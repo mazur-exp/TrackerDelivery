@@ -1,0 +1,466 @@
+<div class="min-h-screen bg-gradient-to-br from-slate-50 via-white to-blue-50">
+  <!-- Navigation -->
+  <nav class="fixed top-0 w-full bg-white/95 backdrop-blur-md z-50 border-b border-slate-200">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 py-3 sm:py-4">
+      <div class="flex items-center justify-between">
+        <!-- Logo -->
+        <a href="/" class="flex items-center space-x-2 sm:space-x-3">
+          <div class="w-8 h-8 sm:w-10 sm:h-10 bg-gradient-to-br from-blue-600 to-indigo-700 rounded-lg sm:rounded-xl flex items-center justify-center shadow-lg">
+            <span class="text-white font-bold text-lg sm:text-xl">DT</span>
+          </div>
+          <span class="text-lg sm:text-xl font-semibold text-slate-900">Delivery Tracking</span>
+        </a>
+        
+        <!-- Desktop Nav Links -->
+        <div class="hidden md:flex items-center space-x-8">
+          <a href="#features" class="text-slate-600 hover:text-slate-900 transition-colors">Features</a>
+          <a href="#pricing" class="text-slate-600 hover:text-slate-900 transition-colors">Pricing</a>
+          <a href="#" class="px-5 py-2.5 bg-gradient-to-r from-blue-600 to-indigo-700 text-white rounded-lg hover:shadow-lg transition-all duration-200">
+            Start Free Trial
+          </a>
+        </div>
+
+        <!-- Mobile Nav Button -->
+        <div class="md:hidden">
+          <button type="button" class="mobile-menu-button p-2 text-slate-600 hover:text-slate-900 transition-colors" onclick="toggleMobileMenu()">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
+            </svg>
+          </button>
+        </div>
+      </div>
+
+      <!-- Mobile Menu -->
+      <div class="mobile-menu hidden md:hidden mt-4 pb-4">
+        <div class="flex flex-col space-y-4">
+          <a href="#features" class="text-slate-600 hover:text-slate-900 transition-colors py-2">Features</a>
+          <a href="#pricing" class="text-slate-600 hover:text-slate-900 transition-colors py-2">Pricing</a>
+          <a href="#" class="w-full text-center px-6 py-3 bg-gradient-to-r from-blue-600 to-indigo-700 text-white rounded-lg hover:shadow-lg transition-all duration-200">
+            Start Free Trial
+          </a>
+        </div>
+      </div>
+    </div>
+  </nav>
+
+  <script>
+    function toggleMobileMenu() {
+      const menu = document.querySelector('.mobile-menu');
+      menu.classList.toggle('hidden');
+    }
+  </script>
+
+  <main>
+    <!-- Hero Section -->
+    <section class="pt-24 sm:pt-32 pb-16 sm:pb-20 px-4 sm:px-6 text-center">
+      <div class="max-w-4xl mx-auto">
+        <!-- Badge -->
+        <div class="inline-flex items-center space-x-2 px-3 sm:px-4 py-1.5 sm:py-2 bg-green-100 rounded-full mb-6 sm:mb-8">
+          <svg class="w-4 h-4 sm:w-5 sm:h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+          </svg>
+          <span class="text-xs sm:text-sm font-medium text-green-800">Protect Your Revenue 24/7</span>
+        </div>
+        
+        <h1 class="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold text-slate-900 mb-4 sm:mb-6 leading-tight px-2">
+          Never Miss Another
+          <span class="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-indigo-700 block sm:inline">Delivery Platform Closure</span>
+        </h1>
+        
+        <p class="text-lg sm:text-xl text-slate-600 max-w-3xl mx-auto leading-relaxed mb-8 sm:mb-12 px-2">
+          Protect your Bali F&B business from hidden revenue losses. Get instant alerts when GrabFood or GoFood closes your restaurant – preventing $70-200 daily losses from missed orders.
+        </p>
+        
+        <div class="flex flex-col items-center justify-center gap-3 sm:gap-4 px-4">
+          <a href="#" class="w-full sm:w-auto px-8 py-4 bg-gradient-to-r from-blue-600 to-indigo-700 text-white rounded-xl font-semibold hover:shadow-xl transition-all duration-200 flex items-center justify-center space-x-2 min-h-[44px]">
+            <span>Start 14-Day Free Trial</span>
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6"></path>
+            </svg>
+          </a>
+          <a href="#features" class="w-full sm:w-auto px-8 py-4 bg-slate-100 text-slate-700 rounded-xl font-semibold hover:bg-slate-200 transition-all duration-200 min-h-[44px] flex items-center justify-center">
+            See How It Works
+          </a>
+        </div>
+
+        <p class="mt-6 sm:mt-8 text-xs sm:text-sm text-slate-500 px-4">
+          No credit card required • 14-day free trial • Cancel anytime
+        </p>
+      </div>
+    </section>
+
+    <!-- Problem Section -->
+    <section class="px-4 sm:px-6 py-16 sm:py-20 bg-white">
+      <div class="max-w-6xl mx-auto">
+        <div class="text-center mb-12 sm:mb-16">
+          <h2 class="text-2xl sm:text-3xl md:text-4xl font-bold text-slate-900 mb-3 sm:mb-4 px-2">
+            Every Day You're Not Monitoring, You're Losing Money
+          </h2>
+          <p class="text-lg sm:text-xl text-slate-600 max-w-3xl mx-auto px-2">
+            Foreign F&B owners in Bali lose hundreds of dollars daily from platform issues they don't even know about
+          </p>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
+          <!-- Problem 1 -->
+          <div class="bg-red-50 rounded-2xl p-6 sm:p-8 border border-red-100">
+            <div class="w-12 h-12 sm:w-14 sm:h-14 bg-red-100 rounded-xl flex items-center justify-center mb-4 sm:mb-6">
+              <svg class="w-6 h-6 sm:w-7 sm:h-7 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.664-.833-2.464 0L4.35 15.5c-.77.833.192 2.5 1.732 2.5z"></path>
+              </svg>
+            </div>
+            <h3 class="text-lg sm:text-xl font-semibold text-slate-900 mb-2 sm:mb-3">Silent Platform Closures</h3>
+            <p class="text-slate-600 mb-3 sm:mb-4 text-sm sm:text-base">
+              Grab auto-closes restaurants after single cancellations. Staff forget to reopen after breaks. You discover hours or days later.
+            </p>
+            <div class="text-red-600 font-semibold text-sm sm:text-base">$70-200 lost per day</div>
+          </div>
+
+          <!-- Problem 2 -->
+          <div class="bg-amber-50 rounded-2xl p-6 sm:p-8 border border-amber-100">
+            <div class="w-12 h-12 sm:w-14 sm:h-14 bg-amber-100 rounded-xl flex items-center justify-center mb-4 sm:mb-6">
+              <svg class="w-6 h-6 sm:w-7 sm:h-7 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z"></path>
+              </svg>
+            </div>
+            <h3 class="text-lg sm:text-xl font-semibold text-slate-900 mb-2 sm:mb-3">Missed Negative Reviews</h3>
+            <p class="text-slate-600 mb-3 sm:mb-4 text-sm sm:text-base">
+              1-2⭐ reviews are checked irregularly, often days later. Dropping below 4.5⭐ reduces ranking and visibility.
+            </p>
+            <div class="text-amber-600 font-semibold text-sm sm:text-base">Permanent ranking damage</div>
+          </div>
+
+          <!-- Problem 3 -->
+          <div class="bg-orange-50 rounded-2xl p-6 sm:p-8 border border-orange-100 sm:col-span-2 lg:col-span-1">
+            <div class="w-12 h-12 sm:w-14 sm:h-14 bg-orange-100 rounded-xl flex items-center justify-center mb-4 sm:mb-6">
+              <svg class="w-6 h-6 sm:w-7 sm:h-7 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"></path>
+              </svg>
+            </div>
+            <h3 class="text-lg sm:text-xl font-semibold text-slate-900 mb-2 sm:mb-3">Out of Stock Items</h3>
+            <p class="text-slate-600 mb-3 sm:mb-4 text-sm sm:text-base">
+              Bestsellers remain "out of stock" for days. Manual menu updates are slow. Staff process errors go unnoticed.
+            </p>
+            <div class="text-orange-600 font-semibold text-sm sm:text-base">Lost orders every hour</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Features Section -->
+    <section id="features" class="px-4 sm:px-6 py-16 sm:py-20">
+      <div class="max-w-7xl mx-auto">
+        <div class="text-center mb-12 sm:mb-16">
+          <h2 class="text-2xl sm:text-3xl md:text-4xl font-bold text-slate-900 mb-3 sm:mb-4 px-2">
+            Complete Automated Monitoring
+          </h2>
+          <p class="text-lg sm:text-xl text-slate-600 max-w-3xl mx-auto px-2">
+            Our system monitors your GrabFood and GoFood outlets 24/7, sending instant alerts to protect your revenue
+          </p>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
+          <!-- Feature 1 -->
+          <div class="bg-white rounded-2xl p-6 sm:p-8 shadow-sm border border-slate-200 hover:shadow-lg transition-all duration-200">
+            <div class="w-12 h-12 sm:w-14 sm:h-14 bg-gradient-to-br from-green-100 to-emerald-100 rounded-xl flex items-center justify-center mb-4 sm:mb-6">
+              <svg class="w-6 h-6 sm:w-7 sm:h-7 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
+              </svg>
+            </div>
+            <h3 class="text-lg sm:text-xl font-semibold text-slate-900 mb-2 sm:mb-3">Real-Time Status Monitoring</h3>
+            <p class="text-slate-600 mb-3 sm:mb-4 text-sm sm:text-base">
+              Parses public GrabFood/GoFood pages every few minutes. Detects auto-closures, system pauses, and manual closures instantly.
+            </p>
+            <div class="flex items-center text-green-600 font-medium text-sm sm:text-base">
+              <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"></path>
+              </svg>
+              Email & WhatsApp alerts within minutes
+            </div>
+          </div>
+
+          <!-- Feature 2 -->
+          <div class="bg-white rounded-2xl p-6 sm:p-8 shadow-sm border border-slate-200 hover:shadow-lg transition-all duration-200">
+            <div class="w-12 h-12 sm:w-14 sm:h-14 bg-gradient-to-br from-blue-100 to-indigo-100 rounded-xl flex items-center justify-center mb-4 sm:mb-6">
+              <svg class="w-6 h-6 sm:w-7 sm:h-7 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 8h10M7 12h4m1 8l-4-4H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-3l-4 4z"></path>
+              </svg>
+            </div>
+            <h3 class="text-lg sm:text-xl font-semibold text-slate-900 mb-2 sm:mb-3">Rating & Review Alerts</h3>
+            <p class="text-slate-600 mb-3 sm:mb-4 text-sm sm:text-base">
+              Instant notifications for 1-2⭐ reviews with categorization by speed, packaging, or taste. Optional auto-replies with your permission.
+            </p>
+            <div class="flex items-center text-blue-600 font-medium text-sm sm:text-base">
+              <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path>
+              </svg>
+              Protect your 4.5⭐ rating automatically
+            </div>
+          </div>
+
+          <!-- Feature 3 -->
+          <div class="bg-white rounded-2xl p-6 sm:p-8 shadow-sm border border-slate-200 hover:shadow-lg transition-all duration-200 md:col-span-2 lg:col-span-1">
+            <div class="w-12 h-12 sm:w-14 sm:h-14 bg-gradient-to-br from-purple-100 to-violet-100 rounded-xl flex items-center justify-center mb-4 sm:mb-6">
+              <svg class="w-6 h-6 sm:w-7 sm:h-7 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"></path>
+              </svg>
+            </div>
+            <h3 class="text-lg sm:text-xl font-semibold text-slate-900 mb-2 sm:mb-3">Menu Availability Tracking</h3>
+            <p class="text-slate-600 mb-3 sm:mb-4 text-sm sm:text-base">
+              Daily reports on "out of stock" items across all menu categories. Spot persistent staff errors and process issues quickly.
+            </p>
+            <div class="flex items-center text-purple-600 font-medium text-sm sm:text-base">
+              <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
+              </svg>
+              Never miss bestseller availability
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Social Proof Section -->
+    <section class="px-4 sm:px-6 py-16 sm:py-20 bg-slate-900 text-white">
+      <div class="max-w-6xl mx-auto">
+        <div class="text-center mb-12 sm:mb-16">
+          <h2 class="text-2xl sm:text-3xl font-bold mb-3 sm:mb-4 px-2">Trusted by Bali F&B Owners</h2>
+          <p class="text-lg sm:text-xl text-slate-400 max-w-3xl mx-auto px-2">
+            Real scenarios from foreign restaurant owners who protect their revenue with automated monitoring
+          </p>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 sm:gap-12">
+          <div class="bg-slate-800 rounded-2xl p-6 sm:p-8 border border-slate-700">
+            <div class="flex items-start space-x-3 sm:space-x-4">
+              <div class="w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-br from-blue-600 to-indigo-700 rounded-full flex items-center justify-center flex-shrink-0">
+                <span class="text-white font-bold text-sm sm:text-base">MR</span>
+              </div>
+              <div class="min-w-0 flex-1">
+                <h4 class="font-semibold mb-2 text-sm sm:text-base">Marco's Pizza Ubud</h4>
+                <p class="text-slate-400 mb-3 sm:mb-4 text-sm sm:text-base leading-relaxed">
+                  "Grab auto-closed us after one cancelled order on a busy Saturday. We didn't know until Monday morning - lost entire weekend revenue of $400+."
+                </p>
+                <div class="flex items-center text-green-400 text-xs sm:text-sm">
+                  <svg class="w-4 h-4 mr-2 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                  </svg>
+                  Now gets instant alerts within 5 minutes
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="bg-slate-800 rounded-2xl p-6 sm:p-8 border border-slate-700">
+            <div class="flex items-start space-x-3 sm:space-x-4">
+              <div class="w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-br from-green-600 to-emerald-700 rounded-full flex items-center justify-center flex-shrink-0">
+                <span class="text-white font-bold text-sm sm:text-base">LK</span>
+              </div>
+              <div class="min-w-0 flex-1">
+                <h4 class="font-semibold mb-2 text-sm sm:text-base">Luna Café Canggu</h4>
+                <p class="text-slate-400 mb-3 sm:mb-4 text-sm sm:text-base leading-relaxed">
+                  "Staff forgot to mark our signature smoothie bowls back 'in stock' for 3 days. That's our #1 seller - probably lost 50+ orders."
+                </p>
+                <div class="flex items-center text-blue-400 text-xs sm:text-sm">
+                  <svg class="w-4 h-4 mr-2 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"></path>
+                  </svg>
+                  Daily menu reports catch issues immediately
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Pricing Section -->
+    <section id="pricing" class="px-4 sm:px-6 py-16 sm:py-20">
+      <div class="max-w-4xl mx-auto">
+        <div class="text-center mb-12 sm:mb-16">
+          <h2 class="text-2xl sm:text-3xl md:text-4xl font-bold text-slate-900 mb-3 sm:mb-4 px-2">
+            Simple Pricing That Pays for Itself
+          </h2>
+          <p class="text-lg sm:text-xl text-slate-600 px-2">
+            Prevent one closure and save more than a year's subscription
+          </p>
+        </div>
+
+        <div class="relative mx-2 sm:mx-0">
+          <!-- Floating background -->
+          <div class="absolute inset-0 bg-gradient-to-br from-blue-100 to-indigo-100 rounded-2xl sm:rounded-3xl transform rotate-2 sm:rotate-3"></div>
+          
+          <!-- Pricing card -->
+          <div class="relative bg-white rounded-2xl sm:rounded-3xl shadow-xl p-6 sm:p-8 md:p-12 border border-slate-200">
+            <div class="text-center mb-6 sm:mb-8">
+              <div class="inline-flex items-baseline">
+                <span class="text-4xl sm:text-5xl font-bold text-slate-900">$49</span>
+                <span class="text-lg sm:text-xl text-slate-600 ml-2">/month</span>
+              </div>
+              <p class="text-slate-600 mt-2 text-sm sm:text-base">For up to 3 restaurant outlets</p>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 sm:gap-8 mb-6 sm:mb-8">
+              <div>
+                <h4 class="font-semibold text-slate-900 mb-3 sm:mb-4 text-sm sm:text-base">What's Included:</h4>
+                <ul class="space-y-2 sm:space-y-3 text-slate-600">
+                  <li class="flex items-center text-sm sm:text-base">
+                    <svg class="w-4 h-4 sm:w-5 sm:h-5 text-green-600 mr-2 sm:mr-3 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                    </svg>
+                    24/7 status monitoring for 3 outlets
+                  </li>
+                  <li class="flex items-center text-sm sm:text-base">
+                    <svg class="w-4 h-4 sm:w-5 sm:h-5 text-green-600 mr-2 sm:mr-3 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                    </svg>
+                    Instant Email & WhatsApp alerts
+                  </li>
+                  <li class="flex items-center text-sm sm:text-base">
+                    <svg class="w-4 h-4 sm:w-5 sm:h-5 text-green-600 mr-2 sm:mr-3 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                    </svg>
+                    Review & rating monitoring
+                  </li>
+                  <li class="flex items-center text-sm sm:text-base">
+                    <svg class="w-4 h-4 sm:w-5 sm:h-5 text-green-600 mr-2 sm:mr-3 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                    </svg>
+                    Daily menu availability reports
+                  </li>
+                  <li class="flex items-center text-sm sm:text-base">
+                    <svg class="w-4 h-4 sm:w-5 sm:h-5 text-green-600 mr-2 sm:mr-3 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                    </svg>
+                    Both GrabFood & GoFood coverage
+                  </li>
+                </ul>
+              </div>
+
+              <div>
+                <h4 class="font-semibold text-slate-900 mb-3 sm:mb-4 text-sm sm:text-base">ROI Calculation:</h4>
+                <div class="space-y-2 sm:space-y-3 text-slate-600">
+                  <div class="flex justify-between text-sm sm:text-base">
+                    <span>Monthly monitoring time saved:</span>
+                    <span class="font-medium">$100</span>
+                  </div>
+                  <div class="flex justify-between text-sm sm:text-base">
+                    <span>One prevented closure:</span>
+                    <span class="font-medium text-green-600">$70-200</span>
+                  </div>
+                  <hr class="my-2">
+                  <div class="flex justify-between font-semibold text-slate-900 text-sm sm:text-base">
+                    <span>Monthly value:</span>
+                    <span class="text-green-600">$170-300+</span>
+                  </div>
+                  <div class="text-xs sm:text-sm text-slate-500 mt-2">
+                    Service pays for itself 3-6x over
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="text-center">
+              <a href="#" class="block sm:inline-block w-full sm:w-auto px-8 py-4 bg-gradient-to-r from-blue-600 to-indigo-700 text-white rounded-xl font-semibold hover:shadow-xl transition-all duration-200 mb-3 sm:mb-4 min-h-[44px] flex items-center justify-center">
+                Start 14-Day Free Trial
+              </a>
+              
+              <div class="text-slate-600">
+                <p class="text-xs sm:text-sm mb-1 sm:mb-2">+ $15/month for each additional outlet</p>
+                <p class="text-xs">No setup fees • Cancel anytime • No credit card for trial</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Final CTA Section -->
+    <section class="px-4 sm:px-6 py-16 sm:py-20 bg-gradient-to-r from-blue-600 to-indigo-700">
+      <div class="max-w-4xl mx-auto text-center text-white">
+        <h2 class="text-2xl sm:text-3xl md:text-4xl font-bold mb-4 sm:mb-6 px-2">Stop Losing Money to Platform Issues</h2>
+        <p class="text-lg sm:text-xl mb-8 sm:mb-12 text-blue-100 px-2">
+          Join foreign F&B owners in Bali who protect their revenue with automated monitoring. Get your first alert within 24 hours.
+        </p>
+        
+        <a href="#" class="block sm:inline-block w-full sm:w-auto px-8 sm:px-10 py-4 sm:py-5 bg-white text-blue-600 rounded-xl font-semibold hover:shadow-xl transition-all duration-200 text-base sm:text-lg min-h-[44px] flex items-center justify-center mx-4 sm:mx-0">
+          Start Your Free Trial Now
+        </a>
+        
+        <p class="mt-6 sm:mt-8 text-xs sm:text-sm text-blue-200 px-4">
+          14-day free trial • No credit card required • Setup in 5 minutes
+        </p>
+      </div>
+    </section>
+  </main>
+
+  <!-- Footer -->
+  <footer class="bg-slate-900 text-slate-400 py-8 sm:py-12 px-4 sm:px-6">
+    <div class="max-w-6xl mx-auto">
+      <div class="grid grid-cols-2 md:grid-cols-4 gap-6 sm:gap-8 mb-6 sm:mb-8">
+        <div class="col-span-2 md:col-span-1">
+          <div class="flex items-center space-x-2 sm:space-x-3 mb-3 sm:mb-4">
+            <div class="w-8 h-8 sm:w-10 sm:h-10 bg-gradient-to-br from-blue-600 to-indigo-700 rounded-lg sm:rounded-xl flex items-center justify-center">
+              <span class="text-white font-bold text-lg sm:text-xl">DT</span>
+            </div>
+            <span class="text-lg sm:text-xl font-semibold text-white">Delivery Tracking</span>
+          </div>
+          <p class="text-xs sm:text-sm">Protecting Bali F&B businesses from delivery platform revenue losses since 2024.</p>
+        </div>
+        
+        <div>
+          <h4 class="text-white font-semibold mb-3 sm:mb-4 text-sm sm:text-base">Product</h4>
+          <ul class="space-y-1 sm:space-y-2 text-xs sm:text-sm">
+            <li><a href="#features" class="hover:text-white transition-colors">Features</a></li>
+            <li><a href="#pricing" class="hover:text-white transition-colors">Pricing</a></li>
+            <li><a href="/test" class="hover:text-white transition-colors">Demo</a></li>
+          </ul>
+        </div>
+        
+        <div>
+          <h4 class="text-white font-semibold mb-3 sm:mb-4 text-sm sm:text-base">Support</h4>
+          <ul class="space-y-1 sm:space-y-2 text-xs sm:text-sm">
+            <li><a href="#" class="hover:text-white transition-colors">Help Center</a></li>
+            <li><a href="#" class="hover:text-white transition-colors">Contact Us</a></li>
+            <li><a href="#" class="hover:text-white transition-colors">WhatsApp Support</a></li>
+          </ul>
+        </div>
+        
+        <div class="col-span-2 md:col-span-1">
+          <h4 class="text-white font-semibold mb-3 sm:mb-4 text-sm sm:text-base">Company</h4>
+          <ul class="space-y-1 sm:space-y-2 text-xs sm:text-sm">
+            <li><a href="#" class="hover:text-white transition-colors">About</a></li>
+            <li><a href="#" class="hover:text-white transition-colors">Privacy Policy</a></li>
+            <li><a href="#" class="hover:text-white transition-colors">Terms of Service</a></li>
+          </ul>
+        </div>
+      </div>
+      
+      <div class="border-t border-slate-800 pt-6 sm:pt-8 text-center text-xs sm:text-sm">
+        <p>&copy; 2024 Delivery Tracking. All rights reserved. Built for Bali F&B businesses.</p>
+      </div>
+    </div>
+  </footer>
+
+  <!-- Mobile Sticky CTA -->
+  <div class="fixed bottom-4 left-4 right-4 md:hidden z-40">
+    <a href="#" class="block w-full px-6 py-4 bg-gradient-to-r from-blue-600 to-indigo-700 text-white text-center rounded-xl font-semibold shadow-lg hover:shadow-xl transition-all duration-200">
+      Start Free Trial
+    </a>
+  </div>
+</div>
+
+<style>
+  /* Ensure mobile menu closes when clicking outside */
+  @media (max-width: 767px) {
+    .mobile-menu.hidden { display: none; }
+    .mobile-menu:not(.hidden) { display: block; }
+  }
+  
+  /* Add padding bottom to prevent sticky CTA from overlapping content on mobile */
+  @media (max-width: 767px) {
+    footer { padding-bottom: 5rem; }
+  }
+</style>
+

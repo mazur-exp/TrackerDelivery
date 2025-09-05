@@ -1,5 +1,6 @@
 Rails.application.routes.draw do
   get "landing/index"
+  get "index" => "landing#index"  # Для aidelivery.tech/index
   get "test" => "landing#test"
   # Define your application routes per the DSL in https://guides.rubyonrails.org/routing.html
 

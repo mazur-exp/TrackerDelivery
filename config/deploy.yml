@@ -2,12 +2,14 @@
 service: ai
 
 # Name of the container image.
-image: your-user/ai
+image: mazur-exp/trackerdelivery
+
+
 
 # Deploy to these servers.
 servers:
   web:
-    - 192.168.0.1
+    - 46.62.195.19
   # job:
   #   hosts:
   #     - 192.168.0.1
@@ -19,13 +21,15 @@ servers:
 # Note: If using Cloudflare, set encryption mode in SSL/TLS setting to "Full" to enable CF-to-app encryption.
 proxy:
   ssl: true
-  host: app.example.com
+  host: landing.aidelivery.tech 
 
 # Credentials for your image host.
 registry:
   # Specify the registry server, if you're not using Docker Hub
   # server: registry.digitalocean.com / ghcr.io / ...
-  username: your-user
+  username: mazur-exp
+  server: ghcr.io
+
 
   # Always use an access token rather than real password when possible.
   password:
@@ -38,7 +42,7 @@ env:
   clear:
     # Run the Solid Queue Supervisor inside the web server's Puma process to do jobs.
     # When you start using multiple servers, you should split out job processing to a dedicated machine.
-    SOLID_QUEUE_IN_PUMA: true
+    # SOLID_QUEUE_IN_PUMA: true  # Отключено из-за конфликта с Puma 7.0.0
 
     # Set number of processes dedicated to Solid Queue (default: 1)
     # JOB_CONCURRENCY: 3
@@ -75,7 +79,7 @@ asset_path: /rails/public/assets
 
 # Configure the image builder.
 builder:
-  arch: amd64
+  arch: arm64
 
   # # Build image via remote server (useful for faster amd64 builds on arm64 computers)
   # remote: ssh://docker@docker-builder-server

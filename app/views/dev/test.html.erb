@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>DeliveryTracker - Never Miss a Closed Store Again</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+</head>
+<body>
+  <div class="min-h-screen bg-gradient-to-br from-green-50 to-white">
+    <!-- Header -->
+    <header class="border-b bg-white/80 backdrop-blur-sm sticky top-0 z-50">
+      <div class="container mx-auto px-4 py-4 flex items-center justify-between">
+        <div class="flex items-center space-x-2">
+          <div class="w-8 h-8 bg-green-600 rounded-lg flex items-center justify-center">
+            <i data-lucide="bell" class="w-5 h-5 text-white"></i>
+          </div>
+          <span class="text-xl font-bold text-gray-900">DeliveryTracker</span>
+        </div>
+        <nav class="hidden md:flex items-center space-x-6">
+          <a href="#features" class="text-gray-600 hover:text-green-600 transition-colors">Features</a>
+          <a href="#pricing" class="text-gray-600 hover:text-green-600 transition-colors">Pricing</a>
+          <a href="#contact" class="text-gray-600 hover:text-green-600 transition-colors">Contact</a>
+        </nav>
+        <div class="flex items-center space-x-3">
+          <a href="/dev/dashboard" class="text-gray-600 hover:text-green-600 px-3 py-2 rounded-md hover:bg-gray-100">Sign In</a>
+          <a href="/dev/onboarding" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-md">Get Started</a>
+        </div>
+      </div>
+    </header>
+
+    <!-- Hero Section -->
+    <section class="py-20 px-4">
+      <div class="container mx-auto text-center">
+        <span class="mb-6 bg-green-100 text-green-800 border border-green-200 px-3 py-1 rounded-full text-sm">Protect Your Revenue 24/7</span>
+        <h1 class="text-4xl md:text-6xl font-bold text-gray-900 mb-6">
+          Never Miss a <span class="text-green-600">Closed Store</span> Again
+        </h1>
+        <p class="text-xl text-gray-600 mb-8 max-w-3xl mx-auto">
+          Automatically monitor your GoFood and GrabFood outlets. Get instant alerts when your store unexpectedly
+          closes, preventing revenue loss of $70-200+ per day.
+        </p>
+        <div class="flex flex-col sm:flex-row gap-4 justify-center mb-12">
+          <a href="/dev/onboarding" class="bg-green-600 hover:bg-green-700 text-white px-8 py-3 rounded-md text-lg">
+            Start 14-Day Free Trial
+          </a>
+          <button class="border border-green-600 text-green-600 hover:bg-green-50 px-8 py-3 rounded-md text-lg bg-transparent">
+            Watch Demo
+          </button>
+        </div>
+
+        <!-- Status Demo Cards -->
+        <div class="grid md:grid-cols-2 gap-6 max-w-2xl mx-auto">
+          <div class="border border-green-200 bg-green-50 p-6 rounded-lg">
+            <div class="flex items-center justify-between mb-3">
+              <div>
+                <h3 class="text-lg font-semibold">Warung Bali Asli</h3>
+                <p class="text-gray-600">Canggu, Bali</p>
+              </div>
+              <i data-lucide="check-circle" class="w-6 h-6 text-green-600"></i>
+            </div>
+            <div class="space-y-2">
+              <div class="flex items-center justify-between">
+                <span class="text-sm text-gray-600">Status</span>
+                <span class="bg-green-600 text-white px-2 py-1 rounded text-sm">Open</span>
+              </div>
+              <div class="flex items-center justify-between">
+                <span class="text-sm text-gray-600">Last Check</span>
+                <span class="text-sm text-gray-900">2 min ago</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="border border-red-200 bg-red-50 p-6 rounded-lg">
+            <div class="flex items-center justify-between mb-3">
+              <div>
+                <h3 class="text-lg font-semibold">Café Sunset</h3>
+                <p class="text-gray-600">Seminyak, Bali</p>
+              </div>
+              <i data-lucide="x-circle" class="w-6 h-6 text-red-600"></i>
+            </div>
+            <div class="space-y-2">
+              <div class="flex items-center justify-between">
+                <span class="text-sm text-gray-600">Status</span>
+                <span class="bg-red-600 text-white px-2 py-1 rounded text-sm">Closed</span>
+              </div>
+              <div class="flex items-center justify-between">
+                <span class="text-sm text-gray-600">Alert Sent</span>
+                <span class="text-sm text-gray-900">Just now</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Problem Section -->
+    <section class="py-16 px-4 bg-white">
+      <div class="container mx-auto">
+        <div class="text-center mb-12">
+          <h2 class="text-3xl md:text-4xl font-bold text-gray-900 mb-4">The Hidden Revenue Killer</h2>
+          <p class="text-xl text-gray-600 max-w-3xl mx-auto">
+            Food delivery platforms close your outlets without warning, costing you hundreds of dollars daily
+          </p>
+        </div>
+
+        <div class="grid md:grid-cols-3 gap-8">
+          <div class="border border-red-200 p-6 rounded-lg">
+            <i data-lucide="alert-triangle" class="w-12 h-12 text-red-600 mb-4"></i>
+            <h3 class="text-xl font-bold text-red-900 mb-3">Silent Closures</h3>
+            <p class="text-gray-600">
+              GoFood and GrabFood automatically close outlets due to order cancellations, courier delays, or system
+              glitches - often without notification.
+            </p>
+          </div>
+
+          <div class="border border-orange-200 p-6 rounded-lg">
+            <i data-lucide="trending-up" class="w-12 h-12 text-orange-600 mb-4"></i>
+            <h3 class="text-xl font-bold text-orange-900 mb-3">Revenue Loss</h3>
+            <p class="text-gray-600">
+              Each closure costs $70-200+ per day in lost orders. Owners often discover closures hours or even days
+              later.
+            </p>
+          </div>
+
+          <div class="border border-blue-200 p-6 rounded-lg">
+            <i data-lucide="clock" class="w-12 h-12 text-blue-600 mb-4"></i>
+            <h3 class="text-xl font-bold text-blue-900 mb-3">Late Discovery</h3>
+            <p class="text-gray-600">
+              Busy owners and unreliable staff monitoring means closures go unnoticed, compounding the financial
+              impact.
+            </p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Solution Section -->
+    <section class="py-16 px-4 bg-green-50">
+      <div class="container mx-auto">
+        <div class="text-center mb-12">
+          <h2 class="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
+            <span class="text-green-600">Automated Protection</span> for Your Business
+          </h2>
+          <p class="text-xl text-gray-600 max-w-3xl mx-auto">
+            We monitor your outlets every 15 minutes and alert you instantly when something goes wrong
+          </p>
+        </div>
+
+        <div class="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
+          <div class="bg-white border border-green-200 p-6 rounded-lg text-center">
+            <div class="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+              <i data-lucide="shield" class="w-8 h-8 text-green-600"></i>
+            </div>
+            <h3 class="text-lg font-bold mb-3">24/7 Monitoring</h3>
+            <p class="text-gray-600">
+              Automated checks every 15 minutes during operating hours on both GoFood and GrabFood
+            </p>
+          </div>
+
+          <div class="bg-white border border-green-200 p-6 rounded-lg text-center">
+            <div class="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+              <i data-lucide="bell" class="w-8 h-8 text-green-600"></i>
+            </div>
+            <h3 class="text-lg font-bold mb-3">Instant Alerts</h3>
+            <p class="text-gray-600">
+              WhatsApp, Telegram, email, and web push notifications within 5 minutes of status change
+            </p>
+          </div>
+
+          <div class="bg-white border border-green-200 p-6 rounded-lg text-center">
+            <div class="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+              <i data-lucide="smartphone" class="w-8 h-8 text-green-600"></i>
+            </div>
+            <h3 class="text-lg font-bold mb-3">Mobile Dashboard</h3>
+            <p class="text-gray-600">
+              Real-time status, historical data, and settings management from any device
+            </p>
+          </div>
+
+          <div class="bg-white border border-green-200 p-6 rounded-lg text-center">
+            <div class="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+              <i data-lucide="trending-up" class="w-8 h-8 text-green-600"></i>
+            </div>
+            <h3 class="text-lg font-bold mb-3">Revenue Protection</h3>
+            <p class="text-gray-600">
+              Prevent $70-200+ daily losses by catching closures within minutes, not hours
+            </p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- CTA Section -->
+    <section class="py-20 px-4 bg-green-600">
+      <div class="container mx-auto text-center">
+        <h2 class="text-3xl md:text-4xl font-bold text-white mb-6">Stop Losing Money to Silent Closures</h2>
+        <p class="text-xl text-green-100 mb-8 max-w-2xl mx-auto">
+          Join Bali's smartest F&B owners who protect their revenue with automated monitoring
+        </p>
+        <div class="flex flex-col sm:flex-row gap-4 justify-center">
+          <a href="/dev/onboarding" class="bg-white text-green-600 hover:bg-gray-100 px-8 py-3 rounded-md text-lg">
+            Start Free Trial - No Credit Card
+          </a>
+          <button class="border border-white text-white hover:bg-white hover:text-green-600 px-8 py-3 rounded-md text-lg bg-transparent">
+            Schedule Demo Call
+          </button>
+        </div>
+        <p class="text-green-200 mt-4 text-sm">14-day free trial • Cancel anytime • Setup in 5 minutes</p>
+      </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="py-12 px-4 bg-gray-900">
+      <div class="container mx-auto">
+        <div class="flex flex-col md:flex-row items-center justify-between">
+          <div class="flex items-center space-x-2 mb-4 md:mb-0">
+            <div class="w-8 h-8 bg-green-600 rounded-lg flex items-center justify-center">
+              <i data-lucide="bell" class="w-5 h-5 text-white"></i>
+            </div>
+            <span class="text-xl font-bold text-white">DeliveryTracker</span>
+          </div>
+          <div class="flex items-center space-x-6 text-gray-400">
+            <a href="#" class="hover:text-white transition-colors">Privacy</a>
+            <a href="#" class="hover:text-white transition-colors">Terms</a>
+            <a href="#" class="hover:text-white transition-colors">Support</a>
+          </div>
+        </div>
+        <div class="border-t border-gray-800 mt-8 pt-8 text-center text-gray-400">
+          <p>&copy; 2024 DeliveryTracker. Protecting F&B businesses across Bali.</p>
+        </div>
+      </div>
+    </footer>
+  </div>
+
+  <script>
+    lucide.createIcons();
+  </script>
+</body>
+</html>

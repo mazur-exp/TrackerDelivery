@@ -1,0 +1,29 @@
+import type React from "react"
+import type { Metadata } from "next"
+import { GeistSans } from "geist/font/sans"
+import { GeistMono } from "geist/font/mono"
+import { Analytics } from "@vercel/analytics/next"
+import { Suspense } from "react"
+import "./globals.css"
+
+export const metadata: Metadata = {
+  title: "DeliveryTracker - Protect Your F&B Revenue 24/7",
+  description:
+    "Automatically monitor your GoFood and GrabFood outlets. Get instant alerts when stores unexpectedly close. Prevent $70-200+ daily revenue loss.",
+  generator: "DeliveryTracker",
+}
+
+export default function RootLayout({
+  children,
+}: Readonly<{
+  children: React.ReactNode
+}>) {
+  return (
+    <html lang="en">
+      <body className={`font-sans ${GeistSans.variable} ${GeistMono.variable}`}>
+        <Suspense fallback={null}>{children}</Suspense>
+        <Analytics />
+      </body>
+    </html>
+  )
+}

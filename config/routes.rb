@@ -2,6 +2,13 @@ Rails.application.routes.draw do
   get "landing/index"
   get "index" => "landing#index"  # Для aidelivery.tech/index
   get "test" => "landing#test"
+  
+  # Dev routes для новой версии с v0.dev
+  namespace :dev do
+    get "test" => "dev#test"       # aidelivery.tech/dev/test
+    get "dashboard" => "dev#dashboard"
+    get "onboarding" => "dev#onboarding"
+  end
   # Define your application routes per the DSL in https://guides.rubyonrails.org/routing.html
 
   # Reveal health status on /up that returns 200 if the app boots with no exceptions, otherwise 500.

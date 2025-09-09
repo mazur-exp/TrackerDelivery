@@ -1,4 +1,140 @@
-<div>
-  <h1 class="font-bold text-4xl">Dev#onboarding</h1>
-  <p>Find me in app/views/dev/onboarding.html.erb</p>
-</div>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>DeliveryTracker - Setup Your Store Monitoring</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+</head>
+<body>
+  <div class="min-h-screen bg-gradient-to-br from-green-50 to-white">
+    <header class="border-b bg-white/80 backdrop-blur-sm">
+      <div class="container mx-auto px-4 py-4 flex items-center justify-between">
+        <a href="/dev/test" class="flex items-center space-x-2">
+          <div class="w-8 h-8 bg-green-600 rounded-lg flex items-center justify-center">
+            <i data-lucide="bell" class="w-5 h-5 text-white"></i>
+          </div>
+          <span class="text-xl font-bold text-gray-900">DeliveryTracker</span>
+        </a>
+        <span class="bg-green-100 text-green-800 border border-green-200 px-3 py-1 rounded-full text-sm">Setup Progress: 1/3</span>
+      </div>
+    </header>
+
+    <div class="container mx-auto px-4 py-12">
+      <div class="max-w-2xl mx-auto">
+        <div class="flex items-center justify-center mb-12">
+          <div class="flex items-center space-x-4">
+            <div class="w-10 h-10 rounded-full flex items-center justify-center bg-green-600 text-white">
+              1
+            </div>
+            <div class="w-16 h-1 bg-gray-200"></div>
+            <div class="w-10 h-10 rounded-full flex items-center justify-center bg-gray-200 text-gray-600">
+              2
+            </div>
+            <div class="w-16 h-1 bg-gray-200"></div>
+            <div class="w-10 h-10 rounded-full flex items-center justify-center bg-gray-200 text-gray-600">
+              3
+            </div>
+          </div>
+        </div>
+
+        <div class="bg-white rounded-lg shadow-lg border">
+          <div class="p-6 text-center border-b">
+            <h2 class="text-2xl font-bold mb-2">Add Your First Store</h2>
+            <p class="text-gray-600">
+              Let's start monitoring your delivery platforms. We'll need your store URLs from GoFood and GrabFood.
+            </p>
+          </div>
+          <div class="p-6 space-y-6">
+            <div class="space-y-2">
+              <label class="block text-sm font-medium text-gray-700">GoFood Store URL *</label>
+              <input
+                type="url"
+                placeholder="https://gofood.link/a/Jkk6Xoml"
+                class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500"
+              />
+              <p class="text-sm text-gray-600">
+                Copy the URL from your GoFood store page (format: gofood.link/a/...)
+              </p>
+            </div>
+
+            <div class="space-y-2">
+              <label class="block text-sm font-medium text-gray-700">GrabFood Store URL (Optional)</label>
+              <input
+                type="url"
+                placeholder="https://r.grab.com/g/6-20250909_122536_8015D1829687499383E150126C5CEFCA_MEXMPS-6-C4KZFF42EN2VGT"
+                class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500"
+              />
+              <p class="text-sm text-gray-600">
+                Add your GrabFood URL if you're also on their platform (format: r.grab.com/g/...)
+              </p>
+            </div>
+
+            <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
+              <div class="flex items-start">
+                <i data-lucide="alert-circle" class="w-5 h-5 text-blue-600 mt-0.5 mr-3"></i>
+                <div class="text-sm">
+                  <p class="font-medium text-blue-900 mb-1">How to find your store URLs:</p>
+                  <p class="text-blue-800 mb-2">
+                    • <strong>GoFood:</strong> Open your store in GoFood app → Share → Copy link (should start with gofood.link/a/)<br>
+                    • <strong>GrabFood:</strong> Open your store in GrabFood app → Share → Copy link (should start with r.grab.com/g/)
+                  </p>
+                  <p class="font-medium text-blue-900 mb-1">Valid examples:</p>
+                  <p class="text-blue-800">
+                    • GoFood: https://gofood.link/a/Jkk6Xoml<br>
+                    • GrabFood: https://r.grab.com/g/6-20250909_122536_8015D1829687499383E150126C5CEFCA_MEXMPS-6-C4KZFF42EN2VGT
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <button
+              onclick="processUrls()"
+              class="w-full bg-green-600 hover:bg-green-700 text-white px-8 py-3 rounded-md text-lg font-medium"
+              id="continueBtn"
+            >
+              Continue
+              <i data-lucide="arrow-right" class="w-4 h-4 ml-2 inline"></i>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Success Modal -->
+    <div id="successModal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50">
+      <div class="bg-white rounded-lg p-8 max-w-md mx-4">
+        <div class="text-center">
+          <div class="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+            <i data-lucide="check-circle" class="w-8 h-8 text-green-600"></i>
+          </div>
+          <h3 class="text-xl font-bold text-gray-900 mb-2">Store Added Successfully!</h3>
+          <p class="text-gray-600 mb-6">Your store has been connected and monitoring will begin shortly.</p>
+          <a href="/dev/dashboard" class="bg-green-600 hover:bg-green-700 text-white px-6 py-2 rounded-md">
+            Go to Dashboard
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    lucide.createIcons();
+
+    function processUrls() {
+      const btn = document.getElementById('continueBtn');
+      const modal = document.getElementById('successModal');
+      
+      btn.innerHTML = '<i data-lucide="loader-2" class="w-4 h-4 mr-2 inline animate-spin"></i> Processing URLs...';
+      btn.disabled = true;
+      
+      // Simulate processing
+      setTimeout(() => {
+        modal.classList.remove('hidden');
+        modal.classList.add('flex');
+      }, 2000);
+    }
+  </script>
+</body>
+</html>

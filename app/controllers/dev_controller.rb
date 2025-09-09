@@ -1,4 +1,6 @@
 class DevController < ApplicationController
+  layout false  # Отключаем Rails layout для dev страниц
+  
   def test
   end
 

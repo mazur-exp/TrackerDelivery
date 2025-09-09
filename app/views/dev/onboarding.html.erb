@@ -17,311 +17,290 @@
           </div>
           <span class="text-xl font-bold text-gray-900">DeliveryTracker</span>
         </a>
-        <span class="bg-green-100 text-green-800 border border-green-200 px-3 py-1 rounded-full text-sm">Setup Progress: 1/3</span>
+        <span class="bg-green-100 text-green-800 border border-green-200 px-3 py-1 rounded-full text-sm" id="progressBadge">Setup Progress: 1/3</span>
       </div>
     </header>
 
     <div class="container mx-auto px-4 py-12">
       <div class="max-w-2xl mx-auto">
         <div class="flex items-center justify-center mb-12">
-          <div class="flex items-center space-x-4" id="progressSteps">
-            <div class="w-10 h-10 rounded-full flex items-center justify-center bg-green-600 text-white step-indicator" data-step="1">
+          <div class="flex items-center space-x-4">
+            <div class="w-10 h-10 rounded-full flex items-center justify-center bg-green-600 text-white" id="step1-indicator">
               1
             </div>
-            <div class="w-16 h-1 bg-gray-200 step-line" data-line="1"></div>
-            <div class="w-10 h-10 rounded-full flex items-center justify-center bg-gray-200 text-gray-600 step-indicator" data-step="2">
+            <div class="w-16 h-1 bg-gray-200" id="line1"></div>
+            <div class="w-10 h-10 rounded-full flex items-center justify-center bg-gray-200 text-gray-600" id="step2-indicator">
               2
             </div>
-            <div class="w-16 h-1 bg-gray-200 step-line" data-line="2"></div>
-            <div class="w-10 h-10 rounded-full flex items-center justify-center bg-gray-200 text-gray-600 step-indicator" data-step="3">
+            <div class="w-16 h-1 bg-gray-200" id="line2"></div>
+            <div class="w-10 h-10 rounded-full flex items-center justify-center bg-gray-200 text-gray-600" id="step3-indicator">
               3
             </div>
           </div>
         </div>
 
-        <div class="bg-white rounded-lg shadow-lg border" id="onboardingCard">
-          <!-- Step 1: Store URLs -->
-          <div id="step1" class="step-content">
-            <div class="p-6 text-center border-b">
-              <h2 class="text-2xl font-bold mb-2">Add Your First Store</h2>
-              <p class="text-gray-600">
-                Let's start monitoring your delivery platforms. We'll need your store URLs from GoFood and GrabFood.
+        <!-- Step 1: Add Store URLs -->
+        <div id="step1" class="bg-white rounded-lg shadow-lg border">
+          <div class="p-6 text-center border-b">
+            <h2 class="text-2xl font-bold mb-2">Add Your First Store</h2>
+            <p class="text-gray-600">
+              Let's start monitoring your delivery platforms. We'll need your store URLs from GoFood and GrabFood.
+            </p>
+          </div>
+          <div class="p-6 space-y-6">
+            <div class="space-y-2">
+              <label class="block text-sm font-medium text-gray-700">GoFood Store URL *</label>
+              <input
+                type="url"
+                id="gofoodUrl"
+                placeholder="https://gofood.link/a/Jkk6Xoml"
+                class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500"
+              />
+              <div id="gofoodError" class="text-sm text-red-600 hidden"></div>
+              <p class="text-sm text-gray-600">
+                Copy the URL from your GoFood store page (format: gofood.link/a/...)
               </p>
             </div>
-            <div class="p-6 space-y-6">
-              <div class="space-y-2">
-                <label class="block text-sm font-medium text-gray-700">GoFood Store URL *</label>
-                <input
-                  type="url"
-                  id="gofoodUrl"
-                  placeholder="https://gofood.link/a/Jkk6Xoml"
-                  class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500"
-                />
-                <p class="text-sm text-gray-600">
-                  Copy the URL from your GoFood store page (format: gofood.link/a/...)
-                </p>
+
+            <div class="space-y-2">
+              <label class="block text-sm font-medium text-gray-700">GrabFood Store URL (Optional)</label>
+              <input
+                type="url"
+                id="grabfoodUrl"
+                placeholder="https://r.grab.com/g/6-20250909_122536_8015D1829687499383E150126C5CEFCA_MEXMPS-6-C4KZFF42EN2VGT"
+                class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500"
+              />
+              <div id="grabfoodError" class="text-sm text-red-600 hidden"></div>
+              <p class="text-sm text-gray-600">
+                Add your GrabFood URL if you're also on their platform (format: r.grab.com/g/...)
+              </p>
+            </div>
+
+            <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
+              <div class="flex items-start">
+                <i data-lucide="alert-circle" class="w-5 h-5 text-blue-600 mt-0.5 mr-3"></i>
+                <div class="text-sm">
+                  <p class="font-medium text-blue-900 mb-1">How to find your store URLs:</p>
+                  <p class="text-blue-800 mb-2">
+                    • <strong>GoFood:</strong> Open your store in GoFood app → Share → Copy link (should start with gofood.link/a/)<br>
+                    • <strong>GrabFood:</strong> Open your store in GrabFood app → Share → Copy link (should start with r.grab.com/g/)
+                  </p>
+                  <p class="font-medium text-blue-900 mb-1">Valid examples:</p>
+                  <p class="text-blue-800">
+                    • GoFood: https://gofood.link/a/Jkk6Xoml<br>
+                    • GrabFood: https://r.grab.com/g/6-20250909_122536_8015D1829687499383E150126C5CEFCA_MEXMPS-6-C4KZFF42EN2VGT
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <button
+              onclick="handleStep1Next()"
+              class="w-full bg-green-600 hover:bg-green-700 text-white px-8 py-3 rounded-md text-lg font-medium"
+              id="step1Btn"
+            >
+              Continue
+              <i data-lucide="arrow-right" class="w-4 h-4 ml-2 inline"></i>
+            </button>
+          </div>
+        </div>
+
+        <!-- Step 2: Verify Store Information -->
+        <div id="step2" class="bg-white rounded-lg shadow-lg border hidden">
+          <div class="p-6 text-center border-b">
+            <h2 class="text-2xl font-bold mb-2">Verify Store Information</h2>
+            <p class="text-gray-600">We've extracted your store details. Please confirm they're correct.</p>
+          </div>
+          <div class="p-6 space-y-6">
+            <div class="bg-green-50 p-6 rounded-lg border border-green-200">
+              <div class="flex items-center gap-2 mb-4">
+                <i data-lucide="check-circle" class="w-5 h-5 text-green-600"></i>
+                <span class="font-medium text-green-900">Store Details Extracted Successfully</span>
               </div>
 
-              <div class="space-y-2">
-                <label class="block text-sm font-medium text-gray-700">GrabFood Store URL (Optional)</label>
-                <input
-                  type="url"
-                  id="grabfoodUrl"
-                  placeholder="https://r.grab.com/g/6-20250909_122536_8015D1829687499383E150126C5CEFCA_MEXMPS-6-C4KZFF42EN2VGT"
-                  class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500"
-                />
-                <p class="text-sm text-gray-600">
-                  Add your GrabFood URL if you're also on their platform (format: r.grab.com/g/...)
-                </p>
-              </div>
+              <div class="space-y-4">
+                <div>
+                  <label class="text-sm font-medium text-gray-700">Store Name</label>
+                  <input
+                    type="text"
+                    id="storeName"
+                    value="Warung Bali Asli"
+                    class="w-full mt-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                  />
+                </div>
 
-              <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                <div class="flex items-start">
-                  <i data-lucide="alert-circle" class="w-5 h-5 text-blue-600 mt-0.5 mr-3"></i>
-                  <div class="text-sm">
-                    <p class="font-medium text-blue-900 mb-1">How to find your store URLs:</p>
-                    <p class="text-blue-800 mb-2">
-                      • <strong>GoFood:</strong> Open your store in GoFood app → Share → Copy link (should start with gofood.link/a/)<br>
-                      • <strong>GrabFood:</strong> Open your store in GrabFood app → Share → Copy link (should start with r.grab.com/g/)
-                    </p>
-                    <p class="font-medium text-blue-900 mb-1">Valid examples:</p>
-                    <p class="text-blue-800">
-                      • GoFood: https://gofood.link/a/Jkk6Xoml<br>
-                      • GrabFood: https://r.grab.com/g/6-20250909_122536_8015D1829687499383E150126C5CEFCA_MEXMPS-6-C4KZFF42EN2VGT
-                    </p>
+                <div>
+                  <label class="text-sm font-medium text-gray-700">Location</label>
+                  <input
+                    type="text"
+                    id="storeLocation"
+                    value="Jl. Pantai Berawa, Canggu, Bali"
+                    class="w-full mt-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                  />
+                </div>
+
+                <div>
+                  <label class="text-sm font-medium text-gray-700">Operating Hours</label>
+                  <input
+                    type="text"
+                    id="operatingHours"
+                    value="10:00 - 22:00"
+                    class="w-full mt-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                  />
+                  <p class="text-xs text-gray-600 mt-1">We'll only monitor during these hours</p>
+                </div>
+
+                <div class="grid grid-cols-2 gap-4">
+                  <div>
+                    <label class="text-sm font-medium text-gray-700">GoFood</label>
+                    <div class="mt-1 p-2 bg-white rounded border">
+                      <span class="bg-green-600 text-white px-2 py-1 rounded text-sm">Connected</span>
+                    </div>
+                  </div>
+                  <div>
+                    <label class="text-sm font-medium text-gray-700">GrabFood</label>
+                    <div class="mt-1 p-2 bg-white rounded border">
+                      <span id="grabfoodStatus" class="bg-gray-200 text-gray-700 px-2 py-1 rounded text-sm border">Not Added</span>
+                    </div>
                   </div>
                 </div>
               </div>
+            </div>
 
+            <div class="flex gap-3">
               <button
-                onclick="nextStep(2)"
-                class="w-full bg-green-600 hover:bg-green-700 text-white px-8 py-3 rounded-md text-lg font-medium"
-                id="step1Btn"
+                onclick="showStep(1)"
+                class="flex-1 border border-gray-300 hover:bg-gray-50 text-gray-700 px-6 py-3 rounded-md font-medium"
               >
-                Continue
+                <i data-lucide="arrow-left" class="w-4 h-4 mr-2 inline"></i>
+                Back
+              </button>
+              <button
+                onclick="showStep(3)"
+                class="flex-1 bg-green-600 hover:bg-green-700 text-white px-6 py-3 rounded-md font-medium"
+              >
+                Looks Good
                 <i data-lucide="arrow-right" class="w-4 h-4 ml-2 inline"></i>
               </button>
             </div>
           </div>
+        </div>
 
-          <!-- Step 2: Notification Settings -->
-          <div id="step2" class="step-content hidden">
-            <div class="p-6 text-center border-b">
-              <h2 class="text-2xl font-bold mb-2">Set Up Notifications</h2>
-              <p class="text-gray-600">
-                Choose how you want to receive alerts when your store status changes.
-              </p>
-            </div>
-            <div class="p-6 space-y-6">
-              <div class="grid md:grid-cols-2 gap-4">
-                <div class="border border-green-200 bg-green-50 p-4 rounded-lg">
-                  <div class="flex items-center justify-between mb-3">
-                    <div class="flex items-center gap-2">
-                      <i data-lucide="smartphone" class="w-5 h-5 text-green-600"></i>
-                      <h4 class="font-semibold">WhatsApp</h4>
-                    </div>
-                    <label class="relative inline-flex items-center cursor-pointer">
-                      <input type="checkbox" id="whatsappEnabled" checked class="sr-only peer">
-                      <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-green-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-green-600"></div>
-                    </label>
-                  </div>
-                  <input
-                    type="tel"
-                    id="whatsappNumber"
-                    placeholder="+62 812-3456-7890"
-                    class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500"
-                  />
-                  <p class="text-xs text-gray-600 mt-1">Instant alerts via WhatsApp</p>
-                </div>
-
-                <div class="border border-blue-200 bg-blue-50 p-4 rounded-lg">
-                  <div class="flex items-center justify-between mb-3">
-                    <div class="flex items-center gap-2">
-                      <i data-lucide="mail" class="w-5 h-5 text-blue-600"></i>
-                      <h4 class="font-semibold">Email</h4>
-                    </div>
-                    <label class="relative inline-flex items-center cursor-pointer">
-                      <input type="checkbox" id="emailEnabled" checked class="sr-only peer">
-                      <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
-                    </label>
-                  </div>
-                  <input
-                    type="email"
-                    id="emailAddress"
-                    placeholder="owner@restaurant.com"
-                    class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                  />
-                  <p class="text-xs text-gray-600 mt-1">Detailed reports via email</p>
-                </div>
-              </div>
-
-              <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
-                <div class="flex items-start">
-                  <i data-lucide="clock" class="w-5 h-5 text-yellow-600 mt-0.5 mr-3"></i>
-                  <div class="text-sm">
-                    <p class="font-medium text-yellow-900 mb-1">Monitoring Frequency</p>
-                    <p class="text-yellow-800 mb-3">How often should we check your store status?</p>
-                    <select id="checkFrequency" class="w-full px-3 py-2 border border-yellow-300 rounded-md focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500">
-                      <option value="5">Every 5 minutes (Recommended)</option>
-                      <option value="10">Every 10 minutes</option>
-                      <option value="15">Every 15 minutes</option>
-                      <option value="30">Every 30 minutes</option>
-                    </select>
-                  </div>
-                </div>
-              </div>
-
-              <div class="flex gap-3">
-                <button
-                  onclick="prevStep(1)"
-                  class="flex-1 border border-gray-300 hover:bg-gray-50 text-gray-700 px-6 py-3 rounded-md font-medium"
-                >
-                  <i data-lucide="arrow-left" class="w-4 h-4 mr-2 inline"></i>
-                  Back
-                </button>
-                <button
-                  onclick="nextStep(3)"
-                  class="flex-1 bg-green-600 hover:bg-green-700 text-white px-6 py-3 rounded-md font-medium"
-                  id="step2Btn"
-                >
-                  Continue
-                  <i data-lucide="arrow-right" class="w-4 h-4 ml-2 inline"></i>
-                </button>
-              </div>
-            </div>
+        <!-- Step 3: Setup Notifications -->
+        <div id="step3" class="bg-white rounded-lg shadow-lg border hidden">
+          <div class="p-6 text-center border-b">
+            <h2 class="text-2xl font-bold mb-2">Setup Notifications</h2>
+            <p class="text-gray-600">Choose how you want to receive alerts when your store status changes.</p>
           </div>
-
-          <!-- Step 3: Operating Hours -->
-          <div id="step3" class="step-content hidden">
-            <div class="p-6 text-center border-b">
-              <h2 class="text-2xl font-bold mb-2">Set Operating Hours</h2>
-              <p class="text-gray-600">
-                Define when your store should be open to better detect unexpected closures.
-              </p>
+          <div class="p-6 space-y-6">
+            <div id="notificationError" class="bg-red-50 border border-red-200 rounded-lg p-4 hidden">
+              <div class="flex items-center">
+                <i data-lucide="alert-circle" class="w-5 h-5 text-red-600 mr-3"></i>
+                <span class="text-sm text-red-800">Please provide at least one notification method</span>
+              </div>
             </div>
-            <div class="p-6 space-y-6">
-              <div class="space-y-4">
-                <div class="flex items-center justify-between p-3 border rounded-lg">
-                  <span class="font-medium">Monday</span>
-                  <div class="flex items-center gap-2">
-                    <input type="time" value="10:00" class="px-2 py-1 border rounded text-sm">
-                    <span>-</span>
-                    <input type="time" value="22:00" class="px-2 py-1 border rounded text-sm">
-                    <label class="flex items-center ml-3">
-                      <input type="checkbox" checked class="mr-1">
-                      <span class="text-sm text-gray-600">Open</span>
-                    </label>
-                  </div>
-                </div>
 
-                <div class="flex items-center justify-between p-3 border rounded-lg">
-                  <span class="font-medium">Tuesday</span>
-                  <div class="flex items-center gap-2">
-                    <input type="time" value="10:00" class="px-2 py-1 border rounded text-sm">
-                    <span>-</span>
-                    <input type="time" value="22:00" class="px-2 py-1 border rounded text-sm">
-                    <label class="flex items-center ml-3">
-                      <input type="checkbox" checked class="mr-1">
-                      <span class="text-sm text-gray-600">Open</span>
-                    </label>
-                  </div>
+            <div class="space-y-4">
+              <!-- WhatsApp Card -->
+              <div class="border border-green-200 bg-green-50 p-4 rounded-lg">
+                <div class="pb-3">
+                  <h4 class="text-lg font-semibold flex items-center gap-2">
+                    <i data-lucide="smartphone" class="w-5 h-5 text-green-600"></i>
+                    WhatsApp (Recommended)
+                  </h4>
+                  <p class="text-gray-600 text-sm">Get instant alerts on your phone</p>
                 </div>
-
-                <div class="flex items-center justify-between p-3 border rounded-lg">
-                  <span class="font-medium">Wednesday</span>
-                  <div class="flex items-center gap-2">
-                    <input type="time" value="10:00" class="px-2 py-1 border rounded text-sm">
-                    <span>-</span>
-                    <input type="time" value="22:00" class="px-2 py-1 border rounded text-sm">
-                    <label class="flex items-center ml-3">
-                      <input type="checkbox" checked class="mr-1">
-                      <span class="text-sm text-gray-600">Open</span>
-                    </label>
+                <div class="space-y-3">
+                  <div>
+                    <label class="text-sm font-medium text-gray-700">WhatsApp Number</label>
+                    <input
+                      type="tel"
+                      id="whatsappNumber"
+                      placeholder="+62 812-3456-7890"
+                      class="w-full mt-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                    />
                   </div>
-                </div>
-
-                <div class="flex items-center justify-between p-3 border rounded-lg">
-                  <span class="font-medium">Thursday</span>
-                  <div class="flex items-center gap-2">
-                    <input type="time" value="10:00" class="px-2 py-1 border rounded text-sm">
-                    <span>-</span>
-                    <input type="time" value="22:00" class="px-2 py-1 border rounded text-sm">
-                    <label class="flex items-center ml-3">
-                      <input type="checkbox" checked class="mr-1">
-                      <span class="text-sm text-gray-600">Open</span>
-                    </label>
-                  </div>
-                </div>
-
-                <div class="flex items-center justify-between p-3 border rounded-lg">
-                  <span class="font-medium">Friday</span>
-                  <div class="flex items-center gap-2">
-                    <input type="time" value="10:00" class="px-2 py-1 border rounded text-sm">
-                    <span>-</span>
-                    <input type="time" value="23:00" class="px-2 py-1 border rounded text-sm">
-                    <label class="flex items-center ml-3">
-                      <input type="checkbox" checked class="mr-1">
-                      <span class="text-sm text-gray-600">Open</span>
-                    </label>
-                  </div>
-                </div>
-
-                <div class="flex items-center justify-between p-3 border rounded-lg">
-                  <span class="font-medium">Saturday</span>
-                  <div class="flex items-center gap-2">
-                    <input type="time" value="10:00" class="px-2 py-1 border rounded text-sm">
-                    <span>-</span>
-                    <input type="time" value="23:00" class="px-2 py-1 border rounded text-sm">
-                    <label class="flex items-center ml-3">
-                      <input type="checkbox" checked class="mr-1">
-                      <span class="text-sm text-gray-600">Open</span>
-                    </label>
-                  </div>
-                </div>
-
-                <div class="flex items-center justify-between p-3 border rounded-lg">
-                  <span class="font-medium">Sunday</span>
-                  <div class="flex items-center gap-2">
-                    <input type="time" value="10:00" class="px-2 py-1 border rounded text-sm">
-                    <span>-</span>
-                    <input type="time" value="22:00" class="px-2 py-1 border rounded text-sm">
-                    <label class="flex items-center ml-3">
-                      <input type="checkbox" checked class="mr-1">
-                      <span class="text-sm text-gray-600">Open</span>
-                    </label>
-                  </div>
+                  <span class="bg-green-600 text-white px-2 py-1 rounded text-sm">Most Reliable</span>
                 </div>
               </div>
 
-              <div class="bg-green-50 border border-green-200 rounded-lg p-4">
-                <div class="flex items-start">
-                  <i data-lucide="info" class="w-5 h-5 text-green-600 mt-0.5 mr-3"></i>
-                  <div class="text-sm">
-                    <p class="font-medium text-green-900 mb-1">Smart Monitoring</p>
-                    <p class="text-green-800">
-                      We'll only alert you about closures during your operating hours. Outside these times, we'll still monitor but won't send unnecessary alerts.
-                    </p>
+              <!-- Telegram Card -->
+              <div class="border border-blue-200 bg-blue-50 p-4 rounded-lg">
+                <div class="pb-3">
+                  <h4 class="text-lg font-semibold flex items-center gap-2">
+                    <i data-lucide="message-circle" class="w-5 h-5 text-blue-600"></i>
+                    Telegram
+                  </h4>
+                  <p class="text-gray-600 text-sm">Fast notifications via Telegram bot</p>
+                </div>
+                <div class="space-y-3">
+                  <div>
+                    <label class="text-sm font-medium text-gray-700">Telegram Username</label>
+                    <input
+                      type="text"
+                      id="telegramUsername"
+                      placeholder="@yourusername"
+                      class="w-full mt-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    />
+                    <p class="text-xs text-gray-600 mt-1">Start with @ (e.g., @johndoe)</p>
                   </div>
+                  <span class="bg-blue-600 text-white px-2 py-1 rounded text-sm">Instant Delivery</span>
                 </div>
               </div>
 
-              <div class="flex gap-3">
-                <button
-                  onclick="prevStep(2)"
-                  class="flex-1 border border-gray-300 hover:bg-gray-50 text-gray-700 px-6 py-3 rounded-md font-medium"
-                >
-                  <i data-lucide="arrow-left" class="w-4 h-4 mr-2 inline"></i>
-                  Back
-                </button>
-                <button
-                  onclick="completeOnboarding()"
-                  class="flex-1 bg-green-600 hover:bg-green-700 text-white px-6 py-3 rounded-md font-medium"
-                  id="step3Btn"
-                >
-                  Complete Setup
-                  <i data-lucide="check" class="w-4 h-4 ml-2 inline"></i>
-                </button>
+              <!-- Email Card -->
+              <div class="border border-gray-200 p-4 rounded-lg">
+                <div class="pb-3">
+                  <h4 class="text-lg font-semibold flex items-center gap-2">
+                    <i data-lucide="mail" class="w-5 h-5 text-gray-600"></i>
+                    Email Notifications
+                  </h4>
+                  <p class="text-gray-600 text-sm">Backup alerts via email</p>
+                </div>
+                <div class="space-y-3">
+                  <div>
+                    <label class="text-sm font-medium text-gray-700">Email Address</label>
+                    <input
+                      type="email"
+                      id="emailAddress"
+                      placeholder="owner@restaurant.com"
+                      class="w-full mt-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-gray-500 focus:border-gray-500"
+                    />
+                    <div id="emailError" class="text-sm text-red-600 mt-1 hidden"></div>
+                  </div>
+                  <span class="border border-gray-300 text-gray-700 px-2 py-1 rounded text-sm">Always Enabled</span>
+                </div>
               </div>
+            </div>
+
+            <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
+              <div class="flex items-start">
+                <i data-lucide="alert-circle" class="w-5 h-5 text-blue-600 mt-0.5 mr-3"></i>
+                <div class="text-sm">
+                  <p class="font-medium text-blue-900 mb-1">💡 Pro Tip:</p>
+                  <p class="text-blue-800">
+                    We recommend setting up WhatsApp or Telegram for the fastest alerts. You can always add more notification methods later in your dashboard.
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <div class="flex gap-3">
+              <button
+                onclick="showStep(2)"
+                class="flex-1 border border-gray-300 hover:bg-gray-50 text-gray-700 px-6 py-3 rounded-md font-medium"
+              >
+                <i data-lucide="arrow-left" class="w-4 h-4 mr-2 inline"></i>
+                Back
+              </button>
+              <button
+                onclick="completeSetup()"
+                class="flex-1 bg-green-600 hover:bg-green-700 text-white px-6 py-3 rounded-md font-medium"
+                id="step3Btn"
+              >
+                Start Monitoring
+                <i data-lucide="check-circle" class="w-4 h-4 ml-2 inline"></i>
+              </button>
             </div>
           </div>
         </div>
@@ -349,115 +328,165 @@
     lucide.createIcons();
 
     let currentStep = 1;
+    let storeData = {
+      gofoodUrl: '',
+      grabfoodUrl: '',
+      name: 'Warung Bali Asli',
+      location: 'Jl. Pantai Berawa, Canggu, Bali',
+      operatingHours: '10:00 - 22:00'
+    };
+    let notifications = {
+      whatsapp: '',
+      telegram: '',
+      email: ''
+    };
+
+    function validateUrl(url, platform) {
+      if (!url) return true; // Optional field
+      
+      const patterns = {
+        gofood: /^https:\/\/gofood\.link\/a\/[a-zA-Z0-9]+$/,
+        grabfood: /^https:\/\/r\.grab\.com\/g\/[a-zA-Z0-9_-]+$/
+      };
+      return patterns[platform]?.test(url) || false;
+    }
 
     function updateProgressIndicator(step) {
-      // Reset all steps
-      document.querySelectorAll('.step-indicator').forEach((indicator, index) => {
-        const stepNumber = index + 1;
-        if (stepNumber < step) {
+      const progressBadge = document.getElementById('progressBadge');
+      progressBadge.textContent = `Setup Progress: ${step}/3`;
+
+      // Update step indicators
+      for (let i = 1; i <= 3; i++) {
+        const indicator = document.getElementById(`step${i}-indicator`);
+        const line = document.getElementById(`line${i}`);
+        
+        if (i < step) {
           // Completed steps
-          indicator.classList.remove('bg-gray-200', 'text-gray-600');
-          indicator.classList.add('bg-green-600', 'text-white');
-        } else if (stepNumber === step) {
+          indicator.className = 'w-10 h-10 rounded-full flex items-center justify-center bg-green-600 text-white';
+          indicator.innerHTML = '<i data-lucide="check-circle" class="w-6 h-6"></i>';
+          if (line) line.className = 'w-16 h-1 bg-green-600';
+        } else if (i === step) {
           // Current step
-          indicator.classList.remove('bg-gray-200', 'text-gray-600');
-          indicator.classList.add('bg-green-600', 'text-white');
+          indicator.className = 'w-10 h-10 rounded-full flex items-center justify-center bg-green-600 text-white';
+          indicator.textContent = i;
+          if (line) line.className = 'w-16 h-1 bg-gray-200';
         } else {
           // Future steps
-          indicator.classList.remove('bg-green-600', 'text-white');
-          indicator.classList.add('bg-gray-200', 'text-gray-600');
+          indicator.className = 'w-10 h-10 rounded-full flex items-center justify-center bg-gray-200 text-gray-600';
+          indicator.textContent = i;
+          if (line) line.className = 'w-16 h-1 bg-gray-200';
         }
-      });
-
-      // Update progress lines
-      document.querySelectorAll('.step-line').forEach((line, index) => {
-        const lineNumber = index + 1;
-        if (lineNumber < step) {
-          line.classList.remove('bg-gray-200');
-          line.classList.add('bg-green-600');
-        } else {
-          line.classList.remove('bg-green-600');
-          line.classList.add('bg-gray-200');
-        }
-      });
-
-      // Update header progress text
-      const progressText = document.querySelector('.bg-green-100');
-      if (progressText) {
-        progressText.textContent = `Setup Progress: ${step}/3`;
       }
+      
+      lucide.createIcons();
     }
 
     function showStep(step) {
       // Hide all steps
-      document.querySelectorAll('.step-content').forEach(content => {
-        content.classList.add('hidden');
-      });
-
+      for (let i = 1; i <= 3; i++) {
+        document.getElementById(`step${i}`).classList.add('hidden');
+      }
+      
       // Show current step
       document.getElementById(`step${step}`).classList.remove('hidden');
-      
-      // Update progress indicator
-      updateProgressIndicator(step);
       currentStep = step;
+      updateProgressIndicator(step);
     }
 
-    function nextStep(step) {
-      // Validate current step before proceeding
-      if (currentStep === 1) {
-        const gofoodUrl = document.getElementById('gofoodUrl').value;
-        if (!gofoodUrl || !gofoodUrl.includes('gofood.link/a/')) {
-          alert('Please enter a valid GoFood URL (format: https://gofood.link/a/...)');
-          return;
-        }
-      } else if (currentStep === 2) {
-        const whatsappEnabled = document.getElementById('whatsappEnabled').checked;
-        const emailEnabled = document.getElementById('emailEnabled').checked;
-        
-        if (whatsappEnabled && !document.getElementById('whatsappNumber').value) {
-          alert('Please enter your WhatsApp number');
-          return;
-        }
-        
-        if (emailEnabled && !document.getElementById('emailAddress').value) {
-          alert('Please enter your email address');
-          return;
-        }
-        
-        if (!whatsappEnabled && !emailEnabled) {
-          alert('Please enable at least one notification method');
-          return;
-        }
-      }
-
-      showStep(step);
-    }
-
-    function prevStep(step) {
-      showStep(step);
-    }
-
-    function completeOnboarding() {
-      const btn = document.getElementById('step3Btn');
-      const modal = document.getElementById('successModal');
+    function handleStep1Next() {
+      const gofoodUrl = document.getElementById('gofoodUrl').value;
+      const grabfoodUrl = document.getElementById('grabfoodUrl').value;
       
-      btn.innerHTML = '<i data-lucide="loader-2" class="w-4 h-4 mr-2 inline animate-spin"></i> Setting up monitoring...';
+      // Clear previous errors
+      document.getElementById('gofoodError').classList.add('hidden');
+      document.getElementById('grabfoodError').classList.add('hidden');
+      
+      let hasErrors = false;
+      
+      // Validate GoFood URL (required)
+      if (!gofoodUrl) {
+        document.getElementById('gofoodError').textContent = 'GoFood URL is required';
+        document.getElementById('gofoodError').classList.remove('hidden');
+        hasErrors = true;
+      } else if (!validateUrl(gofoodUrl, 'gofood')) {
+        document.getElementById('gofoodError').textContent = 'Please enter a valid GoFood restaurant URL';
+        document.getElementById('gofoodError').classList.remove('hidden');
+        hasErrors = true;
+      }
+      
+      // Validate GrabFood URL (optional)
+      if (grabfoodUrl && !validateUrl(grabfoodUrl, 'grabfood')) {
+        document.getElementById('grabfoodError').textContent = 'Please enter a valid GrabFood restaurant URL';
+        document.getElementById('grabfoodError').classList.remove('hidden');
+        hasErrors = true;
+      }
+      
+      if (hasErrors) return;
+      
+      // Store data and proceed
+      storeData.gofoodUrl = gofoodUrl;
+      storeData.grabfoodUrl = grabfoodUrl;
+      
+      // Update GrabFood status in step 2
+      const grabfoodStatus = document.getElementById('grabfoodStatus');
+      if (grabfoodUrl) {
+        grabfoodStatus.textContent = 'Connected';
+        grabfoodStatus.className = 'bg-green-600 text-white px-2 py-1 rounded text-sm';
+      }
+      
+      // Show loading state
+      const btn = document.getElementById('step1Btn');
+      btn.innerHTML = '<i data-lucide="loader-2" class="w-4 h-4 mr-2 inline animate-spin"></i> Processing URLs...';
       btn.disabled = true;
       
-      // Simulate setup process
       setTimeout(() => {
-        modal.classList.remove('hidden');
-        modal.classList.add('flex');
-        
-        // Update progress to complete
-        updateProgressIndicator(4); // Show all steps as complete
-      }, 3000);
+        showStep(2);
+        btn.innerHTML = 'Continue <i data-lucide="arrow-right" class="w-4 h-4 ml-2 inline"></i>';
+        btn.disabled = false;
+        lucide.createIcons();
+      }, 2000);
     }
 
-    // Initialize the first step
-    document.addEventListener('DOMContentLoaded', function() {
-      updateProgressIndicator(1);
-    });
+    function completeSetup() {
+      const whatsapp = document.getElementById('whatsappNumber').value;
+      const telegram = document.getElementById('telegramUsername').value;
+      const email = document.getElementById('emailAddress').value;
+      
+      // Clear previous errors
+      document.getElementById('notificationError').classList.add('hidden');
+      document.getElementById('emailError').classList.add('hidden');
+      
+      let hasErrors = false;
+      
+      // Validate at least one notification method
+      if (!whatsapp && !telegram && !email) {
+        document.getElementById('notificationError').classList.remove('hidden');
+        hasErrors = true;
+      }
+      
+      // Validate email format if provided
+      if (email && !/\S+@\S+\.\S+/.test(email)) {
+        document.getElementById('emailError').textContent = 'Please enter a valid email address';
+        document.getElementById('emailError').classList.remove('hidden');
+        hasErrors = true;
+      }
+      
+      if (hasErrors) return;
+      
+      // Show loading state
+      const btn = document.getElementById('step3Btn');
+      btn.innerHTML = '<i data-lucide="loader-2" class="w-4 h-4 mr-2 inline animate-spin"></i> Setting up...';
+      btn.disabled = true;
+      
+      setTimeout(() => {
+        document.getElementById('successModal').classList.remove('hidden');
+        document.getElementById('successModal').classList.add('flex');
+        updateProgressIndicator(4); // Show all steps as complete
+      }, 2000);
+    }
+
+    // Initialize
+    updateProgressIndicator(1);
   </script>
 </body>
 </html>

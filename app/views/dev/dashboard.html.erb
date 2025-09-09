@@ -19,7 +19,7 @@
           <span class="text-xl font-bold text-gray-900">DeliveryTracker</span>
         </a>
           <div class="flex items-center space-x-3">
-            <button onclick="handleRefresh()" class="text-gray-600 hover:text-green-600 px-3 py-2 rounded-md hover:bg-gray-100" id="refreshBtn">
+            <button class="text-gray-600 hover:text-green-600 px-3 py-2 rounded-md hover:bg-gray-100" id="refreshBtn">
               <i data-lucide="refresh-cw" class="w-4 h-4 mr-2 inline" id="refreshIcon"></i>
               <span id="refreshText">Refresh</span>
             </button>
@@ -497,6 +497,17 @@
     
     // Initialize timers immediately
     updateCountdowns();
+    
+    // Add event listener for refresh button
+    document.addEventListener('DOMContentLoaded', function() {
+      const refreshBtn = document.getElementById('refreshBtn');
+      if (refreshBtn) {
+        refreshBtn.addEventListener('click', handleRefresh);
+        console.log('Refresh button event listener added');
+      } else {
+        console.error('Refresh button not found');
+      }
+    });
   </script>
 </body>
 </html>

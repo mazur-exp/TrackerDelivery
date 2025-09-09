@@ -161,7 +161,7 @@
                 </div>
                 <div class="flex justify-between text-sm">
                   <span class="text-gray-600">Last Check</span>
-                  <span class="text-gray-900">5 min ago</span>
+                  <span class="text-gray-900" id="lastCheck2">5 min ago</span>
                 </div>
               </div>
               <div class="space-y-2">
@@ -216,7 +216,7 @@
                 </div>
                 <div class="flex justify-between text-sm">
                   <span class="text-gray-600">Last Check</span>
-                  <span class="text-gray-900">23 min ago</span>
+                  <span class="text-gray-900" id="lastCheck3">23 min ago</span>
                 </div>
               </div>
               <div class="space-y-2">
@@ -370,21 +370,24 @@
         name: "Warung Bali Asli",
         nextCheckTime: new Date(Date.now() + 13 * 60 * 1000), // 13 minutes from now
         lastCheck: new Date(Date.now() - 2 * 60 * 1000), // 2 minutes ago
-        elementId: 'nextCheck1'
+        nextCheckElementId: 'nextCheck1',
+        lastCheckElementId: 'lastCheck1'
       },
       {
         id: 2,
         name: "Healthy Bowl Co.",
         nextCheckTime: new Date(Date.now() + 10 * 60 * 1000), // 10 minutes from now
         lastCheck: new Date(Date.now() - 5 * 60 * 1000), // 5 minutes ago
-        elementId: 'nextCheck2'
+        nextCheckElementId: 'nextCheck2',
+        lastCheckElementId: 'lastCheck2'
       },
       {
         id: 3,
         name: "Café Sunset",
         nextCheckTime: new Date(Date.now() + 7 * 60 * 1000), // 7 minutes from now
         lastCheck: new Date(Date.now() - 23 * 60 * 1000), // 23 minutes ago
-        elementId: 'nextCheck3'
+        nextCheckElementId: 'nextCheck3',
+        lastCheckElementId: 'lastCheck3'
       }
     ];
 
@@ -422,10 +425,22 @@
       // Simulate API call
       await new Promise(resolve => setTimeout(resolve, 2000));
       
-      // Update all stores with new check times
+      // Update all stores with new check times and last check
+      const now = new Date();
       stores.forEach(store => {
-        store.lastCheck = new Date();
-        store.nextCheckTime = new Date(Date.now() + 15 * 60 * 1000); // 15 minutes from now
+        store.lastCheck = now;
+        store.nextCheckTime = new Date(now.getTime() + 15 * 60 * 1000); // 15 minutes from now
+        
+        // Update UI elements immediately
+        const nextCheckElement = document.getElementById(store.nextCheckElementId);
+        const lastCheckElement = document.getElementById(store.lastCheckElementId);
+        
+        if (nextCheckElement) {
+          nextCheckElement.textContent = formatTimeRemaining(store.nextCheckTime);
+        }
+        if (lastCheckElement) {
+          lastCheckElement.textContent = formatTimeAgo(store.lastCheck);
+        }
       });
       
       // Reset UI
@@ -443,19 +458,35 @@
       return `${minutes}:${seconds.toString().padStart(2, '0')}`;
     }
 
+    function formatTimeAgo(date) {
+      const now = new Date();
+      const diff = now.getTime() - date.getTime();
+      const minutes = Math.floor(diff / 60000);
+      if (minutes < 1) return "Just now";
+      if (minutes === 1) return "1 min ago";
+      return `${minutes} min ago`;
+    }
+
     function updateCountdowns() {
       stores.forEach(store => {
-        const element = document.getElementById(store.elementId);
-        if (element) {
+        const nextCheckElement = document.getElementById(store.nextCheckElementId);
+        const lastCheckElement = document.getElementById(store.lastCheckElementId);
+        
+        if (nextCheckElement) {
           // Decrease next check time by 1 second
           store.nextCheckTime = new Date(store.nextCheckTime.getTime() - 1000);
           
-          // If time reaches 0, reset to 15 minutes
+          // If time reaches 0, reset to 15 minutes and update last check
           if (store.nextCheckTime.getTime() <= Date.now()) {
             store.nextCheckTime = new Date(Date.now() + 15 * 60 * 1000);
+            store.lastCheck = new Date();
           }
           
-          element.textContent = formatTimeRemaining(store.nextCheckTime);
+          nextCheckElement.textContent = formatTimeRemaining(store.nextCheckTime);
+        }
+        
+        if (lastCheckElement) {
+          lastCheckElement.textContent = formatTimeAgo(store.lastCheck);
         }
       });
     }

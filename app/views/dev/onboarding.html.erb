@@ -24,79 +24,305 @@
     <div class="container mx-auto px-4 py-12">
       <div class="max-w-2xl mx-auto">
         <div class="flex items-center justify-center mb-12">
-          <div class="flex items-center space-x-4">
-            <div class="w-10 h-10 rounded-full flex items-center justify-center bg-green-600 text-white">
+          <div class="flex items-center space-x-4" id="progressSteps">
+            <div class="w-10 h-10 rounded-full flex items-center justify-center bg-green-600 text-white step-indicator" data-step="1">
               1
             </div>
-            <div class="w-16 h-1 bg-gray-200"></div>
-            <div class="w-10 h-10 rounded-full flex items-center justify-center bg-gray-200 text-gray-600">
+            <div class="w-16 h-1 bg-gray-200 step-line" data-line="1"></div>
+            <div class="w-10 h-10 rounded-full flex items-center justify-center bg-gray-200 text-gray-600 step-indicator" data-step="2">
               2
             </div>
-            <div class="w-16 h-1 bg-gray-200"></div>
-            <div class="w-10 h-10 rounded-full flex items-center justify-center bg-gray-200 text-gray-600">
+            <div class="w-16 h-1 bg-gray-200 step-line" data-line="2"></div>
+            <div class="w-10 h-10 rounded-full flex items-center justify-center bg-gray-200 text-gray-600 step-indicator" data-step="3">
               3
             </div>
           </div>
         </div>
 
-        <div class="bg-white rounded-lg shadow-lg border">
-          <div class="p-6 text-center border-b">
-            <h2 class="text-2xl font-bold mb-2">Add Your First Store</h2>
-            <p class="text-gray-600">
-              Let's start monitoring your delivery platforms. We'll need your store URLs from GoFood and GrabFood.
-            </p>
-          </div>
-          <div class="p-6 space-y-6">
-            <div class="space-y-2">
-              <label class="block text-sm font-medium text-gray-700">GoFood Store URL *</label>
-              <input
-                type="url"
-                placeholder="https://gofood.link/a/Jkk6Xoml"
-                class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500"
-              />
-              <p class="text-sm text-gray-600">
-                Copy the URL from your GoFood store page (format: gofood.link/a/...)
+        <div class="bg-white rounded-lg shadow-lg border" id="onboardingCard">
+          <!-- Step 1: Store URLs -->
+          <div id="step1" class="step-content">
+            <div class="p-6 text-center border-b">
+              <h2 class="text-2xl font-bold mb-2">Add Your First Store</h2>
+              <p class="text-gray-600">
+                Let's start monitoring your delivery platforms. We'll need your store URLs from GoFood and GrabFood.
               </p>
             </div>
+            <div class="p-6 space-y-6">
+              <div class="space-y-2">
+                <label class="block text-sm font-medium text-gray-700">GoFood Store URL *</label>
+                <input
+                  type="url"
+                  id="gofoodUrl"
+                  placeholder="https://gofood.link/a/Jkk6Xoml"
+                  class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                />
+                <p class="text-sm text-gray-600">
+                  Copy the URL from your GoFood store page (format: gofood.link/a/...)
+                </p>
+              </div>
 
-            <div class="space-y-2">
-              <label class="block text-sm font-medium text-gray-700">GrabFood Store URL (Optional)</label>
-              <input
-                type="url"
-                placeholder="https://r.grab.com/g/6-20250909_122536_8015D1829687499383E150126C5CEFCA_MEXMPS-6-C4KZFF42EN2VGT"
-                class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500"
-              />
-              <p class="text-sm text-gray-600">
-                Add your GrabFood URL if you're also on their platform (format: r.grab.com/g/...)
-              </p>
-            </div>
+              <div class="space-y-2">
+                <label class="block text-sm font-medium text-gray-700">GrabFood Store URL (Optional)</label>
+                <input
+                  type="url"
+                  id="grabfoodUrl"
+                  placeholder="https://r.grab.com/g/6-20250909_122536_8015D1829687499383E150126C5CEFCA_MEXMPS-6-C4KZFF42EN2VGT"
+                  class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                />
+                <p class="text-sm text-gray-600">
+                  Add your GrabFood URL if you're also on their platform (format: r.grab.com/g/...)
+                </p>
+              </div>
 
-            <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
-              <div class="flex items-start">
-                <i data-lucide="alert-circle" class="w-5 h-5 text-blue-600 mt-0.5 mr-3"></i>
-                <div class="text-sm">
-                  <p class="font-medium text-blue-900 mb-1">How to find your store URLs:</p>
-                  <p class="text-blue-800 mb-2">
-                    • <strong>GoFood:</strong> Open your store in GoFood app → Share → Copy link (should start with gofood.link/a/)<br>
-                    • <strong>GrabFood:</strong> Open your store in GrabFood app → Share → Copy link (should start with r.grab.com/g/)
-                  </p>
-                  <p class="font-medium text-blue-900 mb-1">Valid examples:</p>
-                  <p class="text-blue-800">
-                    • GoFood: https://gofood.link/a/Jkk6Xoml<br>
-                    • GrabFood: https://r.grab.com/g/6-20250909_122536_8015D1829687499383E150126C5CEFCA_MEXMPS-6-C4KZFF42EN2VGT
-                  </p>
+              <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                <div class="flex items-start">
+                  <i data-lucide="alert-circle" class="w-5 h-5 text-blue-600 mt-0.5 mr-3"></i>
+                  <div class="text-sm">
+                    <p class="font-medium text-blue-900 mb-1">How to find your store URLs:</p>
+                    <p class="text-blue-800 mb-2">
+                      • <strong>GoFood:</strong> Open your store in GoFood app → Share → Copy link (should start with gofood.link/a/)<br>
+                      • <strong>GrabFood:</strong> Open your store in GrabFood app → Share → Copy link (should start with r.grab.com/g/)
+                    </p>
+                    <p class="font-medium text-blue-900 mb-1">Valid examples:</p>
+                    <p class="text-blue-800">
+                      • GoFood: https://gofood.link/a/Jkk6Xoml<br>
+                      • GrabFood: https://r.grab.com/g/6-20250909_122536_8015D1829687499383E150126C5CEFCA_MEXMPS-6-C4KZFF42EN2VGT
+                    </p>
+                  </div>
                 </div>
               </div>
-            </div>
 
-            <button
-              onclick="processUrls()"
-              class="w-full bg-green-600 hover:bg-green-700 text-white px-8 py-3 rounded-md text-lg font-medium"
-              id="continueBtn"
-            >
-              Continue
-              <i data-lucide="arrow-right" class="w-4 h-4 ml-2 inline"></i>
-            </button>
+              <button
+                onclick="nextStep(2)"
+                class="w-full bg-green-600 hover:bg-green-700 text-white px-8 py-3 rounded-md text-lg font-medium"
+                id="step1Btn"
+              >
+                Continue
+                <i data-lucide="arrow-right" class="w-4 h-4 ml-2 inline"></i>
+              </button>
+            </div>
+          </div>
+
+          <!-- Step 2: Notification Settings -->
+          <div id="step2" class="step-content hidden">
+            <div class="p-6 text-center border-b">
+              <h2 class="text-2xl font-bold mb-2">Set Up Notifications</h2>
+              <p class="text-gray-600">
+                Choose how you want to receive alerts when your store status changes.
+              </p>
+            </div>
+            <div class="p-6 space-y-6">
+              <div class="grid md:grid-cols-2 gap-4">
+                <div class="border border-green-200 bg-green-50 p-4 rounded-lg">
+                  <div class="flex items-center justify-between mb-3">
+                    <div class="flex items-center gap-2">
+                      <i data-lucide="smartphone" class="w-5 h-5 text-green-600"></i>
+                      <h4 class="font-semibold">WhatsApp</h4>
+                    </div>
+                    <label class="relative inline-flex items-center cursor-pointer">
+                      <input type="checkbox" id="whatsappEnabled" checked class="sr-only peer">
+                      <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-green-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-green-600"></div>
+                    </label>
+                  </div>
+                  <input
+                    type="tel"
+                    id="whatsappNumber"
+                    placeholder="+62 812-3456-7890"
+                    class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                  />
+                  <p class="text-xs text-gray-600 mt-1">Instant alerts via WhatsApp</p>
+                </div>
+
+                <div class="border border-blue-200 bg-blue-50 p-4 rounded-lg">
+                  <div class="flex items-center justify-between mb-3">
+                    <div class="flex items-center gap-2">
+                      <i data-lucide="mail" class="w-5 h-5 text-blue-600"></i>
+                      <h4 class="font-semibold">Email</h4>
+                    </div>
+                    <label class="relative inline-flex items-center cursor-pointer">
+                      <input type="checkbox" id="emailEnabled" checked class="sr-only peer">
+                      <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                    </label>
+                  </div>
+                  <input
+                    type="email"
+                    id="emailAddress"
+                    placeholder="owner@restaurant.com"
+                    class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  />
+                  <p class="text-xs text-gray-600 mt-1">Detailed reports via email</p>
+                </div>
+              </div>
+
+              <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+                <div class="flex items-start">
+                  <i data-lucide="clock" class="w-5 h-5 text-yellow-600 mt-0.5 mr-3"></i>
+                  <div class="text-sm">
+                    <p class="font-medium text-yellow-900 mb-1">Monitoring Frequency</p>
+                    <p class="text-yellow-800 mb-3">How often should we check your store status?</p>
+                    <select id="checkFrequency" class="w-full px-3 py-2 border border-yellow-300 rounded-md focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500">
+                      <option value="5">Every 5 minutes (Recommended)</option>
+                      <option value="10">Every 10 minutes</option>
+                      <option value="15">Every 15 minutes</option>
+                      <option value="30">Every 30 minutes</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+
+              <div class="flex gap-3">
+                <button
+                  onclick="prevStep(1)"
+                  class="flex-1 border border-gray-300 hover:bg-gray-50 text-gray-700 px-6 py-3 rounded-md font-medium"
+                >
+                  <i data-lucide="arrow-left" class="w-4 h-4 mr-2 inline"></i>
+                  Back
+                </button>
+                <button
+                  onclick="nextStep(3)"
+                  class="flex-1 bg-green-600 hover:bg-green-700 text-white px-6 py-3 rounded-md font-medium"
+                  id="step2Btn"
+                >
+                  Continue
+                  <i data-lucide="arrow-right" class="w-4 h-4 ml-2 inline"></i>
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Step 3: Operating Hours -->
+          <div id="step3" class="step-content hidden">
+            <div class="p-6 text-center border-b">
+              <h2 class="text-2xl font-bold mb-2">Set Operating Hours</h2>
+              <p class="text-gray-600">
+                Define when your store should be open to better detect unexpected closures.
+              </p>
+            </div>
+            <div class="p-6 space-y-6">
+              <div class="space-y-4">
+                <div class="flex items-center justify-between p-3 border rounded-lg">
+                  <span class="font-medium">Monday</span>
+                  <div class="flex items-center gap-2">
+                    <input type="time" value="10:00" class="px-2 py-1 border rounded text-sm">
+                    <span>-</span>
+                    <input type="time" value="22:00" class="px-2 py-1 border rounded text-sm">
+                    <label class="flex items-center ml-3">
+                      <input type="checkbox" checked class="mr-1">
+                      <span class="text-sm text-gray-600">Open</span>
+                    </label>
+                  </div>
+                </div>
+
+                <div class="flex items-center justify-between p-3 border rounded-lg">
+                  <span class="font-medium">Tuesday</span>
+                  <div class="flex items-center gap-2">
+                    <input type="time" value="10:00" class="px-2 py-1 border rounded text-sm">
+                    <span>-</span>
+                    <input type="time" value="22:00" class="px-2 py-1 border rounded text-sm">
+                    <label class="flex items-center ml-3">
+                      <input type="checkbox" checked class="mr-1">
+                      <span class="text-sm text-gray-600">Open</span>
+                    </label>
+                  </div>
+                </div>
+
+                <div class="flex items-center justify-between p-3 border rounded-lg">
+                  <span class="font-medium">Wednesday</span>
+                  <div class="flex items-center gap-2">
+                    <input type="time" value="10:00" class="px-2 py-1 border rounded text-sm">
+                    <span>-</span>
+                    <input type="time" value="22:00" class="px-2 py-1 border rounded text-sm">
+                    <label class="flex items-center ml-3">
+                      <input type="checkbox" checked class="mr-1">
+                      <span class="text-sm text-gray-600">Open</span>
+                    </label>
+                  </div>
+                </div>
+
+                <div class="flex items-center justify-between p-3 border rounded-lg">
+                  <span class="font-medium">Thursday</span>
+                  <div class="flex items-center gap-2">
+                    <input type="time" value="10:00" class="px-2 py-1 border rounded text-sm">
+                    <span>-</span>
+                    <input type="time" value="22:00" class="px-2 py-1 border rounded text-sm">
+                    <label class="flex items-center ml-3">
+                      <input type="checkbox" checked class="mr-1">
+                      <span class="text-sm text-gray-600">Open</span>
+                    </label>
+                  </div>
+                </div>
+
+                <div class="flex items-center justify-between p-3 border rounded-lg">
+                  <span class="font-medium">Friday</span>
+                  <div class="flex items-center gap-2">
+                    <input type="time" value="10:00" class="px-2 py-1 border rounded text-sm">
+                    <span>-</span>
+                    <input type="time" value="23:00" class="px-2 py-1 border rounded text-sm">
+                    <label class="flex items-center ml-3">
+                      <input type="checkbox" checked class="mr-1">
+                      <span class="text-sm text-gray-600">Open</span>
+                    </label>
+                  </div>
+                </div>
+
+                <div class="flex items-center justify-between p-3 border rounded-lg">
+                  <span class="font-medium">Saturday</span>
+                  <div class="flex items-center gap-2">
+                    <input type="time" value="10:00" class="px-2 py-1 border rounded text-sm">
+                    <span>-</span>
+                    <input type="time" value="23:00" class="px-2 py-1 border rounded text-sm">
+                    <label class="flex items-center ml-3">
+                      <input type="checkbox" checked class="mr-1">
+                      <span class="text-sm text-gray-600">Open</span>
+                    </label>
+                  </div>
+                </div>
+
+                <div class="flex items-center justify-between p-3 border rounded-lg">
+                  <span class="font-medium">Sunday</span>
+                  <div class="flex items-center gap-2">
+                    <input type="time" value="10:00" class="px-2 py-1 border rounded text-sm">
+                    <span>-</span>
+                    <input type="time" value="22:00" class="px-2 py-1 border rounded text-sm">
+                    <label class="flex items-center ml-3">
+                      <input type="checkbox" checked class="mr-1">
+                      <span class="text-sm text-gray-600">Open</span>
+                    </label>
+                  </div>
+                </div>
+              </div>
+
+              <div class="bg-green-50 border border-green-200 rounded-lg p-4">
+                <div class="flex items-start">
+                  <i data-lucide="info" class="w-5 h-5 text-green-600 mt-0.5 mr-3"></i>
+                  <div class="text-sm">
+                    <p class="font-medium text-green-900 mb-1">Smart Monitoring</p>
+                    <p class="text-green-800">
+                      We'll only alert you about closures during your operating hours. Outside these times, we'll still monitor but won't send unnecessary alerts.
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              <div class="flex gap-3">
+                <button
+                  onclick="prevStep(2)"
+                  class="flex-1 border border-gray-300 hover:bg-gray-50 text-gray-700 px-6 py-3 rounded-md font-medium"
+                >
+                  <i data-lucide="arrow-left" class="w-4 h-4 mr-2 inline"></i>
+                  Back
+                </button>
+                <button
+                  onclick="completeOnboarding()"
+                  class="flex-1 bg-green-600 hover:bg-green-700 text-white px-6 py-3 rounded-md font-medium"
+                  id="step3Btn"
+                >
+                  Complete Setup
+                  <i data-lucide="check" class="w-4 h-4 ml-2 inline"></i>
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -122,19 +348,116 @@
   <script>
     lucide.createIcons();
 
-    function processUrls() {
-      const btn = document.getElementById('continueBtn');
+    let currentStep = 1;
+
+    function updateProgressIndicator(step) {
+      // Reset all steps
+      document.querySelectorAll('.step-indicator').forEach((indicator, index) => {
+        const stepNumber = index + 1;
+        if (stepNumber < step) {
+          // Completed steps
+          indicator.classList.remove('bg-gray-200', 'text-gray-600');
+          indicator.classList.add('bg-green-600', 'text-white');
+        } else if (stepNumber === step) {
+          // Current step
+          indicator.classList.remove('bg-gray-200', 'text-gray-600');
+          indicator.classList.add('bg-green-600', 'text-white');
+        } else {
+          // Future steps
+          indicator.classList.remove('bg-green-600', 'text-white');
+          indicator.classList.add('bg-gray-200', 'text-gray-600');
+        }
+      });
+
+      // Update progress lines
+      document.querySelectorAll('.step-line').forEach((line, index) => {
+        const lineNumber = index + 1;
+        if (lineNumber < step) {
+          line.classList.remove('bg-gray-200');
+          line.classList.add('bg-green-600');
+        } else {
+          line.classList.remove('bg-green-600');
+          line.classList.add('bg-gray-200');
+        }
+      });
+
+      // Update header progress text
+      const progressText = document.querySelector('.bg-green-100');
+      if (progressText) {
+        progressText.textContent = `Setup Progress: ${step}/3`;
+      }
+    }
+
+    function showStep(step) {
+      // Hide all steps
+      document.querySelectorAll('.step-content').forEach(content => {
+        content.classList.add('hidden');
+      });
+
+      // Show current step
+      document.getElementById(`step${step}`).classList.remove('hidden');
+      
+      // Update progress indicator
+      updateProgressIndicator(step);
+      currentStep = step;
+    }
+
+    function nextStep(step) {
+      // Validate current step before proceeding
+      if (currentStep === 1) {
+        const gofoodUrl = document.getElementById('gofoodUrl').value;
+        if (!gofoodUrl || !gofoodUrl.includes('gofood.link/a/')) {
+          alert('Please enter a valid GoFood URL (format: https://gofood.link/a/...)');
+          return;
+        }
+      } else if (currentStep === 2) {
+        const whatsappEnabled = document.getElementById('whatsappEnabled').checked;
+        const emailEnabled = document.getElementById('emailEnabled').checked;
+        
+        if (whatsappEnabled && !document.getElementById('whatsappNumber').value) {
+          alert('Please enter your WhatsApp number');
+          return;
+        }
+        
+        if (emailEnabled && !document.getElementById('emailAddress').value) {
+          alert('Please enter your email address');
+          return;
+        }
+        
+        if (!whatsappEnabled && !emailEnabled) {
+          alert('Please enable at least one notification method');
+          return;
+        }
+      }
+
+      showStep(step);
+    }
+
+    function prevStep(step) {
+      showStep(step);
+    }
+
+    function completeOnboarding() {
+      const btn = document.getElementById('step3Btn');
       const modal = document.getElementById('successModal');
       
-      btn.innerHTML = '<i data-lucide="loader-2" class="w-4 h-4 mr-2 inline animate-spin"></i> Processing URLs...';
+      btn.innerHTML = '<i data-lucide="loader-2" class="w-4 h-4 mr-2 inline animate-spin"></i> Setting up monitoring...';
       btn.disabled = true;
       
-      // Simulate processing
+      // Simulate setup process
       setTimeout(() => {
         modal.classList.remove('hidden');
         modal.classList.add('flex');
-      }, 2000);
+        
+        // Update progress to complete
+        updateProgressIndicator(4); // Show all steps as complete
+      }, 3000);
     }
+
+    // Initialize the first step
+    document.addEventListener('DOMContentLoaded', function() {
+      updateProgressIndicator(1);
+    });
   </script>
 </body>
 </html>

@@ -18,11 +18,11 @@
           </div>
           <span class="text-xl font-bold text-gray-900">DeliveryTracker</span>
         </a>
-        <div class="flex items-center space-x-3">
-          <button onclick="refreshAll()" class="text-gray-600 hover:text-green-600 px-3 py-2 rounded-md hover:bg-gray-100" id="refreshBtn">
-            <i data-lucide="refresh-cw" class="w-4 h-4 mr-2 inline"></i>
-            Refresh
-          </button>
+          <div class="flex items-center space-x-3">
+            <button onclick="handleRefresh()" class="text-gray-600 hover:text-green-600 px-3 py-2 rounded-md hover:bg-gray-100" id="refreshBtn" disabled="false">
+              <i data-lucide="refresh-cw" class="w-4 h-4 mr-2 inline" id="refreshIcon"></i>
+              <span id="refreshText">Refresh</span>
+            </button>
           <button class="text-gray-600 hover:text-green-600 px-3 py-2 rounded-md hover:bg-gray-100">
             <i data-lucide="settings" class="w-4 h-4 mr-2 inline"></i>
             Settings
@@ -175,7 +175,7 @@
                 </div>
                 <div class="flex justify-between text-sm">
                   <span class="text-gray-600">Next Check</span>
-                  <span class="text-gray-900 font-mono">10:15</span>
+                  <span class="text-gray-900 font-mono" id="nextCheck2">10:15</span>
                 </div>
               </div>
             </div>
@@ -230,7 +230,7 @@
                 </div>
                 <div class="flex justify-between text-sm">
                   <span class="text-gray-600">Next Check</span>
-                  <span class="text-gray-900 font-mono">7:12</span>
+                  <span class="text-gray-900 font-mono" id="nextCheck3">7:12</span>
                 </div>
               </div>
             </div>
@@ -361,6 +361,33 @@
   <script>
     lucide.createIcons();
 
+    let isRefreshing = false;
+    
+    // Store data with timers
+    let stores = [
+      {
+        id: 1,
+        name: "Warung Bali Asli",
+        nextCheckTime: new Date(Date.now() + 13 * 60 * 1000), // 13 minutes from now
+        lastCheck: new Date(Date.now() - 2 * 60 * 1000), // 2 minutes ago
+        elementId: 'nextCheck1'
+      },
+      {
+        id: 2,
+        name: "Healthy Bowl Co.",
+        nextCheckTime: new Date(Date.now() + 10 * 60 * 1000), // 10 minutes from now
+        lastCheck: new Date(Date.now() - 5 * 60 * 1000), // 5 minutes ago
+        elementId: 'nextCheck2'
+      },
+      {
+        id: 3,
+        name: "Café Sunset",
+        nextCheckTime: new Date(Date.now() + 7 * 60 * 1000), // 7 minutes from now
+        lastCheck: new Date(Date.now() - 23 * 60 * 1000), // 23 minutes ago
+        elementId: 'nextCheck3'
+      }
+    ];
+
     function showTab(tabName) {
       // Hide all tabs
       document.getElementById('stores-tab').classList.add('hidden');
@@ -380,41 +407,64 @@
       document.querySelector(`[data-tab="${tabName}"]`).classList.remove('text-gray-500');
     }
 
-    function refreshAll() {
+    async function handleRefresh() {
+      if (isRefreshing) return;
+      
+      isRefreshing = true;
       const btn = document.getElementById('refreshBtn');
-      const icon = btn.querySelector('i');
+      const icon = document.getElementById('refreshIcon');
+      const text = document.getElementById('refreshText');
       
+      btn.disabled = true;
       icon.classList.add('animate-spin');
-      btn.innerHTML = '<i data-lucide="refresh-cw" class="w-4 h-4 mr-2 inline animate-spin"></i>Checking...';
+      text.textContent = 'Checking...';
       
-      setTimeout(() => {
-        btn.innerHTML = '<i data-lucide="refresh-cw" class="w-4 h-4 mr-2 inline"></i>Refresh';
-        lucide.createIcons();
-      }, 2000);
+      // Simulate API call
+      await new Promise(resolve => setTimeout(resolve, 2000));
+      
+      // Update all stores with new check times
+      stores.forEach(store => {
+        store.lastCheck = new Date();
+        store.nextCheckTime = new Date(Date.now() + 15 * 60 * 1000); // 15 minutes from now
+      });
+      
+      // Reset UI
+      btn.disabled = false;
+      icon.classList.remove('animate-spin');
+      text.textContent = 'Refresh';
+      isRefreshing = false;
     }
 
-    // Update countdown timers
+    function formatTimeRemaining(date) {
+      const now = new Date();
+      const diff = Math.max(0, date.getTime() - now.getTime());
+      const minutes = Math.floor(diff / 60000);
+      const seconds = Math.floor((diff % 60000) / 1000);
+      return `${minutes}:${seconds.toString().padStart(2, '0')}`;
+    }
+
     function updateCountdowns() {
-      const nextCheck1 = document.getElementById('nextCheck1');
-      if (nextCheck1) {
-        let minutes = parseInt(nextCheck1.textContent.split(':')[0]);
-        let seconds = parseInt(nextCheck1.textContent.split(':')[1]);
-        
-        seconds--;
-        if (seconds < 0) {
-          seconds = 59;
-          minutes--;
+      stores.forEach(store => {
+        const element = document.getElementById(store.elementId);
+        if (element) {
+          // Decrease next check time by 1 second
+          store.nextCheckTime = new Date(store.nextCheckTime.getTime() - 1000);
+          
+          // If time reaches 0, reset to 15 minutes
+          if (store.nextCheckTime.getTime() <= Date.now()) {
+            store.nextCheckTime = new Date(Date.now() + 15 * 60 * 1000);
+          }
+          
+          element.textContent = formatTimeRemaining(store.nextCheckTime);
         }
-        if (minutes < 0) {
-          minutes = 14;
-          seconds = 59;
-        }
-        
-        nextCheck1.textContent = `${minutes}:${seconds.toString().padStart(2, '0')}`;
-      }
+      });
     }
 
+    // Start countdown timer
     setInterval(updateCountdowns, 1000);
+    
+    // Initialize timers immediately
+    updateCountdowns();
   </script>
 </body>
 </html>

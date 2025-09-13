@@ -2,7 +2,7 @@ Rails.application.routes.draw do
   get "landing/index"
   get "index" => "landing#index"  # Для aidelivery.tech/index
   get "test" => "landing#test"
-  
+
   # Dev routes для новой версии с v0.dev
   get "dev/test" => "dev#test"       # aidelivery.tech/dev/test
   get "dev/dashboard" => "dev#dashboard"
@@ -26,5 +26,4 @@ Rails.application.routes.draw do
 
   # Defines the root path route ("/")
   root "landing#index"
-
 end

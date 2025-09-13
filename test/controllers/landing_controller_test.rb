@@ -7,7 +7,7 @@ class LandingControllerTest < ActionDispatch::IntegrationTest
   end
 
   test "should get test" do
-    get landing_test_url
+    get test_url
     assert_response :success
   end
 end

@@ -1,4 +1,35 @@
 Rails.application.routes.draw do
+  # Root - главная страница лендинга DeliveryTracker
+  root "dash#test"
+  
+  # Authentication routes
+  resource :session, only: [:new, :create, :destroy]
+  get "login" => "sessions#new"
+  post "login" => "sessions#create"
+  delete "logout" => "sessions#destroy"
+  
+  # User registration
+  resources :users, only: [:new, :create]
+  get "signup" => "users#new"
+  post "signup" => "users#create"
+  
+  # Email confirmation
+  get "email_confirmation" => "email_confirmations#show"
+  resources :email_confirmations, only: [:new, :create]
+  get "resend_confirmation" => "email_confirmations#new"
+  post "resend_confirmation" => "email_confirmations#create"
+  
+  # Password reset
+  resources :passwords, param: :token, only: [:new, :create, :edit, :update]
+  get "forgot_password" => "passwords#new"
+  post "forgot_password" => "passwords#create"
+  get "reset_password" => "passwords#edit"
+  patch "reset_password" => "passwords#update"
+  
+  # Protected routes
+  get "dashboard" => "dash#dashboard"
+  get "onboarding" => "dash#onboarding"
+
   get "landing/index"
   get "index" => "landing#index"  # Для aidelivery.tech/index
   get "test" => "landing#test"
@@ -24,6 +55,4 @@ Rails.application.routes.draw do
   # get "manifest" => "rails/pwa#manifest", as: :pwa_manifest
   # get "service-worker" => "rails/pwa#service_worker", as: :pwa_service_worker
 
-  # Defines the root path route ("/")
-  root "landing#index"
 end

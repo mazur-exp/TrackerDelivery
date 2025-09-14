@@ -1,5 +1,7 @@
 class DashController < ApplicationController
   layout false  # Отключаем Rails layout для dash страниц
+  
+  allow_unauthenticated_access only: [:test]  # Only landing page is public
 
   def test
     # Главная страница прототипа DeliveryTracker

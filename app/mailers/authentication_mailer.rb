@@ -1,4 +1,4 @@
-class AuthenticationMailerDisabled < ApplicationMailer
+class AuthenticationMailer < ApplicationMailer
   # DISABLED - We use Loops.so API for email sending
   # This mailer interfered with our custom EmailService
   

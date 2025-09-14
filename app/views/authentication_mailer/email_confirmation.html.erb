@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Confirm Your TrackerDelivery Account</title>
+  <style>
+    body { font-family: Arial, sans-serif; line-height: 1.6; margin: 0; padding: 20px; background-color: #f4f4f4; }
+    .container { max-width: 600px; margin: 0 auto; background-color: white; padding: 20px; border-radius: 10px; box-shadow: 0 0 10px rgba(0,0,0,0.1); }
+    .header { text-align: center; margin-bottom: 30px; }
+    .logo { font-size: 28px; font-weight: bold; color: #2563eb; margin-bottom: 10px; }
+    .button { display: inline-block; background: linear-gradient(135deg, #2563eb, #4f46e5); color: white; padding: 12px 30px; text-decoration: none; border-radius: 5px; margin: 20px 0; font-weight: bold; }
+    .footer { margin-top: 30px; padding-top: 20px; border-top: 1px solid #eee; color: #666; font-size: 14px; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <div class="logo">TrackerDelivery</div>
+      <p>Restaurant Monitoring for Bali</p>
+    </div>
+    
+    <h2>Welcome to TrackerDelivery!</h2>
+    
+    <p>Hi there,</p>
+    
+    <p>Thank you for signing up for TrackerDelivery! We're excited to help you monitor your restaurant's delivery platform status and prevent revenue losses.</p>
+    
+    <p>To get started, please confirm your email address by clicking the button below:</p>
+    
+    <div style="text-align: center;">
+      <%= link_to "Confirm Your Email", @confirmation_url, class: "button" %>
+    </div>
+    
+    <p>Or copy and paste this link into your browser:</p>
+    <p style="word-break: break-all; color: #2563eb;"><%= @confirmation_url %></p>
+    
+    <p><strong>This confirmation link will expire in 24 hours.</strong></p>
+    
+    <p>Once confirmed, you'll be able to:</p>
+    <ul>
+      <li>🔔 Get instant alerts when your restaurant goes offline</li>
+      <li>📊 Monitor GrabFood and GoFood status 24/7</li>
+      <li>💰 Prevent revenue losses from unnoticed closures</li>
+      <li>📱 Receive notifications via email and WhatsApp</li>
+    </ul>
+    
+    <div class="footer">
+      <p>If you didn't create a TrackerDelivery account, you can safely ignore this email.</p>
+      <p>Best regards,<br>The TrackerDelivery Team</p>
+      <p>Questions? Reply to this email or visit our help center.</p>
+    </div>
+  </div>
+</body>
+</html>

@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Welcome to TrackerDelivery!</title>
+  <style>
+    body { font-family: Arial, sans-serif; line-height: 1.6; margin: 0; padding: 20px; background-color: #f4f4f4; }
+    .container { max-width: 600px; margin: 0 auto; background-color: white; padding: 20px; border-radius: 10px; box-shadow: 0 0 10px rgba(0,0,0,0.1); }
+    .header { text-align: center; margin-bottom: 30px; }
+    .logo { font-size: 28px; font-weight: bold; color: #2563eb; margin-bottom: 10px; }
+    .button { display: inline-block; background: linear-gradient(135deg, #2563eb, #4f46e5); color: white; padding: 12px 30px; text-decoration: none; border-radius: 5px; margin: 20px 0; font-weight: bold; }
+    .feature { margin: 15px 0; padding: 15px; background-color: #f8fafc; border-left: 4px solid #2563eb; }
+    .footer { margin-top: 30px; padding-top: 20px; border-top: 1px solid #eee; color: #666; font-size: 14px; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <div class="logo">TrackerDelivery</div>
+      <p>🎉 Your account is now active!</p>
+    </div>
+    
+    <h2>Welcome to TrackerDelivery!</h2>
+    
+    <p>Hi <%= @user.email_address.split('@').first.capitalize %>,</p>
+    
+    <p>Your email has been confirmed and your TrackerDelivery account is now active! You're now protected from losing revenue due to unmonitored restaurant closures.</p>
+    
+    <div style="text-align: center;">
+      <%= link_to "Access Your Dashboard", root_url, class: "button" %>
+    </div>
+    
+    <h3>What happens next?</h3>
+    
+    <div class="feature">
+      <strong>🏪 Add Your Restaurants</strong><br>
+      Connect your GrabFood and GoFood restaurant profiles to start monitoring.
+    </div>
+    
+    <div class="feature">
+      <strong>🔔 Set Up Alerts</strong><br>
+      Configure how you want to receive notifications (email, WhatsApp, SMS).
+    </div>
+    
+    <div class="feature">
+      <strong>📊 Monitor 24/7</strong><br>
+      We'll watch your restaurant status around the clock and alert you within 5 minutes of any issues.
+    </div>
+    
+    <div class="feature">
+      <strong>💰 Save Revenue</strong><br>
+      Prevent the $70-200 daily losses that foreign restaurant owners typically face from unnoticed closures.
+    </div>
+    
+    <h3>Need Help Getting Started?</h3>
+    <p>Our setup process takes less than 5 minutes. If you need any assistance:</p>
+    <ul>
+      <li>📧 Reply to this email</li>
+      <li>💬 Contact support via our dashboard</li>
+      <li>📱 WhatsApp us for immediate help</li>
+    </ul>
+    
+    <div class="footer">
+      <p>Thank you for trusting TrackerDelivery to protect your business!</p>
+      <p>Best regards,<br>The TrackerDelivery Team</p>
+      <p><em>Serving F&B businesses across Bali since 2024</em></p>
+    </div>
+  </div>
+</body>
+</html>

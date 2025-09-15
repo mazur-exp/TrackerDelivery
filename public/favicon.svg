@@ -1,16 +1,10 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="32" height="32">
-  <defs>
-    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" style="stop-color:#16A34A;stop-opacity:1" />
-      <stop offset="100%" style="stop-color:#15803D;stop-opacity:1" />
-    </linearGradient>
-  </defs>
+  <!-- Solid green background -->
+  <circle cx="16" cy="16" r="16" fill="#16A34A"/>
   
-  <!-- Background -->
-  <circle cx="16" cy="16" r="16" fill="url(#bgGrad)"/>
-  
-  <!-- Large bold G letter - optimized for small sizes -->
-  <path d="M16 6 Q9 6 9 13 Q9 20 16 20 L23 20 L23 16 L19 16 L19 12 L16 12 Q13 12 13 13 Q13 17 16 17 L16 17 Q11 17 11 13 Q11 8 16 8 Q21 8 21 10 L25 10 Q25 6 16 6 Z" 
+  <!-- Large bold white G letter -->
+  <path d="M16 5 Q8 5 8 13 Q8 21 16 21 L24 21 L24 16 L18 16 L18 13 L16 13 Q12 13 12 13 Q12 18 16 18 L16 18 Q10 18 10 13 Q10 7 16 7 Q22 7 22 9 L26 9 Q26 5 16 5 Z" 
         fill="white" 
-        stroke="none"/>
+        stroke="none"
+        stroke-width="0"/>
 </svg>

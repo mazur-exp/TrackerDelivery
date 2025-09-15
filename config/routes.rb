@@ -1,6 +1,6 @@
 Rails.application.routes.draw do
   # Root - главная страница лендинга DeliveryTracker
-  root "dash#test"
+  root "landing#index"
   
   # Authentication routes
   resource :session, only: [:new, :create, :destroy]
@@ -39,12 +39,6 @@ Rails.application.routes.draw do
   get "dev/dashboard" => "dev#dashboard"
   get "dev/onboarding" => "dev#onboarding"
 
-  # Dash routes для UI прототипа DeliveryTracker
-  get "dash/test" => "dash#test"          # aidelivery.tech/dash/test - главная страница прототипа
-  get "dash/onboarding" => "dash#onboarding"    # процесс добавления ресторана
-  get "dash/dashboard" => "dash#dashboard"      # основной дашборд мониторинга
-  get "dash/alerts" => "dash#alerts"            # страница уведомлений
-  get "dash/settings" => "dash#settings"        # настройки уведомлений
   # Define your application routes per the DSL in https://guides.rubyonrails.org/routing.html
 
   # Reveal health status on /up that returns 200 if the app boots with no exceptions, otherwise 500.

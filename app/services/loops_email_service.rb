@@ -17,7 +17,8 @@ class LoopsEmailService
         data_variables: {
           name: user.display_name,
           confirmationUrl: confirmation_url
-        }
+        },
+        add_to_audience: true
       )
     end
     
@@ -53,7 +54,8 @@ class LoopsEmailService
         data_variables: {
           name: user.display_name,
           dashboardUrl: dashboard_url
-        }
+        },
+        add_to_audience: true
       )
     end
     

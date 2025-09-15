@@ -4,7 +4,8 @@ class DashController < ApplicationController
   allow_unauthenticated_access only: [:test]  # Only landing page is public
 
   def test
-    # Главная страница прототипа DeliveryTracker
+    # Перенаправляем на dev/test, так как dash/test.html.erb удален
+    redirect_to dev_test_path
   end
 
   def onboarding

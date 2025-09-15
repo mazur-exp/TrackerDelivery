@@ -1,41 +1,16 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="32" height="32">
   <defs>
-    <linearGradient id="bgGrad3" x1="0%" y1="0%" x2="100%" y2="100%">
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
       <stop offset="0%" style="stop-color:#16A34A;stop-opacity:1" />
       <stop offset="100%" style="stop-color:#15803D;stop-opacity:1" />
-    </linearGradient>
-    <radialGradient id="lensGrad3" cx="35%" cy="35%" r="65%">
-      <stop offset="0%" style="stop-color:#ffffff;stop-opacity:0.95" />
-      <stop offset="80%" style="stop-color:#f1f5f9;stop-opacity:0.8" />
-      <stop offset="100%" style="stop-color:#cbd5e1;stop-opacity:0.6" />
-    </radialGradient>
-    <linearGradient id="handleGrad3" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" style="stop-color:#71717a;stop-opacity:1" />
-      <stop offset="100%" style="stop-color:#52525b;stop-opacity:1" />
     </linearGradient>
   </defs>
   
   <!-- Background -->
-  <circle cx="16" cy="16" r="16" fill="url(#bgGrad3)"/>
+  <circle cx="16" cy="16" r="16" fill="url(#bgGrad)"/>
   
-  <!-- Large G letter -->
-  <g transform="translate(16,16)">
-    <path d="M-6,-8 Q-10,-8 -10,-2 Q-10,4 -6,4 L0,4 L0,0 L-4,0 L-4,-2 L-2,-2 L-2,-4 L-6,-4 Q-7,-4 -7,-2 Q-7,1 -6,1 L-6,2 Q-8,2 -8,-2 Q-8,-6 -6,-6 Q-4,-6 -4,-5 L-2,-5 Q-2,-8 -6,-8 Z" 
-          fill="#F0FDF4" 
-          stroke="#16A34A" 
-          stroke-width="0.5"/>
-  </g>
-  
-  <!-- Magnifying glass lens -->
-  <circle cx="22" cy="10" r="6" fill="url(#lensGrad3)" stroke="#52525b" stroke-width="1.2"/>
-  
-  <!-- Inner lens ring -->
-  <circle cx="22" cy="10" r="4.8" fill="none" stroke="white" stroke-width="0.6" opacity="0.5"/>
-  
-  <!-- Magnifying glass handle -->
-  <g transform="rotate(45 22 10)">
-    <rect x="27" y="9" width="6" height="2" rx="1" fill="url(#handleGrad3)"/>
-    <!-- Handle highlight -->
-    <rect x="27.5" y="9.2" width="5" height="0.6" rx="0.3" fill="white" opacity="0.4"/>
-  </g>
+  <!-- Large bold G letter - optimized for small sizes -->
+  <path d="M16 6 Q9 6 9 13 Q9 20 16 20 L23 20 L23 16 L19 16 L19 12 L16 12 Q13 12 13 13 Q13 17 16 17 L16 17 Q11 17 11 13 Q11 8 16 8 Q21 8 21 10 L25 10 Q25 6 16 6 Z" 
+        fill="white" 
+        stroke="none"/>
 </svg>

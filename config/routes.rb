@@ -26,13 +26,12 @@ Rails.application.routes.draw do
   get "reset_password" => "passwords#edit"
   patch "reset_password" => "passwords#update"
   
-  # Protected routes
-  get "dashboard" => "dash#dashboard"
-  get "onboarding" => "dash#onboarding"
+  # Protected routes (moved to dev namespace)
+  # get "dashboard" => "dev#dashboard"  # Use dev/dashboard instead
+  # get "onboarding" => "dev#onboarding"  # Use dev/onboarding instead
 
   get "landing/index"
   get "index" => "landing#index"  # Для aidelivery.tech/index
-  get "test" => "landing#test"
 
   # Dev routes для новой версии с v0.dev
   get "dev/test" => "dev#test"       # aidelivery.tech/dev/test

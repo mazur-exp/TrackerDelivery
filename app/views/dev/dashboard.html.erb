@@ -3,399 +3,502 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>DeliveryTracker - Dashboard</title>
+  <title>DeliveryTracker - Restaurant Dashboard</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            primary: '#16A34A',
+            'primary-dark': '#15803D',
+            'primary-light': '#4ADE80',
+            'green-50': '#F0FDF4',
+            'green-100': '#DCFCE7',
+            'green-600': '#16A34A',
+            'green-700': '#15803D',
+          }
+        }
+      }
+    }
+  </script>
 </head>
-<body>
-  <div class="min-h-screen bg-gray-50">
-    <!-- Header -->
-    <header class="bg-white border-b sticky top-0 z-50">
-      <div class="container mx-auto px-4 py-4 flex items-center justify-between">
-        <a href="/dev/test" class="flex items-center space-x-2">
-          <div class="w-8 h-8 bg-green-600 rounded-lg flex items-center justify-center">
-            <i data-lucide="bell" class="w-5 h-5 text-white"></i>
+<body class="min-h-screen bg-gray-50">
+  <div class="min-h-screen p-4 md:p-6 lg:p-8">
+    <div class="max-w-7xl mx-auto space-y-6">
+      <!-- Header -->
+      <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+        <div>
+          <div class="flex items-center space-x-2 mb-2">
+            <a href="/" class="flex items-center space-x-2">
+              <div class="w-8 h-8 bg-green-600 rounded-lg flex items-center justify-center">
+                <i data-lucide="monitor" class="w-5 h-5 text-white"></i>
+              </div>
+              <span class="text-xl font-bold text-gray-900">DeliveryTracker</span>
+            </a>
           </div>
-          <span class="text-xl font-bold text-gray-900">DeliveryTracker</span>
-        </a>
-          <div class="flex items-center space-x-3">
-            <button class="text-gray-600 hover:text-green-600 px-3 py-2 rounded-md hover:bg-gray-100" id="refreshBtn">
-              <i data-lucide="refresh-cw" class="w-4 h-4 mr-2 inline" id="refreshIcon"></i>
-              <span id="refreshText">Refresh</span>
-            </button>
-          <button class="text-gray-600 hover:text-green-600 px-3 py-2 rounded-md hover:bg-gray-100">
-            <i data-lucide="settings" class="w-4 h-4 mr-2 inline"></i>
+          <h1 class="text-3xl font-bold text-gray-900">Restaurant Dashboard</h1>
+          <p class="text-gray-600">Monitor your delivery platforms in real-time</p>
+        </div>
+        <div class="flex items-center gap-3">
+          <div class="inline-flex items-center px-3 py-1 rounded-full border text-sm">
+            <div class="w-2 h-2 bg-green-500 rounded-full animate-pulse mr-2"></div>
+            Live
+          </div>
+          <button id="refreshBtn" class="inline-flex items-center px-3 py-2 border border-gray-300 rounded-md text-sm font-medium hover:bg-gray-50 transition-colors">
+            <i data-lucide="refresh-cw" class="w-4 h-4 mr-2"></i>
+            Refresh
+          </button>
+        </div>
+      </div>
+
+      <!-- Overview Cards -->
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div class="bg-white rounded-xl border border-green-200 bg-green-50/50 p-6 shadow-sm">
+          <div class="flex flex-row items-center justify-between space-y-0 pb-2">
+            <h3 class="text-sm font-medium">Total Revenue</h3>
+            <i data-lucide="dollar-sign" class="h-4 w-4 text-green-600"></i>
+          </div>
+          <div class="text-2xl font-bold text-green-700" id="totalRevenue">Rp 4,240,000</div>
+          <p class="text-xs text-green-600 flex items-center gap-1">
+            <i data-lucide="trending-up" class="w-3 h-3"></i>
+            +12% from yesterday
+          </p>
+        </div>
+
+        <div class="bg-white rounded-xl border border-blue-200 bg-blue-50/50 p-6 shadow-sm">
+          <div class="flex flex-row items-center justify-between space-y-0 pb-2">
+            <h3 class="text-sm font-medium">Total Orders</h3>
+            <i data-lucide="shopping-bag" class="h-4 w-4 text-blue-600"></i>
+          </div>
+          <div class="text-2xl font-bold text-blue-700" id="totalOrders">135</div>
+          <p class="text-xs text-blue-600 flex items-center gap-1">
+            <i data-lucide="trending-up" class="w-3 h-3"></i>
+            +8% from yesterday
+          </p>
+        </div>
+
+        <div class="bg-white rounded-xl border border-purple-200 bg-purple-50/50 p-6 shadow-sm">
+          <div class="flex flex-row items-center justify-between space-y-0 pb-2">
+            <h3 class="text-sm font-medium">Online Stores</h3>
+            <i data-lucide="store" class="h-4 w-4 text-purple-600"></i>
+          </div>
+          <div class="text-2xl font-bold text-purple-700" id="onlineStores">2/3</div>
+          <p class="text-xs text-purple-600" id="operationalPercentage">67% operational</p>
+        </div>
+
+        <div class="bg-white rounded-xl border border-orange-200 bg-orange-50/50 p-6 shadow-sm">
+          <div class="flex flex-row items-center justify-between space-y-0 pb-2">
+            <h3 class="text-sm font-medium">Avg Rating</h3>
+            <i data-lucide="star" class="h-4 w-4 text-orange-600"></i>
+          </div>
+          <div class="text-2xl font-bold text-orange-700" id="avgRating">4.7</div>
+          <p class="text-xs text-orange-600 flex items-center gap-1">
+            <i data-lucide="star" class="w-3 h-3 fill-current"></i>
+            Across all platforms
+          </p>
+        </div>
+      </div>
+
+      <!-- Main Content Tabs -->
+      <div class="space-y-6">
+        <!-- Tab Navigation -->
+        <div class="bg-gray-100 rounded-lg p-1 inline-flex">
+          <button class="tab-btn px-4 py-2 text-sm font-medium rounded-md transition-colors bg-white text-gray-900 shadow-sm" data-tab="restaurants">
+            Restaurants
+          </button>
+          <button class="tab-btn px-4 py-2 text-sm font-medium rounded-md transition-colors text-gray-500 hover:text-gray-700" data-tab="alerts">
+            Alerts
+          </button>
+          <button class="tab-btn px-4 py-2 text-sm font-medium rounded-md transition-colors text-gray-500 hover:text-gray-700" data-tab="stock">
+            Stock
+          </button>
+          <button class="tab-btn px-4 py-2 text-sm font-medium rounded-md transition-colors text-gray-500 hover:text-gray-700" data-tab="settings">
             Settings
           </button>
-          <a href="/dev/onboarding" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-md">
-            <i data-lucide="plus" class="w-4 h-4 mr-2 inline"></i>
-            Add Store
-          </a>
+        </div>
+
+        <!-- Restaurants Tab -->
+        <div id="restaurants-tab" class="tab-content space-y-4">
+          <!-- Restaurant 1 -->
+          <div class="bg-white rounded-xl border shadow-sm hover:shadow-md transition-shadow p-6">
+            <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+              <div class="flex items-center gap-4">
+                <div class="w-8 h-8 bg-green-500 rounded-lg flex items-center justify-center text-white text-xs font-bold">
+                  GO
+                </div>
+                <div>
+                  <h3 class="font-semibold text-lg">Nasi Padang Express</h3>
+                  <p class="text-sm text-gray-500">Gojek</p>
+                </div>
+              </div>
+
+              <div class="flex flex-col lg:flex-row items-start lg:items-center gap-4 lg:gap-8">
+                <div class="flex items-center gap-2" id="status-1">
+                  <div class="w-3 h-3 rounded-full bg-green-500 animate-pulse"></div>
+                  <span class="text-sm font-medium text-green-700">Online</span>
+                </div>
+                
+                <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 text-sm">
+                  <div>
+                    <p class="text-gray-500">Orders</p>
+                    <p class="font-semibold" id="orders-1">45</p>
+                  </div>
+                  <div>
+                    <p class="text-gray-500">Revenue</p>
+                    <p class="font-semibold" id="revenue-1">Rp 1,250,000</p>
+                  </div>
+                  <div>
+                    <p class="text-gray-500">Rating</p>
+                    <p class="font-semibold flex items-center gap-1">
+                      <i data-lucide="star" class="w-3 h-3 fill-yellow-400 text-yellow-400"></i>
+                      <span id="rating-1">4.8</span>
+                    </p>
+                  </div>
+                  <div>
+                    <p class="text-gray-500">Reviews</p>
+                    <p class="font-semibold" id="reviews-1">234</p>
+                  </div>
+                </div>
+
+                <div class="flex items-center gap-2">
+                  <button class="toggle-status-btn inline-flex items-center px-3 py-2 border border-red-200 text-red-600 hover:bg-red-50 rounded-md text-sm font-medium transition-colors" data-restaurant="1" data-status="online">
+                    <i data-lucide="wifi-off" class="w-4 h-4 mr-2"></i>
+                    Go Offline
+                  </button>
+                  <button class="inline-flex items-center px-3 py-2 text-gray-400 hover:text-gray-600 rounded-md transition-colors">
+                    <i data-lucide="eye" class="w-4 h-4"></i>
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Restaurant 2 -->
+          <div class="bg-white rounded-xl border shadow-sm hover:shadow-md transition-shadow p-6">
+            <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+              <div class="flex items-center gap-4">
+                <div class="w-8 h-8 bg-green-600 rounded-lg flex items-center justify-center text-white text-xs font-bold">
+                  GR
+                </div>
+                <div>
+                  <h3 class="font-semibold text-lg">Burger Corner</h3>
+                  <p class="text-sm text-gray-500">Grab</p>
+                </div>
+              </div>
+
+              <div class="flex flex-col lg:flex-row items-start lg:items-center gap-4 lg:gap-8">
+                <div class="flex items-center gap-2" id="status-2">
+                  <div class="w-3 h-3 rounded-full bg-red-500 animate-pulse"></div>
+                  <span class="text-sm font-medium text-red-700">Offline</span>
+                </div>
+                
+                <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 text-sm">
+                  <div>
+                    <p class="text-gray-500">Orders</p>
+                    <p class="font-semibold" id="orders-2">23</p>
+                  </div>
+                  <div>
+                    <p class="text-gray-500">Revenue</p>
+                    <p class="font-semibold" id="revenue-2">Rp 890,000</p>
+                  </div>
+                  <div>
+                    <p class="text-gray-500">Rating</p>
+                    <p class="font-semibold flex items-center gap-1">
+                      <i data-lucide="star" class="w-3 h-3 fill-yellow-400 text-yellow-400"></i>
+                      <span id="rating-2">4.5</span>
+                    </p>
+                  </div>
+                  <div>
+                    <p class="text-gray-500">Reviews</p>
+                    <p class="font-semibold" id="reviews-2">156</p>
+                  </div>
+                </div>
+
+                <div class="flex items-center gap-2">
+                  <button class="toggle-status-btn inline-flex items-center px-3 py-2 border border-green-200 text-green-600 hover:bg-green-50 rounded-md text-sm font-medium transition-colors" data-restaurant="2" data-status="offline">
+                    <i data-lucide="wifi" class="w-4 h-4 mr-2"></i>
+                    Go Online
+                  </button>
+                  <button class="inline-flex items-center px-3 py-2 text-gray-400 hover:text-gray-600 rounded-md transition-colors">
+                    <i data-lucide="eye" class="w-4 h-4"></i>
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Restaurant 3 -->
+          <div class="bg-white rounded-xl border shadow-sm hover:shadow-md transition-shadow p-6">
+            <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+              <div class="flex items-center gap-4">
+                <div class="w-8 h-8 bg-pink-500 rounded-lg flex items-center justify-center text-white text-xs font-bold">
+                  FP
+                </div>
+                <div>
+                  <h3 class="font-semibold text-lg">Sushi Delight</h3>
+                  <p class="text-sm text-gray-500">Foodpanda</p>
+                </div>
+              </div>
+
+              <div class="flex flex-col lg:flex-row items-start lg:items-center gap-4 lg:gap-8">
+                <div class="flex items-center gap-2" id="status-3">
+                  <div class="w-3 h-3 rounded-full bg-yellow-500 animate-pulse"></div>
+                  <span class="text-sm font-medium text-yellow-700">Busy</span>
+                </div>
+                
+                <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 text-sm">
+                  <div>
+                    <p class="text-gray-500">Orders</p>
+                    <p class="font-semibold" id="orders-3">67</p>
+                  </div>
+                  <div>
+                    <p class="text-gray-500">Revenue</p>
+                    <p class="font-semibold" id="revenue-3">Rp 2,100,000</p>
+                  </div>
+                  <div>
+                    <p class="text-gray-500">Rating</p>
+                    <p class="font-semibold flex items-center gap-1">
+                      <i data-lucide="star" class="w-3 h-3 fill-yellow-400 text-yellow-400"></i>
+                      <span id="rating-3">4.9</span>
+                    </p>
+                  </div>
+                  <div>
+                    <p class="text-gray-500">Reviews</p>
+                    <p class="font-semibold" id="reviews-3">445</p>
+                  </div>
+                </div>
+
+                <div class="flex items-center gap-2">
+                  <button class="toggle-status-btn inline-flex items-center px-3 py-2 border border-red-200 text-red-600 hover:bg-red-50 rounded-md text-sm font-medium transition-colors" data-restaurant="3" data-status="busy">
+                    <i data-lucide="wifi-off" class="w-4 h-4 mr-2"></i>
+                    Go Offline
+                  </button>
+                  <button class="inline-flex items-center px-3 py-2 text-gray-400 hover:text-gray-600 rounded-md transition-colors">
+                    <i data-lucide="eye" class="w-4 h-4"></i>
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Alerts Tab -->
+        <div id="alerts-tab" class="tab-content hidden space-y-4">
+          <div class="bg-white rounded-xl border shadow-sm">
+            <div class="p-6 border-b">
+              <h3 class="text-lg font-semibold flex items-center gap-2">
+                <i data-lucide="bell" class="w-5 h-5"></i>
+                Recent Alerts
+              </h3>
+              <p class="text-gray-600 text-sm mt-1">Monitor important notifications across all platforms</p>
+            </div>
+            <div class="p-6">
+              <div class="space-y-4" id="alerts-container">
+                <!-- Alert 1 -->
+                <div class="flex items-center justify-between p-4 border rounded-lg alert-item">
+                  <div class="flex items-center gap-3">
+                    <div class="inline-flex items-center px-2 py-1 rounded-md border-transparent bg-red-500 text-white text-xs font-medium gap-1">
+                      <i data-lucide="alert-triangle" class="w-3 h-3"></i>
+                      HIGH
+                    </div>
+                    <div>
+                      <p class="font-medium">Chicken stock running low (5 portions left)</p>
+                      <p class="text-sm text-gray-500">5 mins ago</p>
+                    </div>
+                  </div>
+                  <div class="flex items-center gap-2">
+                    <button class="inline-flex items-center px-3 py-2 border border-gray-300 rounded-md text-sm font-medium hover:bg-gray-50">
+                      Restock
+                    </button>
+                    <button class="dismiss-alert inline-flex items-center px-3 py-2 text-gray-400 hover:text-gray-600 rounded-md transition-colors">
+                      Dismiss
+                    </button>
+                  </div>
+                </div>
+
+                <!-- Alert 2 -->
+                <div class="flex items-center justify-between p-4 border rounded-lg alert-item">
+                  <div class="flex items-center gap-3">
+                    <div class="inline-flex items-center px-2 py-1 rounded-md border-transparent bg-gray-200 text-gray-700 text-xs font-medium gap-1">
+                      <i data-lucide="clock" class="w-3 h-3"></i>
+                      MEDIUM
+                    </div>
+                    <div>
+                      <p class="font-medium">New 2-star review received</p>
+                      <p class="text-sm text-gray-500">10 mins ago</p>
+                    </div>
+                  </div>
+                  <div class="flex items-center gap-2">
+                    <button class="inline-flex items-center px-3 py-2 border border-gray-300 rounded-md text-sm font-medium hover:bg-gray-50">
+                      Respond
+                    </button>
+                    <button class="dismiss-alert inline-flex items-center px-3 py-2 text-gray-400 hover:text-gray-600 rounded-md transition-colors">
+                      Dismiss
+                    </button>
+                  </div>
+                </div>
+
+                <!-- Alert 3 -->
+                <div class="flex items-center justify-between p-4 border rounded-lg alert-item">
+                  <div class="flex items-center gap-3">
+                    <div class="inline-flex items-center px-2 py-1 rounded-md border border-gray-300 text-gray-700 text-xs font-medium gap-1">
+                      <i data-lucide="check-circle" class="w-3 h-3"></i>
+                      LOW
+                    </div>
+                    <div>
+                      <p class="font-medium">Order #1234 ready for pickup</p>
+                      <p class="text-sm text-gray-500">2 mins ago</p>
+                    </div>
+                  </div>
+                  <div class="flex items-center gap-2">
+                    <button class="dismiss-alert inline-flex items-center px-3 py-2 text-gray-400 hover:text-gray-600 rounded-md transition-colors">
+                      Dismiss
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Stock Tab -->
+        <div id="stock-tab" class="tab-content hidden space-y-4">
+          <div class="bg-white rounded-xl border shadow-sm">
+            <div class="p-6 border-b">
+              <h3 class="text-lg font-semibold flex items-center gap-2">
+                <i data-lucide="package" class="w-5 h-5"></i>
+                Stock Levels
+              </h3>
+              <p class="text-gray-600 text-sm mt-1">Monitor inventory across all restaurant locations</p>
+            </div>
+            <div class="p-6">
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <!-- Stock Item 1 -->
+                <div class="space-y-3">
+                  <div class="flex justify-between items-center">
+                    <span class="text-sm font-medium">Chicken Breast</span>
+                    <span class="text-sm text-gray-500">5 kg</span>
+                  </div>
+                  <div class="w-full bg-gray-200 rounded-full h-2">
+                    <div class="h-2 rounded-full bg-red-500 transition-all duration-300" style="width: 50%"></div>
+                  </div>
+                  <div class="flex items-center gap-2 text-red-600 text-sm">
+                    <i data-lucide="alert-triangle" class="w-4 h-4"></i>
+                    Critical - Restock immediately
+                  </div>
+                </div>
+
+                <!-- Stock Item 2 -->
+                <div class="space-y-3">
+                  <div class="flex justify-between items-center">
+                    <span class="text-sm font-medium">Rice</span>
+                    <span class="text-sm text-gray-500">25 kg</span>
+                  </div>
+                  <div class="w-full bg-gray-200 rounded-full h-2">
+                    <div class="h-2 rounded-full bg-green-500 transition-all duration-300" style="width: 100%"></div>
+                  </div>
+                </div>
+
+                <!-- Stock Item 3 -->
+                <div class="space-y-3">
+                  <div class="flex justify-between items-center">
+                    <span class="text-sm font-medium">Cooking Oil</span>
+                    <span class="text-sm text-gray-500">8 L</span>
+                  </div>
+                  <div class="w-full bg-gray-200 rounded-full h-2">
+                    <div class="h-2 rounded-full bg-yellow-500 transition-all duration-300" style="width: 53%"></div>
+                  </div>
+                </div>
+
+                <!-- Stock Item 4 -->
+                <div class="space-y-3">
+                  <div class="flex justify-between items-center">
+                    <span class="text-sm font-medium">Onions</span>
+                    <span class="text-sm text-gray-500">12 kg</span>
+                  </div>
+                  <div class="w-full bg-gray-200 rounded-full h-2">
+                    <div class="h-2 rounded-full bg-green-500 transition-all duration-300" style="width: 100%"></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Settings Tab -->
+        <div id="settings-tab" class="tab-content hidden space-y-4">
+          <div class="bg-white rounded-xl border shadow-sm">
+            <div class="p-6 border-b">
+              <h3 class="text-lg font-semibold flex items-center gap-2">
+                <i data-lucide="settings" class="w-5 h-5"></i>
+                Notification Preferences
+              </h3>
+              <p class="text-gray-600 text-sm mt-1">Configure how you want to receive alerts and updates</p>
+            </div>
+            <div class="p-6 space-y-6">
+              <div class="space-y-4">
+                <h4 class="font-medium">Alert Types</h4>
+                <div class="space-y-3">
+                  <div class="flex items-center justify-between">
+                    <label class="text-sm font-medium">Stock alerts</label>
+                    <label class="relative inline-flex items-center cursor-pointer">
+                      <input type="checkbox" checked class="sr-only peer">
+                      <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-green-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-green-600"></div>
+                    </label>
+                  </div>
+                  <div class="flex items-center justify-between">
+                    <label class="text-sm font-medium">Review alerts</label>
+                    <label class="relative inline-flex items-center cursor-pointer">
+                      <input type="checkbox" checked class="sr-only peer">
+                      <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-green-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-green-600"></div>
+                    </label>
+                  </div>
+                  <div class="flex items-center justify-between">
+                    <label class="text-sm font-medium">Order alerts</label>
+                    <label class="relative inline-flex items-center cursor-pointer">
+                      <input type="checkbox" class="sr-only peer">
+                      <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-green-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-green-600"></div>
+                    </label>
+                  </div>
+                  <div class="flex items-center justify-between">
+                    <label class="text-sm font-medium">System alerts</label>
+                    <label class="relative inline-flex items-center cursor-pointer">
+                      <input type="checkbox" checked class="sr-only peer">
+                      <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-green-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-green-600"></div>
+                    </label>
+                  </div>
+                </div>
+              </div>
+
+              <div class="space-y-4">
+                <h4 class="font-medium">Delivery Methods</h4>
+                <div class="space-y-3">
+                  <div class="flex items-center justify-between">
+                    <label class="text-sm font-medium">Email notifications</label>
+                    <label class="relative inline-flex items-center cursor-pointer">
+                      <input type="checkbox" checked class="sr-only peer">
+                      <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-green-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-green-600"></div>
+                    </label>
+                  </div>
+                  <div class="flex items-center justify-between">
+                    <label class="text-sm font-medium">Push notifications</label>
+                    <label class="relative inline-flex items-center cursor-pointer">
+                      <input type="checkbox" class="sr-only peer">
+                      <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-green-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-green-600"></div>
+                    </label>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
-    </header>
 
-    <div class="container mx-auto px-4 py-8">
-      <!-- Overview Cards -->
-      <div class="grid md:grid-cols-4 gap-6 mb-8">
-        <div class="bg-white rounded-lg shadow p-6">
-          <h3 class="text-sm font-medium text-gray-600 mb-2">Total Stores</h3>
-          <div class="text-2xl font-bold text-gray-900">3</div>
-          <p class="text-sm text-gray-500">All monitored</p>
-        </div>
-
-        <div class="bg-white rounded-lg shadow p-6">
-          <h3 class="text-sm font-medium text-gray-600 mb-2">Currently Open</h3>
-          <div class="text-2xl font-bold text-green-600">2</div>
-          <p class="text-sm text-gray-500">Accepting orders</p>
-        </div>
-
-        <div class="bg-white rounded-lg shadow p-6">
-          <h3 class="text-sm font-medium text-gray-600 mb-2">Alerts Today</h3>
-          <div class="text-2xl font-bold text-orange-600">1</div>
-          <p class="text-sm text-gray-500">Closure detected</p>
-        </div>
-
-        <div class="bg-white rounded-lg shadow p-6">
-          <h3 class="text-sm font-medium text-gray-600 mb-2">Avg Uptime Today</h3>
-          <div class="text-2xl font-bold text-blue-600">96%</div>
-          <p class="text-sm text-gray-500">Above average</p>
-        </div>
-      </div>
-
-      <!-- Tabs -->
-      <div class="bg-white rounded-lg shadow">
-        <div class="border-b">
-          <nav class="flex">
-            <button onclick="showTab('stores')" class="px-6 py-3 text-sm font-medium text-green-600 border-b-2 border-green-600 tab-btn" data-tab="stores">
-              Store Status
-            </button>
-            <button onclick="showTab('history')" class="px-6 py-3 text-sm font-medium text-gray-500 hover:text-gray-700 tab-btn" data-tab="history">
-              History
-            </button>
-            <button onclick="showTab('notifications')" class="px-6 py-3 text-sm font-medium text-gray-500 hover:text-gray-700 tab-btn" data-tab="notifications">
-              Notifications
-            </button>
-          </nav>
-        </div>
-
-        <!-- Store Status Tab -->
-        <div id="stores-tab" class="p-6 space-y-6">
-          <!-- Store 1 - Open -->
-          <div class="border border-green-200 bg-green-50 p-6 rounded-lg">
-            <div class="flex items-center justify-between mb-4">
-              <div>
-                <h3 class="text-lg font-semibold flex items-center gap-2">
-                  <i data-lucide="check-circle" class="w-5 h-5 text-green-600"></i>
-                  Warung Bali Asli
-                </h3>
-                <p class="text-gray-600">Jl. Pantai Berawa, Canggu</p>
-              </div>
-              <span class="bg-green-600 text-white px-3 py-1 rounded-full text-sm">Open</span>
-            </div>
-            
-            <div class="grid md:grid-cols-2 gap-4">
-              <div class="space-y-2">
-                <div class="flex justify-between text-sm">
-                  <span class="text-gray-600">GoFood Status</span>
-                  <span class="font-medium text-green-600">Open</span>
-                </div>
-                <div class="flex justify-between text-sm">
-                  <span class="text-gray-600">GrabFood Status</span>
-                  <span class="font-medium text-green-600">Open</span>
-                </div>
-                <div class="flex justify-between text-sm">
-                  <span class="text-gray-600">Last Check</span>
-                  <span class="text-gray-900" id="lastCheck1">2 min ago</span>
-                </div>
-              </div>
-              <div class="space-y-2">
-                <div class="flex justify-between text-sm">
-                  <span class="text-gray-600">Operating Hours</span>
-                  <span class="text-gray-900">10:00 - 22:00</span>
-                </div>
-                <div class="flex justify-between text-sm">
-                  <span class="text-gray-600">Uptime Today</span>
-                  <span class="text-green-600">100%</span>
-                </div>
-                <div class="flex justify-between text-sm">
-                  <span class="text-gray-600">Next Check</span>
-                  <span class="text-gray-900 font-mono" id="nextCheck1">13:24</span>
-                </div>
-              </div>
-            </div>
-
-            <div class="mt-4">
-              <div class="flex justify-between text-sm mb-2">
-                <span class="text-gray-600">Today's Uptime</span>
-                <span class="text-gray-900">100%</span>
-              </div>
-              <div class="w-full bg-gray-200 rounded-full h-2">
-                <div class="bg-green-600 h-2 rounded-full" style="width: 100%"></div>
-              </div>
-            </div>
-          </div>
-
-          <!-- Store 2 - Open -->
-          <div class="border border-green-200 bg-green-50 p-6 rounded-lg">
-            <div class="flex items-center justify-between mb-4">
-              <div>
-                <h3 class="text-lg font-semibold flex items-center gap-2">
-                  <i data-lucide="check-circle" class="w-5 h-5 text-green-600"></i>
-                  Healthy Bowl Co.
-                </h3>
-                <p class="text-gray-600">Jl. Raya Seminyak, Seminyak</p>
-              </div>
-              <span class="bg-green-600 text-white px-3 py-1 rounded-full text-sm">Open</span>
-            </div>
-            
-            <div class="grid md:grid-cols-2 gap-4">
-              <div class="space-y-2">
-                <div class="flex justify-between text-sm">
-                  <span class="text-gray-600">GoFood Status</span>
-                  <span class="font-medium text-green-600">Open</span>
-                </div>
-                <div class="flex justify-between text-sm">
-                  <span class="text-gray-600">GrabFood Status</span>
-                  <span class="font-medium text-green-600">Open</span>
-                </div>
-                <div class="flex justify-between text-sm">
-                  <span class="text-gray-600">Last Check</span>
-                  <span class="text-gray-900" id="lastCheck2">5 min ago</span>
-                </div>
-              </div>
-              <div class="space-y-2">
-                <div class="flex justify-between text-sm">
-                  <span class="text-gray-600">Operating Hours</span>
-                  <span class="text-gray-900">08:00 - 21:00</span>
-                </div>
-                <div class="flex justify-between text-sm">
-                  <span class="text-gray-600">Uptime Today</span>
-                  <span class="text-green-600">100%</span>
-                </div>
-                <div class="flex justify-between text-sm">
-                  <span class="text-gray-600">Next Check</span>
-                  <span class="text-gray-900 font-mono" id="nextCheck2">10:15</span>
-                </div>
-              </div>
-            </div>
-
-            <div class="mt-4">
-              <div class="flex justify-between text-sm mb-2">
-                <span class="text-gray-600">Today's Uptime</span>
-                <span class="text-gray-900">100%</span>
-              </div>
-              <div class="w-full bg-gray-200 rounded-full h-2">
-                <div class="bg-green-600 h-2 rounded-full" style="width: 100%"></div>
-              </div>
-            </div>
-          </div>
-
-          <!-- Store 3 - Issue -->
-          <div class="border border-red-200 bg-red-50 p-6 rounded-lg">
-            <div class="flex items-center justify-between mb-4">
-              <div>
-                <h3 class="text-lg font-semibold flex items-center gap-2">
-                  <i data-lucide="x-circle" class="w-5 h-5 text-red-600"></i>
-                  Café Sunset
-                </h3>
-                <p class="text-gray-600">Jl. Kayu Aya, Seminyak</p>
-              </div>
-              <span class="bg-red-600 text-white px-3 py-1 rounded-full text-sm">Issue Detected</span>
-            </div>
-            
-            <div class="grid md:grid-cols-2 gap-4">
-              <div class="space-y-2">
-                <div class="flex justify-between text-sm">
-                  <span class="text-gray-600">GoFood Status</span>
-                  <span class="font-medium text-red-600">Closed</span>
-                </div>
-                <div class="flex justify-between text-sm">
-                  <span class="text-gray-600">GrabFood Status</span>
-                  <span class="font-medium text-green-600">Open</span>
-                </div>
-                <div class="flex justify-between text-sm">
-                  <span class="text-gray-600">Last Check</span>
-                  <span class="text-gray-900" id="lastCheck3">23 min ago</span>
-                </div>
-              </div>
-              <div class="space-y-2">
-                <div class="flex justify-between text-sm">
-                  <span class="text-gray-600">Operating Hours</span>
-                  <span class="text-gray-900">09:00 - 23:00</span>
-                </div>
-                <div class="flex justify-between text-sm">
-                  <span class="text-gray-600">Uptime Today</span>
-                  <span class="text-orange-600">87%</span>
-                </div>
-                <div class="flex justify-between text-sm">
-                  <span class="text-gray-600">Next Check</span>
-                  <span class="text-gray-900 font-mono" id="nextCheck3">7:12</span>
-                </div>
-              </div>
-            </div>
-
-            <div class="mt-4">
-              <div class="flex justify-between text-sm mb-2">
-                <span class="text-gray-600">Today's Uptime</span>
-                <span class="text-gray-900">87%</span>
-              </div>
-              <div class="w-full bg-gray-200 rounded-full h-2">
-                <div class="bg-orange-600 h-2 rounded-full" style="width: 87%"></div>
-              </div>
-            </div>
-
-            <div class="mt-4 p-3 bg-red-100 rounded-lg">
-              <div class="flex items-center gap-2 text-red-800">
-                <i data-lucide="alert-triangle" class="w-4 h-4"></i>
-                <span class="text-sm font-medium">Action Required</span>
-              </div>
-              <p class="text-sm text-red-700 mt-1">
-                GoFood shows your store as closed. Check your tablet or contact platform support.
-              </p>
-              <p class="text-xs text-red-600 mt-1">
-                Detected 23 min ago • Alerts sent via WhatsApp, Email
-              </p>
-            </div>
-          </div>
-        </div>
-
-        <!-- History Tab -->
-        <div id="history-tab" class="p-6 hidden">
-          <h3 class="text-lg font-semibold mb-4">Recent Status Changes</h3>
-          <p class="text-gray-600 mb-6">Last 7 days of monitoring activity</p>
-          
-          <div class="space-y-4">
-            <div class="flex items-center gap-4 p-3 bg-red-50 rounded-lg">
-              <i data-lucide="x-circle" class="w-5 h-5 text-red-600"></i>
-              <div class="flex-1">
-                <p class="font-medium text-gray-900">Café Sunset - GoFood Closed</p>
-                <p class="text-sm text-gray-600">Today at 2:37 PM • Alert sent via WhatsApp, Email</p>
-              </div>
-              <span class="bg-red-600 text-white px-2 py-1 rounded text-sm">Closed</span>
-            </div>
-
-            <div class="flex items-center gap-4 p-3 bg-green-50 rounded-lg">
-              <i data-lucide="check-circle" class="w-5 h-5 text-green-600"></i>
-              <div class="flex-1">
-                <p class="font-medium text-gray-900">Healthy Bowl Co. - GrabFood Reopened</p>
-                <p class="text-sm text-gray-600">Yesterday at 8:15 AM • Automatic recovery</p>
-              </div>
-              <span class="bg-green-600 text-white px-2 py-1 rounded text-sm">Open</span>
-            </div>
-
-            <div class="flex items-center gap-4 p-3 bg-red-50 rounded-lg">
-              <i data-lucide="x-circle" class="w-5 h-5 text-red-600"></i>
-              <div class="flex-1">
-                <p class="font-medium text-gray-900">Healthy Bowl Co. - GrabFood Closed</p>
-                <p class="text-sm text-gray-600">Yesterday at 6:22 AM • Alert sent via Telegram</p>
-              </div>
-              <span class="bg-red-600 text-white px-2 py-1 rounded text-sm">Closed</span>
-            </div>
-          </div>
-        </div>
-
-        <!-- Notifications Tab -->
-        <div id="notifications-tab" class="p-6 hidden">
-          <h3 class="text-lg font-semibold mb-4">Notification Settings</h3>
-          <p class="text-gray-600 mb-6">Configure how and when you receive alerts</p>
-          
-          <div class="grid md:grid-cols-2 gap-6">
-            <div class="border border-green-200 bg-green-50 p-6 rounded-lg">
-              <div class="flex items-center justify-between mb-4">
-                <div class="flex items-center gap-2">
-                  <i data-lucide="smartphone" class="w-5 h-5 text-green-600"></i>
-                  <h4 class="text-lg font-semibold">WhatsApp</h4>
-                </div>
-                <label class="relative inline-flex items-center cursor-pointer">
-                  <input type="checkbox" checked class="sr-only peer">
-                  <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-green-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-green-600"></div>
-                </label>
-              </div>
-              <div class="space-y-3">
-                <div class="flex justify-between items-center">
-                  <span class="text-sm">Status</span>
-                  <span class="bg-green-600 text-white px-2 py-1 rounded text-sm">Connected</span>
-                </div>
-                <div class="flex justify-between items-center">
-                  <span class="text-sm">Phone</span>
-                  <span class="text-sm text-gray-600">+62 812-3456-7890</span>
-                </div>
-                <button class="w-full border border-gray-300 hover:bg-gray-50 px-4 py-2 rounded-md text-sm">
-                  Update Number
-                </button>
-              </div>
-            </div>
-
-            <div class="border border-blue-200 bg-blue-50 p-6 rounded-lg">
-              <div class="flex items-center justify-between mb-4">
-                <div class="flex items-center gap-2">
-                  <i data-lucide="mail" class="w-5 h-5 text-blue-600"></i>
-                  <h4 class="text-lg font-semibold">Email</h4>
-                </div>
-                <label class="relative inline-flex items-center cursor-pointer">
-                  <input type="checkbox" checked class="sr-only peer">
-                  <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
-                </label>
-              </div>
-              <div class="space-y-3">
-                <div class="flex justify-between items-center">
-                  <span class="text-sm">Status</span>
-                  <span class="bg-green-600 text-white px-2 py-1 rounded text-sm">Active</span>
-                </div>
-                <div class="flex justify-between items-center">
-                  <span class="text-sm">Address</span>
-                  <span class="text-sm text-gray-600">owner@restaurant.com</span>
-                </div>
-                <button class="w-full border border-gray-300 hover:bg-gray-50 px-4 py-2 rounded-md text-sm">
-                  Change Email
-                </button>
-              </div>
-            </div>
-          </div>
-
-          <!-- Alert Preferences Section -->
-          <div class="mt-8">
-            <h3 class="text-lg font-semibold mb-4">Alert Preferences</h3>
-            <div class="space-y-6">
-              <!-- Store Closures -->
-              <div class="flex items-center justify-between py-4">
-                <div>
-                  <h4 class="text-base font-medium text-gray-900">Store Closures</h4>
-                  <p class="text-sm text-gray-500">Get notified when a store unexpectedly closes</p>
-                </div>
-                <label class="relative inline-flex items-center cursor-pointer">
-                  <input type="checkbox" checked class="sr-only peer">
-                  <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-green-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-green-600"></div>
-                </label>
-              </div>
-
-              <!-- Daily Summary -->
-              <div class="flex items-center justify-between py-4">
-                <div>
-                  <h4 class="text-base font-medium text-gray-900">Daily Summary</h4>
-                  <p class="text-sm text-gray-500">Receive daily uptime reports at 9 AM</p>
-                </div>
-                <label class="relative inline-flex items-center cursor-pointer">
-                  <input type="checkbox" checked class="sr-only peer">
-                  <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-green-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-green-600"></div>
-                </label>
-              </div>
-
-              <!-- System Updates -->
-              <div class="flex items-center justify-between py-4">
-                <div>
-                  <h4 class="text-base font-medium text-gray-900">System Updates</h4>
-                  <p class="text-sm text-gray-500">Important service announcements</p>
-                </div>
-                <label class="relative inline-flex items-center cursor-pointer">
-                  <input type="checkbox" class="sr-only peer">
-                  <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-green-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-green-600"></div>
-                </label>
-              </div>
-            </div>
-          </div>
-        </div>
+      <!-- Footer -->
+      <div class="text-center text-sm text-gray-500">
+        Last updated: <span id="lastUpdate">-</span>
       </div>
     </div>
   </div>
@@ -403,153 +506,142 @@
   <script>
     lucide.createIcons();
 
-    let isRefreshing = false;
-    
-    // Store data with timers
-    let stores = [
-      {
-        id: 1,
-        name: "Warung Bali Asli",
-        nextCheckTime: new Date(Date.now() + 13 * 60 * 1000), // 13 minutes from now
-        lastCheck: new Date(Date.now() - 2 * 60 * 1000), // 2 minutes ago
-        nextCheckElementId: 'nextCheck1',
-        lastCheckElementId: 'lastCheck1'
-      },
-      {
-        id: 2,
-        name: "Healthy Bowl Co.",
-        nextCheckTime: new Date(Date.now() + 10 * 60 * 1000), // 10 minutes from now
-        lastCheck: new Date(Date.now() - 5 * 60 * 1000), // 5 minutes ago
-        nextCheckElementId: 'nextCheck2',
-        lastCheckElementId: 'lastCheck2'
-      },
-      {
-        id: 3,
-        name: "Café Sunset",
-        nextCheckTime: new Date(Date.now() + 7 * 60 * 1000), // 7 minutes from now
-        lastCheck: new Date(Date.now() - 23 * 60 * 1000), // 23 minutes ago
-        nextCheckElementId: 'nextCheck3',
-        lastCheckElementId: 'lastCheck3'
-      }
+    // Mock data
+    let restaurants = [
+      { id: 1, name: 'Nasi Padang Express', platform: 'gojek', status: 'online', orders: 45, revenue: 1250000, rating: 4.8, reviews: 234 },
+      { id: 2, name: 'Burger Corner', platform: 'grab', status: 'offline', orders: 23, revenue: 890000, rating: 4.5, reviews: 156 },
+      { id: 3, name: 'Sushi Delight', platform: 'foodpanda', status: 'busy', orders: 67, revenue: 2100000, rating: 4.9, reviews: 445 }
     ];
 
+    // Tab functionality
     function showTab(tabName) {
       // Hide all tabs
-      document.getElementById('stores-tab').classList.add('hidden');
-      document.getElementById('history-tab').classList.add('hidden');
-      document.getElementById('notifications-tab').classList.add('hidden');
-      
+      document.querySelectorAll('.tab-content').forEach(tab => {
+        tab.classList.add('hidden');
+      });
+
       // Show selected tab
       document.getElementById(tabName + '-tab').classList.remove('hidden');
-      
+
       // Update tab buttons
       document.querySelectorAll('.tab-btn').forEach(btn => {
-        btn.classList.remove('text-green-600', 'border-b-2', 'border-green-600');
-        btn.classList.add('text-gray-500');
+        btn.classList.remove('bg-white', 'text-gray-900', 'shadow-sm');
+        btn.classList.add('text-gray-500', 'hover:text-gray-700');
       });
-      
-      document.querySelector(`[data-tab="${tabName}"]`).classList.add('text-green-600', 'border-b-2', 'border-green-600');
-      document.querySelector(`[data-tab="${tabName}"]`).classList.remove('text-gray-500');
+
+      document.querySelector(`[data-tab="${tabName}"]`).classList.add('bg-white', 'text-gray-900', 'shadow-sm');
+      document.querySelector(`[data-tab="${tabName}"]`).classList.remove('text-gray-500', 'hover:text-gray-700');
     }
 
-    async function handleRefresh() {
-      console.log('handleRefresh called');
-      if (isRefreshing) return;
-      
-      isRefreshing = true;
-      const btn = document.getElementById('refreshBtn');
-      const icon = document.getElementById('refreshIcon');
-      const text = document.getElementById('refreshText');
-      
-      btn.disabled = true;
-      icon.classList.add('animate-spin');
-      text.textContent = 'Checking...';
-      
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      
-      // Update all stores with new check times and last check
-      const now = new Date();
-      stores.forEach(store => {
-        store.lastCheck = now;
-        store.nextCheckTime = new Date(now.getTime() + 15 * 60 * 1000); // 15 minutes from now
-        
-        // Update UI elements immediately
-        const nextCheckElement = document.getElementById(store.nextCheckElementId);
-        const lastCheckElement = document.getElementById(store.lastCheckElementId);
-        
-        if (nextCheckElement) {
-          nextCheckElement.textContent = formatTimeRemaining(store.nextCheckTime);
-        }
-        if (lastCheckElement) {
-          lastCheckElement.textContent = formatTimeAgo(store.lastCheck);
-        }
+    // Tab event listeners
+    document.querySelectorAll('.tab-btn').forEach(btn => {
+      btn.addEventListener('click', function() {
+        const tabName = this.getAttribute('data-tab');
+        showTab(tabName);
       });
-      
-      // Reset UI
-      btn.disabled = false;
-      icon.classList.remove('animate-spin');
-      text.textContent = 'Refresh';
-      isRefreshing = false;
-    }
-
-    function formatTimeRemaining(date) {
-      const now = new Date();
-      const diff = Math.max(0, date.getTime() - now.getTime());
-      const minutes = Math.floor(diff / 60000);
-      const seconds = Math.floor((diff % 60000) / 1000);
-      return `${minutes}:${seconds.toString().padStart(2, '0')}`;
-    }
-
-    function formatTimeAgo(date) {
-      const now = new Date();
-      const diff = now.getTime() - date.getTime();
-      const minutes = Math.floor(diff / 60000);
-      if (minutes < 1) return "Just now";
-      if (minutes === 1) return "1 min ago";
-      return `${minutes} min ago`;
-    }
-
-    function updateCountdowns() {
-      stores.forEach(store => {
-        const nextCheckElement = document.getElementById(store.nextCheckElementId);
-        const lastCheckElement = document.getElementById(store.lastCheckElementId);
-        
-        if (nextCheckElement) {
-          // Decrease next check time by 1 second
-          store.nextCheckTime = new Date(store.nextCheckTime.getTime() - 1000);
-          
-          // If time reaches 0, reset to 15 minutes and update last check
-          if (store.nextCheckTime.getTime() <= Date.now()) {
-            store.nextCheckTime = new Date(Date.now() + 15 * 60 * 1000);
-            store.lastCheck = new Date();
-          }
-          
-          nextCheckElement.textContent = formatTimeRemaining(store.nextCheckTime);
-        }
-        
-        if (lastCheckElement) {
-          lastCheckElement.textContent = formatTimeAgo(store.lastCheck);
-        }
-      });
-    }
-
-    // Start countdown timer
-    setInterval(updateCountdowns, 1000);
-    
-    // Initialize timers immediately
-    updateCountdowns();
-    
-    // Add event listener for refresh button
-    document.addEventListener('DOMContentLoaded', function() {
-      const refreshBtn = document.getElementById('refreshBtn');
-      if (refreshBtn) {
-        refreshBtn.addEventListener('click', handleRefresh);
-        console.log('Refresh button event listener added');
-      } else {
-        console.error('Refresh button not found');
-      }
     });
+
+    // Toggle restaurant status
+    document.querySelectorAll('.toggle-status-btn').forEach(btn => {
+      btn.addEventListener('click', function() {
+        const restaurantId = parseInt(this.getAttribute('data-restaurant'));
+        const currentStatus = this.getAttribute('data-status');
+        const newStatus = currentStatus === 'online' ? 'offline' : 'online';
+        
+        // Update restaurant data
+        const restaurant = restaurants.find(r => r.id === restaurantId);
+        if (restaurant) {
+          restaurant.status = newStatus;
+        }
+
+        // Update UI
+        updateRestaurantStatus(restaurantId, newStatus);
+        updateOverviewCards();
+      });
+    });
+
+    function updateRestaurantStatus(id, status) {
+      const statusElement = document.getElementById(`status-${id}`);
+      const btn = document.querySelector(`[data-restaurant="${id}"]`);
+      
+      if (status === 'online') {
+        statusElement.innerHTML = `
+          <div class="w-3 h-3 rounded-full bg-green-500 animate-pulse"></div>
+          <span class="text-sm font-medium text-green-700">Online</span>
+        `;
+        btn.className = 'toggle-status-btn inline-flex items-center px-3 py-2 border border-red-200 text-red-600 hover:bg-red-50 rounded-md text-sm font-medium transition-colors';
+        btn.innerHTML = '<i data-lucide="wifi-off" class="w-4 h-4 mr-2"></i>Go Offline';
+        btn.setAttribute('data-status', 'online');
+      } else {
+        statusElement.innerHTML = `
+          <div class="w-3 h-3 rounded-full bg-red-500 animate-pulse"></div>
+          <span class="text-sm font-medium text-red-700">Offline</span>
+        `;
+        btn.className = 'toggle-status-btn inline-flex items-center px-3 py-2 border border-green-200 text-green-600 hover:bg-green-50 rounded-md text-sm font-medium transition-colors';
+        btn.innerHTML = '<i data-lucide="wifi" class="w-4 h-4 mr-2"></i>Go Online';
+        btn.setAttribute('data-status', 'offline');
+      }
+      
+      lucide.createIcons();
+    }
+
+    function updateOverviewCards() {
+      const totalRevenue = restaurants.reduce((sum, r) => sum + r.revenue, 0);
+      const totalOrders = restaurants.reduce((sum, r) => sum + r.orders, 0);
+      const onlineRestaurants = restaurants.filter(r => r.status === 'online').length;
+      const avgRating = restaurants.reduce((sum, r) => sum + r.rating, 0) / restaurants.length;
+
+      document.getElementById('totalRevenue').textContent = formatCurrency(totalRevenue);
+      document.getElementById('totalOrders').textContent = totalOrders;
+      document.getElementById('onlineStores').textContent = `${onlineRestaurants}/${restaurants.length}`;
+      document.getElementById('operationalPercentage').textContent = `${Math.round((onlineRestaurants / restaurants.length) * 100)}% operational`;
+      document.getElementById('avgRating').textContent = avgRating.toFixed(1);
+    }
+
+    function formatCurrency(amount) {
+      return 'Rp ' + amount.toLocaleString('id-ID');
+    }
+
+    // Dismiss alerts
+    document.querySelectorAll('.dismiss-alert').forEach(btn => {
+      btn.addEventListener('click', function() {
+        this.closest('.alert-item').style.opacity = '0';
+        setTimeout(() => {
+          this.closest('.alert-item').remove();
+        }, 300);
+      });
+    });
+
+    // Refresh functionality
+    document.getElementById('refreshBtn').addEventListener('click', function() {
+      const icon = this.querySelector('i');
+      icon.classList.add('animate-spin');
+      
+      // Simulate refresh
+      setTimeout(() => {
+        icon.classList.remove('animate-spin');
+        updateLastUpdate();
+        // Simulate small changes to data
+        restaurants.forEach(r => {
+          r.orders += Math.floor(Math.random() * 3);
+          r.revenue += Math.floor(Math.random() * 50000);
+        });
+        updateOverviewCards();
+      }, 1000);
+    });
+
+    function updateLastUpdate() {
+      const now = new Date();
+      document.getElementById('lastUpdate').textContent = now.toLocaleTimeString();
+    }
+
+    // Initialize
+    updateOverviewCards();
+    updateLastUpdate();
+    showTab('restaurants');
+
+    // Update time every minute
+    setInterval(updateLastUpdate, 60000);
   </script>
 </body>
 </html>

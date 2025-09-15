@@ -4,10 +4,16 @@ class LoopsEmailService
   
   class << self
     def send_email_confirmation(user, token)
-      # Build URL manually since email_confirmation route doesn't have a named helper
-      host = Rails.application.config.action_mailer.default_url_options[:host] || 'localhost'
-      port = Rails.application.config.action_mailer.default_url_options[:port] || 3001
-      confirmation_url = "http://#{host}:#{port}/email_confirmation?token=#{token}"
+      # Build URL using proper Rails URL options
+      host = Rails.application.config.action_mailer.default_url_options[:host] || ENV['RAILS_HOST'] || 'localhost'
+      protocol = Rails.application.config.action_mailer.default_url_options[:protocol] || (Rails.env.production? ? 'https' : 'http')
+      port = Rails.application.config.action_mailer.default_url_options[:port]
+      
+      confirmation_url = if port && !Rails.env.production?
+        "#{protocol}://#{host}:#{port}/email_confirmation?token=#{token}"
+      else
+        "#{protocol}://#{host}/email_confirmation?token=#{token}"
+      end
       
       Rails.logger.info "Sending email confirmation to #{user.email_address} with URL: #{confirmation_url}"
       
@@ -23,10 +29,16 @@ class LoopsEmailService
     end
     
     def send_password_reset(user, token)
-      # Build URL manually
-      host = Rails.application.config.action_mailer.default_url_options[:host] || 'localhost'
-      port = Rails.application.config.action_mailer.default_url_options[:port] || 3001
-      reset_url = "http://#{host}:#{port}/reset_password?token=#{token}"
+      # Build URL using proper Rails URL options
+      host = Rails.application.config.action_mailer.default_url_options[:host] || ENV['RAILS_HOST'] || 'localhost'
+      protocol = Rails.application.config.action_mailer.default_url_options[:protocol] || (Rails.env.production? ? 'https' : 'http')
+      port = Rails.application.config.action_mailer.default_url_options[:port]
+      
+      reset_url = if port && !Rails.env.production?
+        "#{protocol}://#{host}:#{port}/reset_password?token=#{token}"
+      else
+        "#{protocol}://#{host}/reset_password?token=#{token}"
+      end
       
       Rails.logger.info "Sending password reset to #{user.email_address} with URL: #{reset_url}"
       
@@ -41,10 +53,16 @@ class LoopsEmailService
     end
     
     def send_welcome_email(user)
-      # Build URL manually
-      host = Rails.application.config.action_mailer.default_url_options[:host] || 'localhost'
-      port = Rails.application.config.action_mailer.default_url_options[:port] || 3001
-      dashboard_url = "http://#{host}:#{port}/dashboard"
+      # Build URL using proper Rails URL options
+      host = Rails.application.config.action_mailer.default_url_options[:host] || ENV['RAILS_HOST'] || 'localhost'
+      protocol = Rails.application.config.action_mailer.default_url_options[:protocol] || (Rails.env.production? ? 'https' : 'http')
+      port = Rails.application.config.action_mailer.default_url_options[:port]
+      
+      dashboard_url = if port && !Rails.env.production?
+        "#{protocol}://#{host}:#{port}/dashboard"
+      else
+        "#{protocol}://#{host}/dashboard"
+      end
       
       Rails.logger.info "Sending welcome email to #{user.email_address}"
       

@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 32 32">
-  <!-- Solid bright green background -->
-  <rect width="32" height="32" fill="#22c55e"/>
+  <!-- Green-600 background to match Start Free Trial buttons -->
+  <rect width="32" height="32" fill="#16a34a"/>
   
   <!-- White letter G -->
   <text x="16" y="22" text-anchor="middle" font-family="Arial" font-size="20" font-weight="bold" fill="#ffffff">G</text>

@@ -29,6 +29,9 @@ Rails.application.routes.draw do
   # Protected routes
   get "dashboard" => "dev#dashboard"
   get "onboarding" => "dev#onboarding"
+  
+  # Restaurant management
+  resources :restaurants, only: [:create]
 
   get "landing/index"
   get "landing/test"

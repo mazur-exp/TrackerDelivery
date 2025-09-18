@@ -2,6 +2,7 @@ class User < ApplicationRecord
   has_secure_password
   has_many :sessions, dependent: :destroy
   has_many :restaurants, dependent: :destroy
+  has_many :notification_contacts, dependent: :destroy
 
   # Validations
   validates :email_address, presence: true,
@@ -82,6 +83,47 @@ class User < ApplicationRecord
     sessions_to_destroy.destroy_all
     Rails.logger.info "Terminated #{destroyed_count} sessions for user #{id}"
     destroyed_count
+  end
+
+  # Notification contact methods
+  def primary_whatsapp
+    notification_contacts.where(contact_type: 'whatsapp', is_primary: true).first&.contact_value
+  end
+
+  def primary_telegram
+    notification_contacts.where(contact_type: 'telegram', is_primary: true).first&.contact_value
+  end
+
+  def primary_email_contact
+    notification_contacts.where(contact_type: 'email', is_primary: true).first&.contact_value
+  end
+
+  def all_whatsapp_contacts
+    notification_contacts.where(contact_type: 'whatsapp').active.ordered.pluck(:contact_value)
+  end
+
+  def all_telegram_contacts
+    notification_contacts.where(contact_type: 'telegram').active.ordered.pluck(:contact_value)
+  end
+
+  def all_email_contacts
+    notification_contacts.where(contact_type: 'email').active.ordered.pluck(:contact_value)
+  end
+
+  def has_required_contacts?
+    has_whatsapp_contact? || has_telegram_contact?
+  end
+
+  def has_whatsapp_contact?
+    notification_contacts.where(contact_type: 'whatsapp').active.exists?
+  end
+
+  def has_telegram_contact?
+    notification_contacts.where(contact_type: 'telegram').active.exists?
+  end
+
+  def has_email_contact?
+    notification_contacts.where(contact_type: 'email').active.exists?
   end
 
   private

@@ -3,6 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="csrf-token" content="<%= form_authenticity_token %>">
   <title>DeliveryTracker - Restaurant Setup</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
@@ -80,7 +81,7 @@
                 <input
                   id="grabUrl"
                   type="url"
-                  placeholder="https://food.grab.com/sg/en/restaurant/..."
+                  placeholder="https://r.grab.com/g/6-20250918_143818_8015D1829687499383E150126C5CEFCA_MEXMPS-6-C6T3R2LKDGJYCT"
                   class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-600/20 focus:border-green-600 transition-all duration-300"
                 />
                 <div id="grab-validation" class="absolute right-3 top-1/2 -translate-y-1/2 hidden">
@@ -101,7 +102,7 @@
                 <input
                   id="gofoodUrl"
                   type="url"
-                  placeholder="https://gofood.co.id/restaurant/..."
+                  placeholder="https://gofood.link/a/Ms4BQQd"
                   class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-600/20 focus:border-green-600 transition-all duration-300"
                 />
                 <div id="gofood-validation" class="absolute right-3 top-1/2 -translate-y-1/2 hidden">
@@ -212,15 +213,20 @@
                   <div class="flex items-center gap-2">
                     <i data-lucide="message-square" class="w-5 h-5 text-green-600"></i>
                     <label for="whatsapp" class="font-medium cursor-pointer">WhatsApp Notifications</label>
+                    <span class="text-red-500 text-sm ml-1">*</span>
                   </div>
-                  <p class="text-sm text-gray-500 mt-1">Get instant order notifications via WhatsApp</p>
+                  <p class="text-sm text-gray-500 mt-1">Get instant order notifications via WhatsApp (multiple numbers separated by comma)</p>
                   <div id="whatsapp-input" class="mt-3 hidden">
                     <input
                       id="whatsappNumber"
                       type="tel"
-                      placeholder="+62 812 3456 7890"
+                      placeholder="+6281234567890, +6281345678901"
                       class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-600/20 focus:border-green-600 transition-all duration-300"
                     />
+                    <div id="whatsapp-preview" class="mt-2 hidden">
+                      <p class="text-xs text-gray-500 mb-1">Contacts to be added:</p>
+                      <div id="whatsapp-contacts" class="flex flex-wrap gap-1"></div>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -232,15 +238,20 @@
                   <div class="flex items-center gap-2">
                     <i data-lucide="phone" class="w-5 h-5 text-green-600"></i>
                     <label for="telegram" class="font-medium cursor-pointer">Telegram Notifications</label>
+                    <span class="text-red-500 text-sm ml-1">*</span>
                   </div>
-                  <p class="text-sm text-gray-500 mt-1">Receive order updates through Telegram bot</p>
+                  <p class="text-sm text-gray-500 mt-1">Receive order updates through Telegram bot (multiple usernames separated by comma)</p>
                   <div id="telegram-input" class="mt-3 hidden">
                     <input
                       id="telegramUsername"
                       type="text"
-                      placeholder="@yourusername"
+                      placeholder="@username1, @username2, @username3"
                       class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-600/20 focus:border-green-600 transition-all duration-300"
                     />
+                    <div id="telegram-preview" class="mt-2 hidden">
+                      <p class="text-xs text-gray-500 mb-1">Contacts to be added:</p>
+                      <div id="telegram-contacts" class="flex flex-wrap gap-1"></div>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -253,23 +264,33 @@
                     <i data-lucide="mail" class="w-5 h-5 text-green-600"></i>
                     <label for="email" class="font-medium cursor-pointer">Email Notifications</label>
                   </div>
-                  <p class="text-sm text-gray-500 mt-1">Get detailed order reports and summaries via email</p>
+                  <p class="text-sm text-gray-500 mt-1">Get detailed order reports and summaries via email (multiple emails separated by comma)</p>
                   <div id="email-input" class="mt-3 hidden">
                     <input
                       id="emailAddress"
                       type="email"
-                      placeholder="restaurant@example.com"
+                      placeholder="primary@example.com, backup@example.com"
                       class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-600/20 focus:border-green-600 transition-all duration-300"
                     />
+                    <div id="email-preview" class="mt-2 hidden">
+                      <p class="text-xs text-gray-500 mb-1">Contacts to be added:</p>
+                      <div id="email-contacts" class="flex flex-wrap gap-1"></div>
+                    </div>
                   </div>
                 </div>
               </div>
             </div>
 
-            <div class="bg-green-50 p-4 rounded-lg">
-              <p class="text-sm text-green-700">
-                <strong>Note:</strong> You can change these preferences anytime in your dashboard settings.
-              </p>
+            <div class="bg-amber-50 border border-amber-200 p-4 rounded-lg">
+              <div class="flex items-start gap-2">
+                <i data-lucide="alert-circle" class="w-5 h-5 text-amber-600 mt-0.5"></i>
+                <div>
+                  <p class="text-sm text-amber-800 font-medium">Required: At least one WhatsApp OR Telegram contact</p>
+                  <p class="text-xs text-amber-700 mt-1">
+                    Email notifications are optional. You can change these preferences anytime in your dashboard settings.
+                  </p>
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -330,19 +351,104 @@
         telegram: false,
         email: false
       },
-      whatsappNumber: "",
-      telegramUsername: "",
-      emailAddress: ""
+      whatsappContacts: [],
+      telegramContacts: [],
+      emailContacts: []
     };
 
-    // Validation functions
+    // URL extraction and platform detection functions
+    function extractUrlFromText(text) {
+      // Extract HTTPS URLs from text
+      const urlRegex = /https:\/\/[^\s]+/g;
+      const matches = text.match(urlRegex);
+      return matches ? matches[0] : text;
+    }
+
+    function detectPlatformFromUrl(url) {
+      if (/r\.grab\.com|grabfood|grab\.com/i.test(url)) {
+        return 'grab';
+      } else if (/gofood\.link|gofood\.co\.id|gojek/i.test(url)) {
+        return 'gofood';
+      }
+      return null;
+    }
+
     function validateUrl(url, platform) {
       if (!url) return true;
       const patterns = {
-        grab: /grab\.com|grabfood/i,
-        gofood: /gofood|gojek/i
+        grab: /r\.grab\.com|grabfood|grab\.com/i,
+        gofood: /gofood\.link|gofood\.co\.id|gojek/i
       };
       return patterns[platform]?.test(url) || false;
+    }
+
+    function handleUrlInput(inputElement, targetPlatform) {
+      const rawText = inputElement.value;
+      const extractedUrl = extractUrlFromText(rawText);
+      const detectedPlatform = detectPlatformFromUrl(extractedUrl);
+      
+      // Update the input with clean URL
+      if (extractedUrl !== rawText) {
+        inputElement.value = extractedUrl;
+        formData[inputElement.id === 'grabUrl' ? 'grabUrl' : 'gofoodUrl'] = extractedUrl;
+      }
+      
+      // Check if URL is in wrong field and auto-correct
+      if (detectedPlatform && detectedPlatform !== targetPlatform) {
+        const correctField = detectedPlatform === 'grab' ? 'grabUrl' : 'gofoodUrl';
+        const correctInput = document.getElementById(correctField);
+        
+        // Move URL to correct field
+        correctInput.value = extractedUrl;
+        inputElement.value = '';
+        
+        // Update form data
+        formData[correctField] = extractedUrl;
+        formData[inputElement.id === 'grabUrl' ? 'grabUrl' : 'gofoodUrl'] = '';
+        
+        // Show notification
+        showPlatformCorrectionNotification(detectedPlatform);
+        
+        // Trigger validation for both fields
+        validateAndUpdateUI(correctInput, detectedPlatform);
+        validateAndUpdateUI(inputElement, targetPlatform);
+      } else {
+        validateAndUpdateUI(inputElement, targetPlatform);
+      }
+    }
+
+    function showPlatformCorrectionNotification(platform) {
+      const platformName = platform === 'grab' ? 'Grab' : 'GoFood';
+      const notification = document.createElement('div');
+      notification.className = 'fixed top-4 right-4 bg-blue-500 text-white px-4 py-2 rounded-lg shadow-lg z-50 animate-pulse';
+      notification.textContent = `URL automatically moved to ${platformName} field`;
+      
+      document.body.appendChild(notification);
+      
+      setTimeout(() => {
+        notification.remove();
+      }, 3000);
+    }
+
+    function validateAndUpdateUI(inputElement, platform) {
+      const url = inputElement.value;
+      const isValid = validateUrl(url, platform);
+      const fieldId = inputElement.id === 'grabUrl' ? 'grab' : 'gofood';
+      const validation = document.getElementById(`${fieldId}-validation`);
+      const error = document.getElementById(`${fieldId}-error`);
+      
+      if (url && isValid) {
+        validation.classList.remove('hidden');
+        error.classList.add('hidden');
+      } else if (url && !isValid) {
+        validation.classList.add('hidden');
+        error.classList.remove('hidden');
+      } else {
+        validation.classList.add('hidden');
+        error.classList.add('hidden');
+      }
+      
+      updateButtons();
     }
 
     function updateProgress() {
@@ -413,6 +519,75 @@
       lucide.createIcons();
     }
 
+    // Contact validation functions
+    function parseContacts(contactString, contactType) {
+      if (!contactString) return [];
+      
+      const contacts = contactString.split(',').map(contact => contact.trim()).filter(contact => contact.length > 0);
+      const validContacts = [];
+      
+      contacts.forEach(contact => {
+        const normalized = normalizeContact(contact, contactType);
+        if (validateContact(normalized, contactType)) {
+          validContacts.push(normalized);
+        }
+      });
+      
+      return validContacts;
+    }
+
+    function normalizeContact(contact, contactType) {
+      switch (contactType) {
+        case 'whatsapp':
+          // Remove spaces and ensure + prefix
+          const phone = contact.replace(/\s+/g, '');
+          return phone.startsWith('+') ? phone : `+${phone}`;
+        case 'telegram':
+          // Ensure @ prefix
+          return contact.startsWith('@') ? contact : `@${contact}`;
+        case 'email':
+          return contact.toLowerCase();
+        default:
+          return contact;
+      }
+    }
+
+    function validateContact(contact, contactType) {
+      switch (contactType) {
+        case 'whatsapp':
+          return /^\+\d{10,15}$/.test(contact);
+        case 'telegram':
+          return /^@[a-zA-Z0-9_]{5,32}$/.test(contact);
+        case 'email':
+          return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(contact);
+        default:
+          return false;
+      }
+    }
+
+    function updateContactPreview(contactType, contacts) {
+      const previewContainer = document.getElementById(`${contactType}-preview`);
+      const contactsContainer = document.getElementById(`${contactType}-contacts`);
+      
+      if (contacts.length > 0) {
+        contactsContainer.innerHTML = '';
+        contacts.forEach((contact, index) => {
+          const tag = document.createElement('span');
+          tag.className = `inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
+            index === 0 ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'
+          }`;
+          tag.innerHTML = `
+            ${contact}
+            ${index === 0 ? '<span class="ml-1 text-green-600 font-bold">●</span>' : ''}
+          `;
+          contactsContainer.appendChild(tag);
+        });
+        previewContainer.classList.remove('hidden');
+      } else {
+        previewContainer.classList.add('hidden');
+      }
+    }
+
     function isStepValid() {
       switch (currentStep) {
         case 1:
@@ -422,12 +597,10 @@
         case 2:
           return formData.restaurantName.trim() !== "" && formData.address.trim() !== "";
         case 3:
-          const hasNotification = Object.values(formData.notifications).some(Boolean);
-          if (!hasNotification) return false;
-          if (formData.notifications.whatsapp && !formData.whatsappNumber) return false;
-          if (formData.notifications.telegram && !formData.telegramUsername) return false;
-          if (formData.notifications.email && !formData.emailAddress) return false;
-          return true;
+          // Check if at least WhatsApp OR Telegram is provided
+          const hasWhatsApp = formData.notifications.whatsapp && formData.whatsappContacts.length > 0;
+          const hasTelegram = formData.notifications.telegram && formData.telegramContacts.length > 0;
+          return hasWhatsApp || hasTelegram;
         default:
           return true;
       }
@@ -480,20 +653,99 @@
       }
       
       if (currentStep === steps.length) {
-        // Submit form
-        isSubmitting = true;
-        updateButtons();
-        
-        setTimeout(() => {
-          alert("Restaurant onboarding completed successfully!");
-          window.location.href = '/dashboard';
-        }, 1500);
+        // Submit form to create restaurant
+        submitRestaurant();
         return;
       }
       
       if (currentStep < steps.length) {
         showStep(currentStep + 1);
       }
+    }
+
+    function submitRestaurant() {
+      isSubmitting = true;
+      updateButtons();
+      
+      const restaurantData = {
+        restaurant: {
+          name: formData.restaurantName,
+          grab_url: formData.grabUrl,
+          gojek_url: formData.gofoodUrl,
+          address: formData.address,
+          phone: formData.phone,
+          cuisine_type: formData.cuisine
+        },
+        whatsapp_contacts: formData.whatsappContacts,
+        telegram_contacts: formData.telegramContacts,
+        email_contacts: formData.emailContacts
+      };
+      
+      fetch('/restaurants', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRF-Token': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content')
+        },
+        body: JSON.stringify(restaurantData)
+      })
+      .then(response => response.json())
+      .then(data => {
+        if (data.success) {
+          showSuccessMessage("Restaurant setup completed successfully!");
+          setTimeout(() => {
+            window.location.href = data.redirect_url || '/dashboard';
+          }, 1500);
+        } else {
+          showErrorMessage(data.errors ? data.errors.join(', ') : 'Failed to create restaurant');
+          isSubmitting = false;
+          updateButtons();
+        }
+      })
+      .catch(error => {
+        console.error('Error:', error);
+        showErrorMessage('Network error. Please try again.');
+        isSubmitting = false;
+        updateButtons();
+      });
+    }
+
+    function showSuccessMessage(message) {
+      const notification = document.createElement('div');
+      notification.className = 'fixed top-4 right-4 bg-green-500 text-white px-6 py-3 rounded-lg shadow-lg z-50';
+      notification.innerHTML = `
+        <div class="flex items-center gap-2">
+          <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path>
+          </svg>
+          <span>${message}</span>
+        </div>
+      `;
+      
+      document.body.appendChild(notification);
+      
+      setTimeout(() => {
+        notification.remove();
+      }, 5000);
+    }
+
+    function showErrorMessage(message) {
+      const notification = document.createElement('div');
+      notification.className = 'fixed top-4 right-4 bg-red-500 text-white px-6 py-3 rounded-lg shadow-lg z-50';
+      notification.innerHTML = `
+        <div class="flex items-center gap-2">
+          <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"></path>
+          </svg>
+          <span>${message}</span>
+        </div>
+      `;
+      
+      document.body.appendChild(notification);
+      
+      setTimeout(() => {
+        notification.remove();
+      }, 5000);
     }
 
     function prevStep() {
@@ -506,45 +758,22 @@
     document.getElementById('prevBtn').addEventListener('click', prevStep);
     document.getElementById('nextBtn').addEventListener('click', nextStep);
 
-    // URL validation
+    // URL validation with automatic extraction and platform detection
     document.getElementById('grabUrl').addEventListener('input', function(e) {
-      formData.grabUrl = e.target.value;
-      const isValid = validateUrl(e.target.value, 'grab');
-      const validation = document.getElementById('grab-validation');
-      const error = document.getElementById('grab-error');
-      
-      if (e.target.value && isValid) {
-        validation.classList.remove('hidden');
-        error.classList.add('hidden');
-      } else if (e.target.value && !isValid) {
-        validation.classList.add('hidden');
-        error.classList.remove('hidden');
-      } else {
-        validation.classList.add('hidden');
-        error.classList.add('hidden');
-      }
-      
-      updateButtons();
+      handleUrlInput(e.target, 'grab');
     });
 
     document.getElementById('gofoodUrl').addEventListener('input', function(e) {
-      formData.gofoodUrl = e.target.value;
-      const isValid = validateUrl(e.target.value, 'gofood');
-      const validation = document.getElementById('gofood-validation');
-      const error = document.getElementById('gofood-error');
-      
-      if (e.target.value && isValid) {
-        validation.classList.remove('hidden');
-        error.classList.add('hidden');
-      } else if (e.target.value && !isValid) {
-        validation.classList.add('hidden');
-        error.classList.remove('hidden');
-      } else {
-        validation.classList.add('hidden');
-        error.classList.add('hidden');
-      }
-      
-      updateButtons();
+      handleUrlInput(e.target, 'gofood');
+    });
+
+    // Handle paste events for better URL extraction
+    document.getElementById('grabUrl').addEventListener('paste', function(e) {
+      setTimeout(() => handleUrlInput(e.target, 'grab'), 10);
+    });
+
+    document.getElementById('gofoodUrl').addEventListener('paste', function(e) {
+      setTimeout(() => handleUrlInput(e.target, 'gofood'), 10);
     });
 
     // Form inputs
@@ -582,19 +811,25 @@
       });
     });
 
-    // Notification inputs
+    // Notification inputs with contact parsing
     document.getElementById('whatsappNumber').addEventListener('input', function(e) {
-      formData.whatsappNumber = e.target.value;
+      const contacts = parseContacts(e.target.value, 'whatsapp');
+      formData.whatsappContacts = contacts;
+      updateContactPreview('whatsapp', contacts);
       updateButtons();
     });
 
     document.getElementById('telegramUsername').addEventListener('input', function(e) {
-      formData.telegramUsername = e.target.value;
+      const contacts = parseContacts(e.target.value, 'telegram');
+      formData.telegramContacts = contacts;
+      updateContactPreview('telegram', contacts);
       updateButtons();
     });
 
     document.getElementById('emailAddress').addEventListener('input', function(e) {
-      formData.emailAddress = e.target.value;
+      const contacts = parseContacts(e.target.value, 'email');
+      formData.emailContacts = contacts;
+      updateContactPreview('email', contacts);
       updateButtons();
     });
 

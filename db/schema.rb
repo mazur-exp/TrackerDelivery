@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2025_09_14_181843) do
+ActiveRecord::Schema[8.0].define(version: 2025_09_18_045240) do
   create_table "email_domain_blacklists", force: :cascade do |t|
     t.string "domain"
     t.string "reason"
@@ -35,6 +35,8 @@ ActiveRecord::Schema[8.0].define(version: 2025_09_14_181843) do
     t.string "ip_address"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.datetime "expires_at"
+    t.datetime "max_lifetime_expires_at"
     t.index ["updated_at"], name: "index_sessions_on_updated_at"
     t.index ["user_id"], name: "index_sessions_on_user_id"
   end

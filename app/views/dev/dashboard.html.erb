@@ -3,6 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="csrf-token" content="<%= form_authenticity_token %>">
   <title>DeliveryTracker - Restaurant Dashboard</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
@@ -23,8 +24,42 @@
       }
     }
   </script>
+  <style>
+    #modalContent {
+      transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    #logoutModal {
+      backdrop-filter: blur(4px);
+    }
+  </style>
 </head>
 <body class="min-h-screen bg-gray-50">
+  <!-- Logout Confirmation Modal -->
+  <div id="logoutModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
+    <div class="bg-white rounded-xl shadow-2xl max-w-md w-full mx-4 transform transition-all" id="modalContent">
+      <div class="p-6">
+        <div class="flex items-center mb-4">
+          <div class="flex items-center justify-center w-12 h-12 bg-red-100 rounded-full mr-4">
+            <i data-lucide="log-out" class="w-6 h-6 text-red-600"></i>
+          </div>
+          <div>
+            <h3 class="text-lg font-semibold text-gray-900">Confirm Logout</h3>
+            <p class="text-sm text-gray-500">Are you sure you want to log out?</p>
+          </div>
+        </div>
+        
+        <div class="flex space-x-3">
+          <button id="cancelLogout" class="flex-1 px-4 py-2 text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg font-medium transition-colors">
+            Cancel
+          </button>
+          <button id="confirmLogout" class="flex-1 px-4 py-2 text-white bg-red-600 hover:bg-red-700 rounded-lg font-medium transition-colors">
+            Log Out
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <div class="min-h-screen p-4 md:p-6 lg:p-8">
     <div class="max-w-7xl mx-auto space-y-6">
       <!-- Header -->
@@ -49,6 +84,10 @@
           <button id="refreshBtn" class="inline-flex items-center px-3 py-2 border border-gray-300 rounded-md text-sm font-medium hover:bg-gray-50 transition-colors">
             <i data-lucide="refresh-cw" class="w-4 h-4 mr-2"></i>
             Refresh
+          </button>
+          <button id="logoutBtn" onclick="testLogout()" class="inline-flex items-center px-3 py-2 border border-red-200 text-red-600 hover:bg-red-50 rounded-md text-sm font-medium transition-colors">
+            <i data-lucide="log-out" class="w-4 h-4 mr-2"></i>
+            Log Out
           </button>
         </div>
       </div>
@@ -504,6 +543,80 @@
   </div>
 
   <script>
+    console.log('Dashboard script loaded');
+    
+    function testLogout() {
+      console.log('testLogout called!');
+      setTimeout(function() {
+        showLogoutModal();
+      }, 100);
+    }
+    
+    function showLogoutModal() {
+      console.log('showLogoutModal called');
+      const modal = document.getElementById('logoutModal');
+      const modalContent = document.getElementById('modalContent');
+      
+      if (!modal || !modalContent) {
+        console.error('Modal elements not found!');
+        return;
+      }
+      
+      modal.classList.remove('hidden');
+      modalContent.style.transform = 'scale(0.9)';
+      modalContent.style.opacity = '0';
+      
+      // Re-initialize lucide icons in modal
+      lucide.createIcons();
+      
+      // Animate in
+      setTimeout(() => {
+        modalContent.style.transform = 'scale(1)';
+        modalContent.style.opacity = '1';
+      }, 10);
+    }
+
+    function hideLogoutModal() {
+      console.log('hideLogoutModal called');
+      const modal = document.getElementById('logoutModal');
+      const modalContent = document.getElementById('modalContent');
+      
+      modalContent.style.transform = 'scale(0.9)';
+      modalContent.style.opacity = '0';
+      
+      setTimeout(() => {
+        modal.classList.add('hidden');
+      }, 150);
+    }
+
+    function performLogout() {
+      console.log('performLogout called');
+      // Create and submit logout form
+      const form = document.createElement('form');
+      form.method = 'POST';
+      form.action = '/logout';
+      
+      // Add CSRF token
+      const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+      if (csrfToken) {
+        const csrfInput = document.createElement('input');
+        csrfInput.type = 'hidden';
+        csrfInput.name = 'authenticity_token';
+        csrfInput.value = csrfToken;
+        form.appendChild(csrfInput);
+      }
+      
+      // Add method override for DELETE
+      const methodInput = document.createElement('input');
+      methodInput.type = 'hidden';
+      methodInput.name = '_method';
+      methodInput.value = 'delete';
+      form.appendChild(methodInput);
+      
+      document.body.appendChild(form);
+      form.submit();
+    }
+    
     lucide.createIcons();
 
     // Mock data
@@ -642,6 +755,166 @@
 
     // Update time every minute
     setInterval(updateLastUpdate, 60000);
+
+    // Initialize modal buttons
+    document.addEventListener('DOMContentLoaded', function() {
+      const cancelBtn = document.getElementById('cancelLogout');
+      const confirmBtn = document.getElementById('confirmLogout');
+      const modal = document.getElementById('logoutModal');
+      
+      if (cancelBtn) {
+        cancelBtn.addEventListener('click', hideLogoutModal);
+      }
+      
+      if (confirmBtn) {
+        confirmBtn.addEventListener('click', function() {
+          hideLogoutModal();
+          setTimeout(performLogout, 150);
+        });
+      }
+      
+      if (modal) {
+        modal.addEventListener('click', function(e) {
+          if (e.target === this) {
+            hideLogoutModal();
+          }
+        });
+      }
+      
+      // Close modal with Escape key
+      document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape' && modal && !modal.classList.contains('hidden')) {
+          hideLogoutModal();
+        }
+      });
+    });
+
+    function initializeLogoutModal() {
+      console.log('Initializing logout modal...');
+      
+      // Check if elements exist
+      const logoutBtn = document.getElementById('logoutBtn');
+      const cancelBtn = document.getElementById('cancelLogout');
+      const confirmBtn = document.getElementById('confirmLogout');
+      const modal = document.getElementById('logoutModal');
+      
+      console.log('Elements found:', {
+        logoutBtn: !!logoutBtn,
+        cancelBtn: !!cancelBtn,
+        confirmBtn: !!confirmBtn,
+        modal: !!modal
+      });
+      
+      console.log('logoutBtn element:', logoutBtn);
+      console.log('modal element:', modal);
+      
+      if (!logoutBtn) {
+        console.error('logoutBtn not found!');
+        return;
+      }
+      
+      if (!cancelBtn || !confirmBtn || !modal) {
+        console.error('Some modal elements not found!', {
+          cancelBtn: !!cancelBtn,
+          confirmBtn: !!confirmBtn,
+          modal: !!modal
+        });
+        return;
+      }
+
+      // Logout functions
+      function showLogoutModal() {
+        console.log('showLogoutModal called');
+        const modal = document.getElementById('logoutModal');
+        const modalContent = document.getElementById('modalContent');
+        
+        modal.classList.remove('hidden');
+        modalContent.style.transform = 'scale(0.9)';
+        modalContent.style.opacity = '0';
+        
+        // Re-initialize lucide icons in modal
+        lucide.createIcons();
+        
+        // Animate in
+        setTimeout(() => {
+          modalContent.style.transform = 'scale(1)';
+          modalContent.style.opacity = '1';
+        }, 10);
+      }
+
+      function hideLogoutModal() {
+        console.log('hideLogoutModal called');
+        const modal = document.getElementById('logoutModal');
+        const modalContent = document.getElementById('modalContent');
+        
+        modalContent.style.transform = 'scale(0.9)';
+        modalContent.style.opacity = '0';
+        
+        setTimeout(() => {
+          modal.classList.add('hidden');
+        }, 150);
+      }
+
+      function performLogout() {
+        console.log('performLogout called');
+        // Create and submit logout form
+        const form = document.createElement('form');
+        form.method = 'POST';
+        form.action = '/logout';
+        
+        // Add CSRF token
+        const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+        if (csrfToken) {
+          const csrfInput = document.createElement('input');
+          csrfInput.type = 'hidden';
+          csrfInput.name = 'authenticity_token';
+          csrfInput.value = csrfToken;
+          form.appendChild(csrfInput);
+        }
+        
+        // Add method override for DELETE
+        const methodInput = document.createElement('input');
+        methodInput.type = 'hidden';
+        methodInput.name = '_method';
+        methodInput.value = 'delete';
+        form.appendChild(methodInput);
+        
+        document.body.appendChild(form);
+        form.submit();
+      }
+
+      // Event listeners
+      logoutBtn.addEventListener('click', function() {
+        console.log('Logout button clicked');
+        showLogoutModal();
+      });
+
+      // Modal event listeners
+      cancelBtn.addEventListener('click', function() {
+        console.log('Cancel logout clicked');
+        hideLogoutModal();
+      });
+      
+      confirmBtn.addEventListener('click', function() {
+        console.log('Confirm logout clicked');
+        hideLogoutModal();
+        setTimeout(performLogout, 150);
+      });
+
+      // Close modal when clicking outside
+      modal.addEventListener('click', function(e) {
+        if (e.target === this) {
+          hideLogoutModal();
+        }
+      });
+
+      // Close modal with Escape key
+      document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape' && !modal.classList.contains('hidden')) {
+          hideLogoutModal();
+        }
+      });
+    }
   </script>
 </body>
 </html>

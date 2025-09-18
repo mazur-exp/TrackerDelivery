@@ -1,36 +1,37 @@
 Rails.application.routes.draw do
   # Root - главная страница лендинга DeliveryTracker
   root "landing#index"
-  
+
   # Authentication routes
-  resource :session, only: [:new, :create, :destroy]
+  resource :session, only: [ :new, :create, :destroy ]
   get "login" => "sessions#new"
   post "login" => "sessions#create"
   delete "logout" => "sessions#destroy"
-  
+
   # User registration
-  resources :users, only: [:new, :create]
+  resources :users, only: [ :new, :create ]
   get "signup" => "users#new"
   post "signup" => "users#create"
-  
+
   # Email confirmation
   get "email_confirmation" => "email_confirmations#show"
-  resources :email_confirmations, only: [:new, :create]
+  resources :email_confirmations, only: [ :new, :create ]
   get "resend_confirmation" => "email_confirmations#new"
   post "resend_confirmation" => "email_confirmations#create"
-  
+
   # Password reset
-  resources :passwords, param: :token, only: [:new, :create, :edit, :update]
+  resources :passwords, param: :token, only: [ :new, :create, :edit, :update ]
   get "forgot_password" => "passwords#new"
   post "forgot_password" => "passwords#create"
   get "reset_password" => "passwords#edit"
   patch "reset_password" => "passwords#update"
-  
+
   # Protected routes
   get "dashboard" => "dev#dashboard"
   get "onboarding" => "dev#onboarding"
 
   get "landing/index"
+  get "landing/test"
   get "index" => "landing#index"  # Для aidelivery.tech/index
 
   # Dev routes для новой версии с v0.dev
@@ -47,5 +48,4 @@ Rails.application.routes.draw do
   # Render dynamic PWA files from app/views/pwa/* (remember to link manifest in application.html.erb)
   # get "manifest" => "rails/pwa#manifest", as: :pwa_manifest
   # get "service-worker" => "rails/pwa#service_worker", as: :pwa_service_worker
-
 end

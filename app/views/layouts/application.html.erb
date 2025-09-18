@@ -30,25 +30,37 @@
     <% if flash.any? %>
       <div class="flash-messages">
         <% flash.each do |type, message| %>
-          <div class="flash-<%= type %> fixed top-4 left-1/2 transform -translate-x-1/2 z-50 max-w-md w-full mx-4 px-4 py-3 rounded-lg shadow-lg <%= type == 'notice' ? 'bg-green-50 border border-green-200 text-green-800' : 'bg-red-50 border border-red-200 text-red-800' %>" style="animation: slideInDown 0.3s ease-out;">
-            <div class="flex items-center justify-between">
-              <div class="flex items-center">
-                <% if type == 'notice' %>
-                  <svg class="w-5 h-5 mr-2 text-green-600" fill="currentColor" viewBox="0 0 20 20">
-                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path>
-                  </svg>
-                <% else %>
-                  <svg class="w-5 h-5 mr-2 text-red-600" fill="currentColor" viewBox="0 0 20 20">
-                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"></path>
-                  </svg>
-                <% end %>
-                <span class="text-sm font-medium"><%= message %></span>
+          <div class="flash-<%= type %> flash-message fixed z-50 <%= type == 'notice' ? 'bg-green-50 border-l-4 border-green-500' : 'bg-red-50 border-l-4 border-red-500' %> rounded-lg shadow-xl" style="animation: slideInDown 0.3s ease-out;">
+            <div class="p-4">
+              <div class="flex items-start">
+                <div class="flex-shrink-0">
+                  <% if type == 'notice' %>
+                    <div class="flex items-center justify-center w-8 h-8 bg-green-100 rounded-full">
+                      <svg class="w-5 h-5 text-green-600" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path>
+                      </svg>
+                    </div>
+                  <% else %>
+                    <div class="flex items-center justify-center w-8 h-8 bg-red-100 rounded-full">
+                      <svg class="w-5 h-5 text-red-600" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"></path>
+                      </svg>
+                    </div>
+                  <% end %>
+                </div>
+                <div class="ml-3 flex-1">
+                  <p class="text-sm font-semibold <%= type == 'notice' ? 'text-green-800' : 'text-red-800' %>">
+                    <%= message %>
+                  </p>
+                </div>
+                <div class="flex-shrink-0 ml-4">
+                  <button class="inline-flex text-gray-400 hover:text-gray-500 focus:outline-none transition-colors">
+                    <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                      <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd"></path>
+                    </svg>
+                  </button>
+                </div>
               </div>
-              <button onclick="this.parentElement.parentElement.remove()" class="ml-3 text-gray-400 hover:text-gray-600">
-                <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                  <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd"></path>
-                </svg>
-              </button>
             </div>
           </div>
         <% end %>
@@ -56,22 +68,113 @@
       
       <style>
         @keyframes slideInDown {
-          from { opacity: 0; transform: translate(-50%, -20px); }
-          to { opacity: 1; transform: translate(-50%, 0); }
+          from { 
+            opacity: 0; 
+            transform: translate(-50%, -20px) scale(0.95); 
+          }
+          to { 
+            opacity: 1; 
+            transform: translate(-50%, 0) scale(1); 
+          }
+        }
+        @keyframes slideOutUp {
+          from { 
+            opacity: 1; 
+            transform: translate(-50%, 0) scale(1); 
+          }
+          to { 
+            opacity: 0; 
+            transform: translate(-50%, -20px) scale(0.95); 
+          }
         }
         .flash-messages > div {
-          animation: slideInDown 0.3s ease-out;
+          animation: slideInDown 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        .flash-messages > div.removing {
+          animation: slideOutUp 0.3s cubic-bezier(0.16, 1, 0.3, 1);
         }
       </style>
       
       <script>
-        // Auto-hide flash messages after 5 seconds
+        // Position flash messages based on page layout
+        function positionFlashMessages() {
+          const flashMessages = document.querySelectorAll('.flash-message');
+          
+          // Check for various types of headers/navigation
+          const hasHeader = document.querySelector('nav, header, .header') || 
+                           document.querySelector('[class*="header"]') || 
+                           document.querySelector('.max-w-7xl') ||
+                           document.querySelector('.navbar') ||
+                           document.querySelector('[class*="nav"]') ||
+                           // Check for navigation menu items
+                           (document.querySelector('a[href*="pricing"]') && document.querySelector('a[href*="contact"]')) ||
+                           // Check for specific landing page elements
+                           document.querySelector('.flex.items-center.justify-between') ||
+                           // Check current page URL
+                           (window.location.pathname === '/' || window.location.pathname === '/index');
+          
+          flashMessages.forEach(function(flash) {
+            if (hasHeader) {
+              flash.style.top = '5rem'; // 80px for pages with header
+            } else {
+              flash.style.top = '1.5rem'; // 24px for pages without header (like login)
+            }
+            
+            // Perfect centering
+            flash.style.left = '50%';
+            flash.style.transform = 'translateX(-50%)';
+            flash.style.maxWidth = '28rem'; // 448px
+            flash.style.width = 'auto';
+            flash.style.minWidth = '20rem'; // 320px minimum
+            flash.style.margin = '0';
+            flash.style.padding = '0';
+            
+            // Ensure it doesn't go beyond screen edges on mobile
+            const viewportWidth = window.innerWidth;
+            if (viewportWidth < 480) {
+              flash.style.maxWidth = 'calc(100vw - 2rem)';
+              flash.style.left = '1rem';
+              flash.style.right = '1rem';
+              flash.style.transform = 'none';
+              flash.style.width = 'auto';
+            }
+          });
+        }
+        
+        // Position messages on page load
+        positionFlashMessages();
+        
+        // Reposition on window resize
+        window.addEventListener('resize', positionFlashMessages);
+
+        // Auto-hide flash messages after 6 seconds
         setTimeout(function() {
           document.querySelectorAll('.flash-messages > div').forEach(function(flash) {
-            flash.style.animation = 'slideInDown 0.3s ease-out reverse';
-            setTimeout(function() { flash.remove(); }, 300);
+            flash.classList.add('removing');
+            setTimeout(function() { 
+              if (flash.parentNode) {
+                flash.remove(); 
+              }
+            }, 300);
           });
-        }, 5000);
+        }, 6000);
+
+        // Smooth close animation for manual close
+        document.addEventListener('click', function(e) {
+          const button = e.target.closest('.flash-messages button');
+          if (button) {
+            e.preventDefault();
+            const flashMessage = button.closest('.flash-notice, .flash-alert');
+            if (flashMessage) {
+              flashMessage.classList.add('removing');
+              setTimeout(function() {
+                if (flashMessage.parentNode) {
+                  flashMessage.remove();
+                }
+              }, 300);
+            }
+          }
+        });
       </script>
     <% end %>
     

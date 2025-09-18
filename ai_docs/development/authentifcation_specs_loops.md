@@ -1,10 +1,10 @@
-# TrackerDelivery Rails 8 Authentication with Loops.so - WORKING IMPLEMENTATION
+# TrackerDelivery Rails 8 Authentication with Loops.so - WORKING IMPLEMENTATION v3.3
 
-This document provides the complete, tested, and working implementation of authentication for TrackerDelivery built with Ruby on Rails 8.0.2 using Loops.so. All code examples reflect the actual working system deployed and tested on September 14, 2025.
+This document provides the complete, tested, and working implementation of authentication for TrackerDelivery built with Ruby on Rails 8.0.2 using Loops.so. All code examples reflect the actual working system deployed and tested on September 16, 2025, including all critical fixes from version 3.3.
 
 **Status**: ✅ FULLY IMPLEMENTED AND TESTED
-**Last Updated**: September 14, 2025
-**Version**: Production Ready
+**Last Updated**: September 16, 2025
+**Version**: 3.3 - Production Ready with Fixes
 
 ## Table of Contents
 
@@ -22,7 +22,7 @@ This document provides the complete, tested, and working implementation of authe
 
 ## Overview
 
-### Architecture Components
+### Architecture Components (Version 3.3)
 
 - **Rails 8 built-in authentication** with `has_secure_password`
 - **Loops.so** for transactional email delivery (confirmation, password reset, welcome)
@@ -31,6 +31,9 @@ This document provides the complete, tested, and working implementation of authe
 - **Password reset** with secure tokens
 - **Rate limiting** for security
 - **Domain blacklist** validation
+- **Production-ready URL generation** with proper protocol detection
+- **Automatic audience management** in Loops.so
+- **Clean user messaging** without development mode references
 
 ### Key Differences from Resend
 
@@ -178,7 +181,7 @@ class User < ApplicationRecord
     send_email_confirmation!
   rescue => e
     Rails.logger.error "Failed to send email confirmation for user #{id}: #{e.message}"
-    Rails.logger.info "🔧 Development Mode: You can confirm your account by visiting: http://localhost:3001/email_confirmation?token=#{email_confirmation_token}"
+    Rails.logger.info "You can confirm your account by visiting: http://localhost:3001/email_confirmation?token=#{email_confirmation_token}"
     # Don't fail user creation if email fails - this is good for development
   end
 
@@ -230,7 +233,7 @@ end
 
 ## Email Service Implementation
 
-### Loops Email Service
+### Loops Email Service (v3.3 - FIXED AND PRODUCTION READY)
 
 ```ruby
 # app/services/loops_email_service.rb
@@ -240,10 +243,16 @@ class LoopsEmailService
   
   class << self
     def send_email_confirmation(user, token)
-      # Build URL manually since email_confirmation route doesn't have a named helper
-      host = Rails.application.config.action_mailer.default_url_options[:host] || 'localhost'
-      port = Rails.application.config.action_mailer.default_url_options[:port] || 3001
-      confirmation_url = "http://#{host}:#{port}/email_confirmation?token=#{token}"
+      # Build URL using proper Rails URL options with protocol detection
+      host = Rails.application.config.action_mailer.default_url_options[:host] || ENV['RAILS_HOST'] || 'localhost'
+      protocol = Rails.application.config.action_mailer.default_url_options[:protocol] || (Rails.env.production? ? 'https' : 'http')
+      port = Rails.application.config.action_mailer.default_url_options[:port]
+      
+      confirmation_url = if port && !Rails.env.production?
+        "#{protocol}://#{host}:#{port}/email_confirmation?token=#{token}"
+      else
+        "#{protocol}://#{host}/email_confirmation?token=#{token}"
+      end
       
       Rails.logger.info "Sending email confirmation to #{user.email_address} with URL: #{confirmation_url}"
       
@@ -253,15 +262,22 @@ class LoopsEmailService
         data_variables: {
           name: user.display_name,
           confirmationUrl: confirmation_url
-        }
+        },
+        add_to_audience: true  # FIXED: Automatically add users to Loops audience
       )
     end
     
     def send_password_reset(user, token)
-      # Build URL manually
-      host = Rails.application.config.action_mailer.default_url_options[:host] || 'localhost'
-      port = Rails.application.config.action_mailer.default_url_options[:port] || 3001
-      reset_url = "http://#{host}:#{port}/reset_password?token=#{token}"
+      # Build URL using proper Rails URL options with protocol detection
+      host = Rails.application.config.action_mailer.default_url_options[:host] || ENV['RAILS_HOST'] || 'localhost'
+      protocol = Rails.application.config.action_mailer.default_url_options[:protocol] || (Rails.env.production? ? 'https' : 'http')
+      port = Rails.application.config.action_mailer.default_url_options[:port]
+      
+      reset_url = if port && !Rails.env.production?
+        "#{protocol}://#{host}:#{port}/reset_password?token=#{token}"
+      else
+        "#{protocol}://#{host}/reset_password?token=#{token}"
+      end
       
       Rails.logger.info "Sending password reset to #{user.email_address} with URL: #{reset_url}"
       
@@ -276,10 +292,16 @@ class LoopsEmailService
     end
     
     def send_welcome_email(user)
-      # Build URL manually
-      host = Rails.application.config.action_mailer.default_url_options[:host] || 'localhost'
-      port = Rails.application.config.action_mailer.default_url_options[:port] || 3001
-      dashboard_url = "http://#{host}:#{port}/dashboard"
+      # Build URL using proper Rails URL options with protocol detection
+      host = Rails.application.config.action_mailer.default_url_options[:host] || ENV['RAILS_HOST'] || 'localhost'
+      protocol = Rails.application.config.action_mailer.default_url_options[:protocol] || (Rails.env.production? ? 'https' : 'http')
+      port = Rails.application.config.action_mailer.default_url_options[:port]
+      
+      dashboard_url = if port && !Rails.env.production?
+        "#{protocol}://#{host}:#{port}/dashboard"
+      else
+        "#{protocol}://#{host}/dashboard"
+      end
       
       Rails.logger.info "Sending welcome email to #{user.email_address}"
       
@@ -289,7 +311,8 @@ class LoopsEmailService
         data_variables: {
           name: user.display_name,
           dashboardUrl: dashboard_url
-        }
+        },
+        add_to_audience: true  # FIXED: Automatically add users to Loops audience
       )
     end
     
@@ -769,17 +792,21 @@ Rails.application.configure do
 end
 ```
 
-### Production Environment
+### Production Environment (v3.3 - VERIFIED WORKING)
 
 ```ruby
 # config/environments/production.rb
 Rails.application.configure do
-  # Default URL options for email links
-  config.action_mailer.default_url_options = { host: 'yourdomain.com' }
+  # Default URL options for email links - PRODUCTION VERIFIED
+  config.action_mailer.default_url_options = { host: "aidelivery.tech", protocol: "https" }
   
-  # Use Loops API
+  # Use Loops API directly (not SMTP)
   config.action_mailer.perform_deliveries = true
   config.action_mailer.raise_delivery_errors = false
+  
+  # SSL is forced for production
+  config.force_ssl = true
+  config.assume_ssl = true
 end
 ```
 
@@ -953,6 +980,45 @@ end
 - [ ] Test email delivery in production
 - [ ] Monitor Loops dashboard for delivery metrics
 - [ ] Set up error tracking for failed emails
+
+## Version 3.3 Key Fixes and Improvements
+
+### Critical Fixes Applied in v3.3
+
+1. **URL Generation Protocol Detection**
+   - **Issue**: Hardcoded `http://` protocol in email URLs causing issues in production
+   - **Fix**: Dynamic protocol detection using `Rails.env.production?` check
+   - **Code**: `protocol = Rails.application.config.action_mailer.default_url_options[:protocol] || (Rails.env.production? ? 'https' : 'http')`
+
+2. **Production Domain Configuration**
+   - **Issue**: Generic 'yourdomain.com' in production configuration
+   - **Fix**: Proper aidelivery.tech domain configuration with HTTPS
+   - **Code**: `config.action_mailer.default_url_options = { host: "aidelivery.tech", protocol: "https" }`
+
+3. **Loops.so Audience Management**
+   - **Issue**: Users not being automatically added to Loops audience
+   - **Fix**: Added `add_to_audience: true` parameter for email confirmation and welcome emails
+   - **Impact**: Better email deliverability and user segmentation in Loops dashboard
+
+4. **User Experience Improvements**
+   - **Issue**: Development mode references in user-facing messages
+   - **Fix**: Removed "🔧 Development Mode:" prefix from fallback messages
+   - **Result**: Cleaner, production-ready user messaging
+
+5. **Onboarding Flow Corrections**
+   - **Issue**: Incorrect redirect from `/onboarding` to `/dash/dashboard`
+   - **Fix**: Proper redirect to `/dashboard` route
+   - **Code**: Updated Authentication concern `after_authentication_url` method
+
+### Deployment Verification
+
+All fixes have been tested and verified on production environment:
+- **Domain**: aidelivery.tech
+- **SSL**: HTTPS enforced
+- **Email Delivery**: Verified working with Loops.so
+- **User Registration Flow**: End-to-end tested
+- **Password Reset**: Verified working
+- **URL Generation**: Proper HTTPS URLs in production
 
 ## Common Issues and Solutions
 

@@ -85,6 +85,10 @@
             <i data-lucide="refresh-cw" class="w-4 h-4 mr-2"></i>
             Refresh
           </button>
+          <button id="addRestaurantBtn" class="inline-flex items-center px-3 py-2 border border-green-200 text-green-600 hover:bg-green-50 rounded-md text-sm font-medium transition-colors">
+            <i data-lucide="plus" class="w-4 h-4 mr-2"></i>
+            Add Restaurant
+          </button>
           <button id="logoutBtn" onclick="testLogout()" class="inline-flex items-center px-3 py-2 border border-red-200 text-red-600 hover:bg-red-50 rounded-md text-sm font-medium transition-colors">
             <i data-lucide="log-out" class="w-4 h-4 mr-2"></i>
             Log Out
@@ -755,6 +759,12 @@
 
     // Update time every minute
     setInterval(updateLastUpdate, 60000);
+
+    // Add Restaurant button handler
+    document.getElementById('addRestaurantBtn').addEventListener('click', function() {
+      console.log('Add Restaurant button clicked');
+      window.location.href = '/onboarding';
+    });
 
     // Initialize modal buttons
     document.addEventListener('DOMContentLoaded', function() {

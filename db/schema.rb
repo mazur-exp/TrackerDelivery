@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2025_09_18_072629) do
+ActiveRecord::Schema[8.0].define(version: 2025_09_18_090512) do
   create_table "email_domain_blacklists", force: :cascade do |t|
     t.string "domain"
     t.string "reason"
@@ -20,7 +20,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_09_18_072629) do
   end
 
   create_table "notification_contacts", force: :cascade do |t|
-    t.integer "user_id", null: false
+    t.integer "restaurant_id", null: false
     t.string "contact_type", null: false
     t.string "contact_value", null: false
     t.boolean "is_primary", default: false
@@ -28,10 +28,10 @@ ActiveRecord::Schema[8.0].define(version: 2025_09_18_072629) do
     t.boolean "is_active", default: true
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
-    t.index ["user_id", "contact_type", "is_primary"], name: "index_notification_contacts_on_user_type_primary"
-    t.index ["user_id", "contact_type"], name: "index_notification_contacts_on_user_id_and_contact_type"
-    t.index ["user_id", "is_primary"], name: "index_notification_contacts_on_user_id_and_is_primary"
-    t.index ["user_id"], name: "index_notification_contacts_on_user_id"
+    t.index ["restaurant_id", "contact_type", "is_primary"], name: "index_notification_contacts_on_restaurant_type_primary"
+    t.index ["restaurant_id", "contact_type"], name: "index_notification_contacts_on_restaurant_id_and_contact_type"
+    t.index ["restaurant_id", "is_primary"], name: "index_notification_contacts_on_restaurant_id_and_is_primary"
+    t.index ["restaurant_id"], name: "index_notification_contacts_on_restaurant_id"
   end
 
   create_table "restaurants", force: :cascade do |t|
@@ -75,7 +75,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_09_18_072629) do
     t.index ["password_reset_token"], name: "index_users_on_password_reset_token", unique: true
   end
 
-  add_foreign_key "notification_contacts", "users"
+  add_foreign_key "notification_contacts", "restaurants"
   add_foreign_key "restaurants", "users"
   add_foreign_key "sessions", "users"
 end

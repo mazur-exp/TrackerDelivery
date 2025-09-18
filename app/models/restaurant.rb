@@ -1,5 +1,6 @@
 class Restaurant < ApplicationRecord
   belongs_to :user
+  has_many :notification_contacts, dependent: :destroy
   
   # Validations
   validates :name, presence: true, length: { minimum: 2, maximum: 100 }
@@ -38,6 +39,35 @@ class Restaurant < ApplicationRecord
     # This would be implemented with actual URL parsing logic
     # For now, return a placeholder
     "Restaurant from URLs"
+  end
+  
+  # Notification contact methods
+  def all_whatsapp_contacts
+    notification_contacts.where(contact_type: 'whatsapp').active.ordered.pluck(:contact_value)
+  end
+
+  def all_telegram_contacts
+    notification_contacts.where(contact_type: 'telegram').active.ordered.pluck(:contact_value)
+  end
+
+  def all_email_contacts
+    notification_contacts.where(contact_type: 'email').active.ordered.pluck(:contact_value)
+  end
+
+  def has_required_contacts?
+    has_whatsapp_contact? || has_telegram_contact?
+  end
+
+  def has_whatsapp_contact?
+    notification_contacts.where(contact_type: 'whatsapp').active.exists?
+  end
+
+  def has_telegram_contact?
+    notification_contacts.where(contact_type: 'telegram').active.exists?
+  end
+
+  def has_email_contact?
+    notification_contacts.where(contact_type: 'email').active.exists?
   end
   
   private

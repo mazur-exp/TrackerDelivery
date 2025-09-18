@@ -1,9 +1,9 @@
-# TrackerDelivery Project Architecture v3.0
-*Last Updated: September 13, 2024*
+# TrackerDelivery Project Architecture v3.4
+*Last Updated: September 18, 2025*
 
 ## 🏗️ Executive Summary
 
-TrackerDelivery v3.0 features a streamlined Rails 8 architecture optimized for restaurant monitoring functionality. The architecture emphasizes simplicity, maintainability, and rapid feature development, with a clean separation between frontend presentation and planned backend monitoring services.
+TrackerDelivery v3.4 features a streamlined Rails 8 architecture optimized for restaurant monitoring functionality with a comprehensive notification system. The architecture emphasizes simplicity, maintainability, and rapid feature development, now enhanced with multi-contact notification management and robust restaurant onboarding capabilities.
 
 ## 🎯 Architecture Philosophy
 
@@ -27,20 +27,31 @@ graph TB
     B --> C[Landing Controller]
     B --> D[Dash Controller] 
     B --> E[Dev Controller]
+    B --> F[Restaurants Controller]
     
-    C --> F[Landing Views]
-    D --> G[Dashboard Views]
-    E --> H[Development Views]
+    C --> G[Landing Views]
+    D --> H[Dashboard Views]
+    E --> I[Development Views]
+    F --> J[Restaurant Management]
     
-    F --> I[TailwindCSS + Lucide]
-    G --> I
-    H --> I
+    G --> K[TailwindCSS + Lucide]
+    H --> K
+    I --> K
+    J --> K
     
-    I --> J[Static Assets]
+    K --> L[Static Assets]
     
-    K[Future: Restaurant Monitoring API] -.-> D
-    L[Future: Authentication System] -.-> B
-    M[Future: Database Models] -.-> K
+    F --> M[User Model]
+    F --> N[Restaurant Model]
+    F --> O[NotificationContact Model]
+    
+    M --> P[SQLite Database]
+    N --> P
+    O --> P
+    
+    Q[Future: Platform Monitoring API] -.-> D
+    R[Authentication System] --> B
+    S[Notification System] --> O
 ```
 
 ## 📁 Application Structure
@@ -53,9 +64,13 @@ TrackerDelivery/
 │   │   ├── application_controller.rb
 │   │   ├── landing_controller.rb
 │   │   ├── dash_controller.rb
-│   │   └── dev_controller.rb
+│   │   ├── dev_controller.rb
+│   │   └── restaurants_controller.rb
 │   ├── models/
-│   │   └── application_record.rb
+│   │   ├── application_record.rb
+│   │   ├── user.rb
+│   │   ├── restaurant.rb
+│   │   └── notification_contact.rb
 │   ├── views/
 │   │   ├── landing/
 │   │   ├── dash/
@@ -64,7 +79,13 @@ TrackerDelivery/
 │   └── helpers/
 ├── config/
 ├── db/
-│   └── (empty - post v3.0 cleanup)
+│   ├── migrate/
+│   │   ├── [timestamp]_devise_create_users.rb
+│   │   ├── [timestamp]_create_sessions.rb
+│   │   ├── [timestamp]_create_restaurants.rb
+│   │   ├── [timestamp]_create_notification_contacts.rb
+│   │   └── [timestamp]_add_fields_to_restaurants.rb
+│   └── schema.rb
 ├── ai_docs/
 │   ├── business/
 │   ├── development/
@@ -170,26 +191,33 @@ end
 
 ## 🗄️ Data Architecture
 
-### Current State (v3.0)
-**Database**: SQLite3 with empty schema post-authentication cleanup
+### Current State (v3.4)
+**Database**: SQLite3 with comprehensive user, restaurant, and notification management
 
 ```sql
--- Current database state
--- (Empty after v3.0 authentication removal)
--- Ready for v3.1 restaurant monitoring schema
-```
+-- Current implemented schema (v3.4)
 
-### Planned Schema (v3.1+)
-
-```sql
--- Planned database architecture for v3.1
-
--- Users table (authentication system redesign)
+-- Users table (authentication system)
 CREATE TABLE users (
   id INTEGER PRIMARY KEY,
-  email VARCHAR(255) NOT NULL UNIQUE,
-  name VARCHAR(255) NOT NULL,
-  encrypted_password VARCHAR(255),
+  name VARCHAR(255),
+  email_address VARCHAR(255) NOT NULL UNIQUE,
+  password_digest VARCHAR(255),
+  email_confirmed_at TIMESTAMP NULL,
+  email_confirmation_token VARCHAR(255),
+  email_confirmation_sent_at TIMESTAMP,
+  password_reset_token VARCHAR(255),
+  password_reset_sent_at TIMESTAMP,
+  created_at TIMESTAMP,
+  updated_at TIMESTAMP
+);
+
+-- Sessions table (authentication sessions)
+CREATE TABLE sessions (
+  id INTEGER PRIMARY KEY,
+  user_id INTEGER REFERENCES users(id),
+  user_agent TEXT,
+  ip_address VARCHAR(255),
   created_at TIMESTAMP,
   updated_at TIMESTAMP
 );
@@ -199,22 +227,53 @@ CREATE TABLE restaurants (
   id INTEGER PRIMARY KEY,
   user_id INTEGER REFERENCES users(id),
   name VARCHAR(255) NOT NULL,
+  grab_url TEXT,
+  gojek_url TEXT,
   address TEXT,
   phone VARCHAR(50),
   cuisine_type VARCHAR(100),
-  status VARCHAR(50) DEFAULT 'active',
   created_at TIMESTAMP,
   updated_at TIMESTAMP
 );
 
--- Platform integrations (GrabFood, GoFood URLs)
-CREATE TABLE platform_integrations (
+-- Notification contacts table (NEW in v3.4)
+CREATE TABLE notification_contacts (
+  id INTEGER PRIMARY KEY,
+  user_id INTEGER REFERENCES users(id) NOT NULL,
+  contact_type VARCHAR(50) NOT NULL, -- 'whatsapp', 'telegram', 'email'
+  contact_value VARCHAR(255) NOT NULL, -- phone, username, email
+  is_primary BOOLEAN DEFAULT false, -- first added = primary
+  priority_order INTEGER, -- order for priority determination
+  is_active BOOLEAN DEFAULT true, -- active status
+  created_at TIMESTAMP,
+  updated_at TIMESTAMP
+);
+
+-- Performance indexes for notification contacts
+CREATE INDEX index_notification_contacts_on_user_id_and_contact_type 
+ON notification_contacts(user_id, contact_type);
+
+CREATE INDEX index_notification_contacts_on_user_id_and_is_primary 
+ON notification_contacts(user_id, is_primary);
+
+CREATE INDEX index_notification_contacts_on_user_type_primary 
+ON notification_contacts(user_id, contact_type, is_primary);
+```
+
+### Planned Schema Extensions (v3.5+)
+
+```sql
+-- Planned extensions for monitoring system (v3.5+)
+
+-- Platform status monitoring
+CREATE TABLE platform_status_checks (
   id INTEGER PRIMARY KEY,
   restaurant_id INTEGER REFERENCES restaurants(id),
-  platform VARCHAR(100) NOT NULL, -- 'grabfood', 'gofood'
-  platform_url TEXT NOT NULL,
+  platform VARCHAR(100) NOT NULL, -- 'grab', 'gojek'
+  status VARCHAR(50) NOT NULL, -- 'online', 'offline', 'unknown'
   last_checked_at TIMESTAMP,
-  status VARCHAR(50) DEFAULT 'active',
+  response_time_ms INTEGER,
+  error_message TEXT,
   created_at TIMESTAMP,
   updated_at TIMESTAMP
 );
@@ -227,7 +286,21 @@ CREATE TABLE alerts (
   severity VARCHAR(50) DEFAULT 'medium', -- 'low', 'medium', 'high'
   title VARCHAR(255) NOT NULL,
   description TEXT,
+  notification_sent_at TIMESTAMP NULL,
   resolved_at TIMESTAMP NULL,
+  created_at TIMESTAMP,
+  updated_at TIMESTAMP
+);
+
+-- Alert delivery tracking
+CREATE TABLE alert_deliveries (
+  id INTEGER PRIMARY KEY,
+  alert_id INTEGER REFERENCES alerts(id),
+  notification_contact_id INTEGER REFERENCES notification_contacts(id),
+  delivery_status VARCHAR(50) DEFAULT 'pending', -- 'pending', 'sent', 'delivered', 'failed'
+  sent_at TIMESTAMP NULL,
+  delivered_at TIMESTAMP NULL,
+  error_message TEXT,
   created_at TIMESTAMP,
   updated_at TIMESTAMP
 );

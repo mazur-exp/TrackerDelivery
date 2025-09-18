@@ -2,7 +2,7 @@ class User < ApplicationRecord
   has_secure_password
   has_many :sessions, dependent: :destroy
   has_many :restaurants, dependent: :destroy
-  has_many :notification_contacts, dependent: :destroy
+  has_many :notification_contacts, through: :restaurants
 
   # Validations
   validates :email_address, presence: true,
@@ -85,29 +85,33 @@ class User < ApplicationRecord
     destroyed_count
   end
 
-  # Notification contact methods
+  # Notification contact methods - get from latest restaurant
+  def latest_restaurant
+    restaurants.order(created_at: :desc).first
+  end
+
   def primary_whatsapp
-    notification_contacts.where(contact_type: 'whatsapp', is_primary: true).first&.contact_value
+    latest_restaurant&.notification_contacts&.where(contact_type: 'whatsapp', is_primary: true)&.first&.contact_value
   end
 
   def primary_telegram
-    notification_contacts.where(contact_type: 'telegram', is_primary: true).first&.contact_value
+    latest_restaurant&.notification_contacts&.where(contact_type: 'telegram', is_primary: true)&.first&.contact_value
   end
 
   def primary_email_contact
-    notification_contacts.where(contact_type: 'email', is_primary: true).first&.contact_value
+    latest_restaurant&.notification_contacts&.where(contact_type: 'email', is_primary: true)&.first&.contact_value
   end
 
   def all_whatsapp_contacts
-    notification_contacts.where(contact_type: 'whatsapp').active.ordered.pluck(:contact_value)
+    latest_restaurant&.all_whatsapp_contacts || []
   end
 
   def all_telegram_contacts
-    notification_contacts.where(contact_type: 'telegram').active.ordered.pluck(:contact_value)
+    latest_restaurant&.all_telegram_contacts || []
   end
 
   def all_email_contacts
-    notification_contacts.where(contact_type: 'email').active.ordered.pluck(:contact_value)
+    latest_restaurant&.all_email_contacts || []
   end
 
   def has_required_contacts?
@@ -115,15 +119,15 @@ class User < ApplicationRecord
   end
 
   def has_whatsapp_contact?
-    notification_contacts.where(contact_type: 'whatsapp').active.exists?
+    latest_restaurant&.has_whatsapp_contact? || false
   end
 
   def has_telegram_contact?
-    notification_contacts.where(contact_type: 'telegram').active.exists?
+    latest_restaurant&.has_telegram_contact? || false
   end
 
   def has_email_contact?
-    notification_contacts.where(contact_type: 'email').active.exists?
+    latest_restaurant&.has_email_contact? || false
   end
 
   private

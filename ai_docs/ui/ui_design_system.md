@@ -17,11 +17,12 @@ TrackerDelivery's design system is built on principles of **clean monitoring**, 
 - Border-based separation instead of heavy shadows
 
 ### 3. **Status-Driven Color Palette**
-- Primary: Green-600 (#16A34A) for active/online states
-- Success: Green tones for positive metrics
-- Warning: Yellow for busy/attention states
+- **Primary: Green-600 (#16A34A)** - THE MAIN BRAND COLOR for all primary actions, buttons, and active states
+- Success: Green tones for positive metrics and confirmations
+- Warning: Yellow for busy/attention states  
 - Error: Red for offline/critical states
-- Info: Blue/Purple for neutral information
+- Info: Blue/Purple ONLY for neutral information (never for primary actions)
+- **IMPORTANT**: All primary UI elements (buttons, notifications, highlights) MUST use green (#16A34A), NOT blue
 
 ### 4. **Functional Spacing**
 - Dashboard-friendly padding: p-6 for cards, p-4 for internal elements
@@ -310,6 +311,53 @@ TrackerDelivery's design system is built on principles of **clean monitoring**, 
 
 <!-- Step indicators -->
 <div class="w-4 h-4 bg-green-600 rounded-full ring-4 ring-green-600/20"></div>
+```
+
+## 🔔 Notification Components
+
+### **Auto-Correction Notifications**
+For onboarding forms with automatic URL detection and correction:
+
+```html
+<!-- Green notification for system actions (URL moved, etc.) -->
+<div class="fixed top-4 right-4 bg-green-600 text-white px-4 py-2 rounded-lg shadow-lg z-50 animate-pulse">
+  URL automatically moved to GoFood field
+</div>
+```
+
+### **Notification Styling Guidelines**
+```css
+/* Primary notifications: system actions, confirmations */
+.notification-primary { @apply bg-green-600 text-white; }
+
+/* Success notifications: completed actions */  
+.notification-success { @apply bg-green-500 text-white; }
+
+/* Warning notifications: attention required */
+.notification-warning { @apply bg-yellow-500 text-white; }
+
+/* Error notifications: critical issues */
+.notification-error { @apply bg-red-500 text-white; }
+```
+
+### **Button Color Guidelines**
+```css
+/* Primary action buttons - ALWAYS GREEN */
+.btn-primary { 
+  @apply bg-green-600 hover:bg-green-700 text-white border-green-600;
+}
+
+/* Secondary buttons - gray/neutral */
+.btn-secondary { 
+  @apply bg-gray-100 hover:bg-gray-200 text-gray-700 border-gray-300;
+}
+
+/* Danger buttons - red for destructive actions */
+.btn-danger { 
+  @apply bg-red-600 hover:bg-red-700 text-white border-red-600;
+}
+
+/* NEVER use blue for primary buttons - blue is only for info/neutral states */
 ```
 
 ## 📱 Responsive Design

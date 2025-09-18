@@ -1,5 +1,5 @@
 class NotificationContact < ApplicationRecord
-  belongs_to :user
+  belongs_to :restaurant
   
   # Constants
   CONTACT_TYPES = %w[whatsapp telegram email].freeze
@@ -8,7 +8,7 @@ class NotificationContact < ApplicationRecord
   # Validations
   validates :contact_type, presence: true, inclusion: { in: CONTACT_TYPES }
   validates :contact_value, presence: true
-  validates :user_id, presence: true
+  validates :restaurant_id, presence: true
   validate :valid_contact_format
   validate :max_contacts_per_type_limit
   
@@ -25,7 +25,7 @@ class NotificationContact < ApplicationRecord
   scope :ordered, -> { order(:priority_order) }
   
   # Class methods
-  def self.create_contacts_from_string(user, contact_type, contact_string)
+  def self.create_contacts_from_string(restaurant, contact_type, contact_string)
     return [] if contact_string.blank?
     
     contacts = parse_contact_string(contact_string)
@@ -34,7 +34,7 @@ class NotificationContact < ApplicationRecord
     contacts.each_with_index do |contact_value, index|
       next if contact_value.blank?
       
-      contact = user.notification_contacts.build(
+      contact = restaurant.notification_contacts.build(
         contact_type: contact_type,
         contact_value: normalize_contact_value(contact_value, contact_type)
       )
@@ -128,7 +128,7 @@ class NotificationContact < ApplicationRecord
   end
   
   def max_contacts_per_type_limit
-    existing_count = user.notification_contacts
+    existing_count = restaurant.notification_contacts
                         .where(contact_type: contact_type)
                         .where.not(id: id)
                         .count
@@ -139,14 +139,14 @@ class NotificationContact < ApplicationRecord
   end
   
   def set_priority_order
-    last_priority = user.notification_contacts
+    last_priority = restaurant.notification_contacts
                        .where(contact_type: contact_type)
                        .maximum(:priority_order) || 0
     self.priority_order = last_priority + 1
   end
   
   def set_primary_if_first
-    if user.notification_contacts.where(contact_type: contact_type).empty?
+    if restaurant.notification_contacts.where(contact_type: contact_type).empty?
       self.is_primary = true
     end
   end
@@ -154,7 +154,7 @@ class NotificationContact < ApplicationRecord
   def ensure_only_one_primary_per_type
     if is_primary?
       # Ensure no other contact of same type is primary
-      user.notification_contacts
+      restaurant.notification_contacts
           .where(contact_type: contact_type)
           .where.not(id: id)
           .update_all(is_primary: false)

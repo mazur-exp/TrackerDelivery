@@ -2,7 +2,7 @@ class RestaurantsController < ApplicationController
   before_action :require_authentication
   
   def create
-    contact_errors = []
+    @contact_errors = []
     
     ActiveRecord::Base.transaction do
       # Create restaurant
@@ -18,51 +18,78 @@ class RestaurantsController < ApplicationController
       
       # Create notification contacts
       
-      # Create WhatsApp contacts
+      # Create WhatsApp contacts (skip if they already exist)
       if params[:whatsapp_contacts].present?
         params[:whatsapp_contacts].each do |contact_value|
-          contact = current_user.notification_contacts.build(
-            contact_type: 'whatsapp',
-            contact_value: contact_value.strip
+          normalized_value = contact_value.strip
+          # Check if contact already exists for this restaurant
+          existing_contact = @restaurant.notification_contacts.find_by(
+            contact_type: 'whatsapp', 
+            contact_value: normalized_value
           )
-          unless contact.save
-            contact_errors.concat(contact.errors.full_messages)
+          
+          unless existing_contact
+            contact = @restaurant.notification_contacts.build(
+              contact_type: 'whatsapp',
+              contact_value: normalized_value
+            )
+            unless contact.save
+              @contact_errors.concat(contact.errors.full_messages)
+            end
           end
         end
       end
       
-      # Create Telegram contacts
+      # Create Telegram contacts (skip if they already exist)
       if params[:telegram_contacts].present?
         params[:telegram_contacts].each do |contact_value|
-          contact = current_user.notification_contacts.build(
-            contact_type: 'telegram',
-            contact_value: contact_value.strip
+          normalized_value = contact_value.strip
+          # Check if contact already exists for this restaurant
+          existing_contact = @restaurant.notification_contacts.find_by(
+            contact_type: 'telegram', 
+            contact_value: normalized_value
           )
-          unless contact.save
-            contact_errors.concat(contact.errors.full_messages)
+          
+          unless existing_contact
+            contact = @restaurant.notification_contacts.build(
+              contact_type: 'telegram',
+              contact_value: normalized_value
+            )
+            unless contact.save
+              @contact_errors.concat(contact.errors.full_messages)
+            end
           end
         end
       end
       
-      # Create Email contacts
+      # Create Email contacts (skip if they already exist)
       if params[:email_contacts].present?
         params[:email_contacts].each do |contact_value|
-          contact = current_user.notification_contacts.build(
-            contact_type: 'email',
-            contact_value: contact_value.strip
+          normalized_value = contact_value.strip
+          # Check if contact already exists for this restaurant
+          existing_contact = @restaurant.notification_contacts.find_by(
+            contact_type: 'email', 
+            contact_value: normalized_value
           )
-          unless contact.save
-            contact_errors.concat(contact.errors.full_messages)
+          
+          unless existing_contact
+            contact = @restaurant.notification_contacts.build(
+              contact_type: 'email',
+              contact_value: normalized_value
+            )
+            unless contact.save
+              @contact_errors.concat(contact.errors.full_messages)
+            end
           end
         end
       end
       
-      # Validate that user has required contacts
-      unless current_user.has_required_contacts?
-        contact_errors << "At least one WhatsApp or Telegram contact is required"
+      # Validate that restaurant has required contacts
+      unless @restaurant.has_required_contacts?
+        @contact_errors << "At least one WhatsApp or Telegram contact is required"
       end
       
-      if contact_errors.any?
+      if @contact_errors.any?
         raise ActiveRecord::Rollback
       end
       
@@ -71,9 +98,9 @@ class RestaurantsController < ApplicationController
         message: "Restaurant and notification contacts added successfully!",
         restaurant: @restaurant,
         contacts: {
-          whatsapp: current_user.all_whatsapp_contacts,
-          telegram: current_user.all_telegram_contacts,
-          email: current_user.all_email_contacts
+          whatsapp: @restaurant.all_whatsapp_contacts,
+          telegram: @restaurant.all_telegram_contacts,
+          email: @restaurant.all_email_contacts
         },
         redirect_url: dashboard_path
       }
@@ -82,7 +109,7 @@ class RestaurantsController < ApplicationController
     Rails.logger.error "Error creating restaurant: #{e.message}"
     render json: { 
       success: false, 
-      errors: contact_errors.presence || ["An error occurred while creating the restaurant"] 
+      errors: @contact_errors.presence || ["An error occurred while creating the restaurant"] 
     }, status: :unprocessable_entity
   end
   

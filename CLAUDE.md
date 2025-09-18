@@ -63,3 +63,4 @@ Key design principles:
 2. Follow the established TailwindCSS design system
 3. Use Rails 8 conventions and Omakase RuboCop styling
 4. Run quality checks before commits: `bin/rubocop`, `bin/brakeman`, `bin/rails test`
+- общайся со мной на русском

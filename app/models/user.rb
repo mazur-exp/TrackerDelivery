@@ -1,23 +1,23 @@
+
 class User < ApplicationRecord
   has_secure_password
   has_many :sessions, dependent: :destroy
   has_many :restaurants, dependent: :destroy
-  has_many :notification_contacts, through: :restaurants
 
   # Validations
-  validates :email_address, presence: true,
-            uniqueness: { case_sensitive: false },
+  validates :email_address, presence: true, 
+            uniqueness: { case_sensitive: false }, 
             format: { with: URI::MailTo::EMAIL_REGEXP }
   validates :password, length: { minimum: 8 }, if: :password_required?
-
+  
   # Normalization
   normalizes :email_address, with: ->(e) { e.strip.downcase }
-
+  
   # Token generation
   generates_token_for :password_reset, expires_in: 2.hours do
     password_salt&.last(10)
   end
-
+  
   generates_token_for :email_confirmation, expires_in: 24.hours do
     email_address
   end
@@ -68,84 +68,12 @@ class User < ApplicationRecord
 
   # Display name helper
   def display_name
-    name.present? ? name : email_address.split("@").first.capitalize
+    name.present? ? name : email_address.split('@').first.capitalize
   end
 
   # Check if user has any restaurants configured
   def has_restaurants?
     restaurants.exists?
-  end
-
-  # Terminate all sessions except the current one
-  def terminate_other_sessions!(current_session = nil)
-    sessions_to_destroy = current_session ? sessions.where.not(id: current_session.id) : sessions
-    destroyed_count = sessions_to_destroy.count
-    sessions_to_destroy.destroy_all
-    Rails.logger.info "Terminated #{destroyed_count} sessions for user #{id}"
-    destroyed_count
-  end
-
-  # Notification contact methods - get from latest restaurant
-  def latest_restaurant
-    restaurants.order(created_at: :desc).first
-  end
-
-  def primary_whatsapp
-    latest_restaurant&.notification_contacts&.where(contact_type: 'whatsapp', is_primary: true)&.first&.contact_value
-  end
-
-  def primary_telegram
-    latest_restaurant&.notification_contacts&.where(contact_type: 'telegram', is_primary: true)&.first&.contact_value
-  end
-
-  def primary_email_contact
-    latest_restaurant&.notification_contacts&.where(contact_type: 'email', is_primary: true)&.first&.contact_value
-  end
-
-  def all_whatsapp_contacts
-    # Собираем уникальные WhatsApp контакты от всех ресторанов пользователя
-    restaurants.joins(:notification_contacts)
-              .where(notification_contacts: { contact_type: 'whatsapp', is_active: true })
-              .pluck('notification_contacts.contact_value')
-              .uniq
-  end
-
-  def all_telegram_contacts
-    # Собираем уникальные Telegram контакты от всех ресторанов пользователя
-    restaurants.joins(:notification_contacts)
-              .where(notification_contacts: { contact_type: 'telegram', is_active: true })
-              .pluck('notification_contacts.contact_value')
-              .uniq
-  end
-
-  def all_email_contacts
-    # Собираем уникальные Email контакты от всех ресторанов пользователя
-    restaurants.joins(:notification_contacts)
-              .where(notification_contacts: { contact_type: 'email', is_active: true })
-              .pluck('notification_contacts.contact_value')
-              .uniq
-  end
-
-  def has_required_contacts?
-    has_whatsapp_contact? || has_telegram_contact?
-  end
-
-  def has_whatsapp_contact?
-    restaurants.joins(:notification_contacts)
-              .where(notification_contacts: { contact_type: 'whatsapp', is_active: true })
-              .exists?
-  end
-
-  def has_telegram_contact?
-    restaurants.joins(:notification_contacts)
-              .where(notification_contacts: { contact_type: 'telegram', is_active: true })
-              .exists?
-  end
-
-  def has_email_contact?
-    restaurants.joins(:notification_contacts)
-              .where(notification_contacts: { contact_type: 'email', is_active: true })
-              .exists?
   end
 
   private
@@ -175,7 +103,7 @@ class User < ApplicationRecord
 
   def email_domain_not_blacklisted
     return if email_address.blank?
-
+    
     if EmailDomainBlacklist.blacklisted?(email_address)
       domain = EmailDomainBlacklist.extract_domain(email_address)
       errors.add(:email_address, "This email domain (#{domain}) is not supported.")

@@ -1,39 +1,48 @@
-# TrackerDelivery Rails 8 Authentication with Loops.so - WORKING IMPLEMENTATION v3.3
+# TrackerDelivery Rails 8 Authentication with Loops.so - WORKING IMPLEMENTATION v3.4
 
-This document provides the complete, tested, and working implementation of authentication for TrackerDelivery built with Ruby on Rails 8.0.2 using Loops.so. All code examples reflect the actual working system deployed and tested on September 16, 2025, including all critical fixes from version 3.3.
+This document provides the complete, tested, and working implementation of authentication for TrackerDelivery built with Ruby on Rails 8.0.2 using Loops.so. All code examples reflect the actual working system deployed and tested on September 18, 2025, including all major enhancements from version 3.4.
 
 **Status**: ✅ FULLY IMPLEMENTED AND TESTED
-**Last Updated**: September 16, 2025
-**Version**: 3.3 - Production Ready with Fixes
+**Last Updated**: September 18, 2025
+**Version**: 3.4 - Production Ready with Session Management & UI/UX Enhancements
 
 ## Table of Contents
 
 1. [Overview](#overview)
-2. [Prerequisites](#prerequisites)
-3. [Loops.so Setup](#loopsso-setup)
-4. [Core Models](#core-models)
-5. [Email Service Implementation](#email-service-implementation)
-6. [Authentication Controllers](#authentication-controllers)
-7. [Transactional Email Templates](#transactional-email-templates)
-8. [Route Configuration](#route-configuration)
-9. [Environment Configuration](#environment-configuration)
-10. [Testing](#testing)
-11. [Implementation Checklist](#implementation-checklist)
+2. [What's New in v3.4](#whats-new-in-v34)
+3. [Prerequisites](#prerequisites)
+4. [Loops.so Setup](#loopsso-setup)
+5. [Core Models](#core-models)
+6. [Session Management & Security](#session-management--security)
+7. [Email Service Implementation](#email-service-implementation)
+8. [Authentication Controllers](#authentication-controllers)
+9. [Smart Redirect Logic](#smart-redirect-logic)
+10. [Flash Message System](#flash-message-system)
+11. [Logout with Confirmation Modal](#logout-with-confirmation-modal)
+12. [Transactional Email Templates](#transactional-email-templates)
+13. [Route Configuration](#route-configuration)
+14. [Environment Configuration](#environment-configuration)
+15. [Testing](#testing)
+16. [Troubleshooting v3.4 Features](#troubleshooting-v34-features)
+17. [Implementation Checklist](#implementation-checklist)
 
 ## Overview
 
-### Architecture Components (Version 3.3)
+### Architecture Components (Version 3.4)
 
 - **Rails 8 built-in authentication** with `has_secure_password`
 - **Loops.so** for transactional email delivery (confirmation, password reset, welcome)
-- **Session-based authentication** (no JWT)
+- **Session-based authentication** with intelligent expiration management
 - **Email confirmation** required before login
-- **Password reset** with secure tokens
+- **Password reset** with secure tokens and session termination
 - **Rate limiting** for security
 - **Domain blacklist** validation
 - **Production-ready URL generation** with proper protocol detection
 - **Automatic audience management** in Loops.so
-- **Clean user messaging** without development mode references
+- **Smart redirect logic** based on user status and restaurant ownership
+- **Professional flash message system** with animations and auto-hide
+- **Logout confirmation modal** with modern UI design
+- **Session expiration** with automatic extension and security cleanup
 
 ### Key Differences from Resend
 
@@ -41,6 +50,55 @@ This document provides the complete, tested, and working implementation of authe
 - Email content is managed in Loops dashboard, not in Rails views
 - API calls send data variables, not full HTML
 - Better email template management and analytics
+
+## What's New in v3.4
+
+### Session Management & Security Enhancements
+
+**Session Expiration with Automatic Extension**
+- **30-day idle timeout**: Sessions expire after 30 days of inactivity
+- **90-day maximum lifetime**: Hard limit regardless of activity
+- **Automatic extension**: Active sessions automatically extend idle timeout
+- **Security cleanup**: All user sessions terminated when password changes
+
+**New Session Fields**
+```ruby
+# Added to sessions table
+t.datetime :expires_at          # Idle timeout (30 days from last activity)
+t.datetime :max_lifetime_expires_at  # Maximum lifetime (90 days from creation)
+```
+
+### Smart Redirect Logic
+
+**Intelligent Post-Authentication Routing**
+- **Dashboard redirect**: Users with restaurants go directly to dashboard
+- **Onboarding redirect**: New users without restaurants are guided to onboarding
+- **Landing page protection**: Authenticated users automatically redirected from landing page
+- **Root path fallback**: Improved security by redirecting to root instead of login page
+
+### UI/UX Improvements
+
+**Professional Flash Message System**
+- **Modern Tailwind CSS styling**: Consistent with design system
+- **Dynamic header detection**: Adapts positioning based on page layout
+- **Smooth animations**: slideInDown/slideOutUp effects with proper timing
+- **Auto-hide functionality**: Messages disappear after 6 seconds with manual close option
+- **Mobile-optimized**: Responsive design with proper viewport handling
+- **Backdrop blur effects**: Modern visual aesthetics
+
+**Logout Confirmation Modal**
+- **Modern modal design**: Professional UI with backdrop blur
+- **Confirmation workflow**: Prevents accidental logouts
+- **CSRF protection**: Proper token handling in JavaScript forms
+- **Smooth animations**: Fade in/out with backdrop effects
+
+### Enhanced Authentication Flow
+
+**Improved Security & User Experience**
+- **Session validation**: Automatic expiration checking on each request
+- **User utility methods**: `has_restaurants?` method for smart routing
+- **Enhanced session management**: Comprehensive creation, validation, and cleanup
+- **Better error handling**: Improved messaging and fallback behavior
 
 ## Prerequisites
 
@@ -92,13 +150,14 @@ loops:
 
 ## Core Models
 
-### User Model
+### User Model (v3.4 Enhanced)
 
 ```ruby
 # app/models/user.rb
 class User < ApplicationRecord
   has_secure_password
   has_many :sessions, dependent: :destroy
+  has_many :restaurants, dependent: :destroy  # NEW in v3.4
 
   # Validations
   validates :email_address, presence: true, 
@@ -121,9 +180,15 @@ class User < ApplicationRecord
   # Callbacks
   after_create :send_email_confirmation
   after_update :send_welcome_email, if: :email_just_confirmed?
+  after_update :terminate_all_sessions_if_password_changed  # NEW in v3.4
 
   # Custom validations
   validate :email_domain_not_blacklisted
+
+  # NEW in v3.4: User status methods for smart routing
+  def has_restaurants?
+    restaurants.exists?
+  end
 
   # Email confirmation methods
   def email_confirmed?
@@ -162,6 +227,12 @@ class User < ApplicationRecord
     false
   end
 
+  # NEW in v3.4: Session management for security
+  def terminate_all_sessions!
+    sessions.destroy_all
+    Rails.logger.info "Terminated all sessions for user #{id}"
+  end
+
   # Display name helper
   def display_name
     name.present? ? name : email_address.split('@').first.capitalize
@@ -175,6 +246,13 @@ class User < ApplicationRecord
 
   def email_just_confirmed?
     saved_change_to_email_confirmed_at? && email_confirmed_at.present?
+  end
+
+  # NEW in v3.4: Terminate all sessions when password changes for security
+  def terminate_all_sessions_if_password_changed
+    if saved_change_to_password_digest?
+      terminate_all_sessions!
+    end
   end
 
   def send_email_confirmation
@@ -203,20 +281,65 @@ class User < ApplicationRecord
 end
 ```
 
-### Session Model
+### Session Model (v3.4 Enhanced with Expiration Management)
 
 ```ruby
 # app/models/session.rb
 class Session < ApplicationRecord
   belongs_to :user
   
+  # NEW in v3.4: Session expiration constants
+  IDLE_TIMEOUT = 30.days
+  MAX_LIFETIME = 90.days
+  
   before_create :set_user_agent_and_ip
+  before_create :set_expiration_times  # NEW in v3.4
+  
+  # NEW in v3.4: Scopes for session management
+  scope :expired, -> { where('expires_at < ? OR max_lifetime_expires_at < ?', Time.current, Time.current) }
+  scope :active, -> { where('expires_at >= ? AND max_lifetime_expires_at >= ?', Time.current, Time.current) }
+  
+  # NEW in v3.4: Session expiration methods
+  def expired?
+    expires_at < Time.current || max_lifetime_expires_at < Time.current
+  end
+  
+  def extend_session!
+    return false if max_lifetime_expired?
+    
+    update!(expires_at: IDLE_TIMEOUT.from_now)
+    Rails.logger.debug "Extended session #{id} until #{expires_at}"
+    true
+  end
+  
+  def max_lifetime_expired?
+    max_lifetime_expires_at < Time.current
+  end
+  
+  def time_until_expiry
+    [expires_at - Time.current, max_lifetime_expires_at - Time.current].min
+  end
+  
+  # NEW in v3.4: Class method for cleanup
+  def self.cleanup_expired!
+    expired_count = expired.count
+    expired.destroy_all
+    Rails.logger.info "Cleaned up #{expired_count} expired sessions"
+    expired_count
+  end
   
   private
   
   def set_user_agent_and_ip
     self.user_agent ||= 'Unknown'
     self.ip_address ||= 'Unknown'
+  end
+  
+  # NEW in v3.4: Set expiration times on session creation
+  def set_expiration_times
+    now = Time.current
+    self.expires_at ||= now + IDLE_TIMEOUT
+    self.max_lifetime_expires_at ||= now + MAX_LIFETIME
   end
 end
 ```
@@ -228,6 +351,87 @@ end
 class Current < ActiveSupport::CurrentAttributes
   attribute :session
   delegate :user, to: :session, allow_nil: true
+end
+```
+
+## Session Management & Security
+
+### Session Expiration Logic (v3.4)
+
+The v3.4 authentication system implements a sophisticated two-tier session expiration system:
+
+#### Idle Timeout (30 days)
+- Sessions expire after 30 days of inactivity
+- Automatically extended on each user activity
+- Tracked via `expires_at` field in sessions table
+
+#### Maximum Lifetime (90 days)
+- Hard limit regardless of user activity
+- Cannot be extended beyond this point
+- Tracked via `max_lifetime_expires_at` field in sessions table
+
+#### Implementation Example
+
+```ruby
+# Example of session extension in Authentication concern
+def resume_session
+  return nil unless cookies.signed[:session_id]
+  
+  session = find_session_by_cookie
+  return nil unless session&.valid_session?
+  
+  # Extend session if not at max lifetime
+  session.extend_session! if session.present?
+  
+  Current.session = session
+end
+
+def find_session_by_cookie
+  session = Session.find_by(id: cookies.signed[:session_id])
+  return nil if session&.expired?
+  
+  session
+end
+```
+
+#### Session Cleanup Task
+
+```ruby
+# lib/tasks/sessions.rake
+namespace :sessions do
+  desc "Clean up expired sessions"
+  task cleanup: :environment do
+    count = Session.cleanup_expired!
+    puts "Cleaned up #{count} expired sessions"
+  end
+end
+
+# Run via cron job every hour:
+# 0 * * * * cd /path/to/app && rails sessions:cleanup
+```
+
+#### Security Features
+
+1. **Password Change Protection**: All user sessions are terminated when password is changed
+2. **Automatic Cleanup**: Expired sessions are automatically cleaned up to maintain database performance
+3. **Session Validation**: Every request validates session expiration before proceeding
+4. **Activity Tracking**: Sessions track last activity and extend automatically
+
+```ruby
+# Example of session security in User model
+after_update :terminate_all_sessions_if_password_changed
+
+private
+
+def terminate_all_sessions_if_password_changed
+  if saved_change_to_password_digest?
+    terminate_all_sessions!
+  end
+end
+
+def terminate_all_sessions!
+  sessions.destroy_all
+  Rails.logger.info "Terminated all sessions for user #{id} - password changed"
 end
 ```
 
@@ -433,7 +637,7 @@ end
 
 ## Authentication Controllers
 
-### Authentication Concern
+### Authentication Concern (v3.4 Enhanced)
 
 ```ruby
 # app/controllers/concerns/authentication.rb
@@ -465,17 +669,31 @@ module Authentication
     resume_session || request_authentication
   end
 
+  # UPDATED in v3.4: Enhanced session resumption with expiration checking
   def resume_session
-    Current.session ||= find_session_by_cookie
+    return nil unless cookies.signed[:session_id]
+    
+    session = find_session_by_cookie
+    return nil unless session
+    
+    # Extend session if valid and not at max lifetime
+    session.extend_session! if session.present? && !session.max_lifetime_expired?
+    
+    Current.session = session
   end
 
+  # UPDATED in v3.4: Session expiration validation
   def find_session_by_cookie
-    Session.find_by(id: cookies.signed[:session_id]) if cookies.signed[:session_id]
+    session = Session.find_by(id: cookies.signed[:session_id])
+    return nil if session&.expired?
+    
+    session
   end
 
+  # UPDATED in v3.4: Redirect to root_path instead of new_session_path for better UX
   def request_authentication
     session[:return_to_after_authenticating] = request.url
-    redirect_to new_session_path, alert: "Please sign in to continue."
+    redirect_to root_path, alert: "Please sign in to continue."
   end
 
   def start_new_session_for(user)
@@ -529,7 +747,7 @@ class UsersController < ApplicationController
 end
 ```
 
-### Sessions Controller
+### Sessions Controller (v3.4 Enhanced with Smart Redirect)
 
 ```ruby
 # app/controllers/sessions_controller.rb
@@ -566,13 +784,21 @@ class SessionsController < ApplicationController
   
   private
   
+  # UPDATED in v3.4: Smart redirect based on user status
   def after_authentication_url
-    session.delete(:return_to_after_authenticating) || dashboard_path
+    return session.delete(:return_to_after_authenticating) if session[:return_to_after_authenticating]
+    
+    # Smart routing based on user's restaurant status
+    if current_user.has_restaurants?
+      dashboard_path
+    else
+      onboarding_path
+    end
   end
 end
 ```
 
-### Email Confirmations Controller
+### Email Confirmations Controller (v3.4 Enhanced with Smart Redirect)
 
 ```ruby
 # app/controllers/email_confirmations_controller.rb
@@ -588,7 +814,9 @@ class EmailConfirmationsController < ApplicationController
     
     @user.confirm_email!
     start_new_session_for(@user)
-    redirect_to dashboard_path, notice: "🎉 Email confirmed successfully! Welcome!"
+    
+    # UPDATED in v3.4: Smart redirect after email confirmation
+    redirect_to after_confirmation_url, notice: "Email confirmed successfully! Welcome!"
   end
   
   def new
@@ -612,6 +840,17 @@ class EmailConfirmationsController < ApplicationController
     
     unless @user
       redirect_to new_session_path, alert: "Email confirmation link is invalid or has expired."
+    end
+  end
+  
+  # NEW in v3.4: Smart redirect after email confirmation
+  def after_confirmation_url
+    # New users without restaurants should go to onboarding
+    # Users with restaurants go to dashboard
+    if @user.has_restaurants?
+      dashboard_path
+    else
+      onboarding_path
     end
   end
 end
@@ -664,6 +903,533 @@ class PasswordsController < ApplicationController
     params.require(:user).permit(:password, :password_confirmation)
   end
 end
+```
+
+## Smart Redirect Logic
+
+### Landing Page Protection (v3.4)
+
+The v3.4 authentication system implements intelligent redirect logic to provide a seamless user experience:
+
+```ruby
+# app/controllers/landing_controller.rb
+class LandingController < ApplicationController
+  allow_unauthenticated_access
+  before_action :redirect_authenticated_users
+  
+  def index
+    # Landing page content for unauthenticated users
+  end
+  
+  private
+  
+  # NEW in v3.4: Redirect authenticated users from landing page
+  def redirect_authenticated_users
+    return unless authenticated?
+    
+    if current_user.has_restaurants?
+      redirect_to dashboard_path
+    else
+      redirect_to onboarding_path
+    end
+  end
+end
+```
+
+### Intelligent Routing Logic
+
+The system uses the `has_restaurants?` method to determine appropriate destinations:
+
+- **Users with restaurants**: Directed to dashboard for immediate monitoring access
+- **New users without restaurants**: Guided to onboarding for setup process
+- **Unauthenticated users**: Redirected to root_path instead of login page for better UX
+
+```ruby
+# Example usage in controllers
+def smart_redirect_after_auth
+  if current_user.has_restaurants?
+    dashboard_path  # Experienced users go straight to dashboard
+  else
+    onboarding_path # New users need setup guidance
+  end
+end
+```
+
+## Flash Message System
+
+### Professional Flash Messages (v3.4)
+
+The v3.4 system includes a comprehensive flash message system with modern UI design:
+
+#### Flash Message Implementation
+
+```erb
+<!-- app/views/layouts/_flash_messages.html.erb -->
+<% if flash.any? %>
+  <div id="flash-messages" class="flash-messages-container">
+    <% flash.each do |type, message| %>
+      <div class="flash-message flash-<%= type %>" data-flash-type="<%= type %>">
+        <div class="flash-content">
+          <div class="flash-icon">
+            <% if type == 'notice' %>
+              <!-- Success icon -->
+              <svg class="w-5 h-5 text-green-600" fill="currentColor" viewBox="0 0 20 20">
+                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path>
+              </svg>
+            <% elsif type == 'alert' %>
+              <!-- Error icon -->
+              <svg class="w-5 h-5 text-red-600" fill="currentColor" viewBox="0 0 20 20">
+                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"></path>
+              </svg>
+            <% end %>
+          </div>
+          <div class="flash-text">
+            <%= message %>
+          </div>
+          <button type="button" class="flash-close" onclick="closeFlashMessage(this)">
+            <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+              <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd"></path>
+            </svg>
+          </button>
+        </div>
+      </div>
+    <% end %>
+  </div>
+<% end %>
+```
+
+#### Flash Message Styling
+
+```css
+/* app/assets/stylesheets/flash_messages.css */
+.flash-messages-container {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 50;
+  pointer-events: none;
+}
+
+.flash-message {
+  pointer-events: auto;
+  margin: 1rem;
+  border-radius: 0.5rem;
+  backdrop-filter: blur(10px);
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+  animation: slideInDown 0.3s ease-out;
+  transition: all 0.3s ease;
+}
+
+.flash-notice {
+  background: rgba(34, 197, 94, 0.95);
+  border: 1px solid rgba(34, 197, 94, 0.3);
+  color: white;
+}
+
+.flash-alert {
+  background: rgba(239, 68, 68, 0.95);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  color: white;
+}
+
+.flash-content {
+  display: flex;
+  align-items: center;
+  padding: 1rem 1.5rem;
+  gap: 0.75rem;
+}
+
+.flash-icon {
+  flex-shrink: 0;
+}
+
+.flash-text {
+  flex-grow: 1;
+  font-weight: 500;
+}
+
+.flash-close {
+  flex-shrink: 0;
+  background: transparent;
+  border: none;
+  color: currentColor;
+  opacity: 0.7;
+  transition: opacity 0.2s;
+  cursor: pointer;
+  padding: 0.25rem;
+  border-radius: 0.25rem;
+}
+
+.flash-close:hover {
+  opacity: 1;
+  background: rgba(255, 255, 255, 0.1);
+}
+
+@keyframes slideInDown {
+  from {
+    transform: translateY(-100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+@keyframes slideOutUp {
+  from {
+    transform: translateY(0);
+    opacity: 1;
+  }
+  to {
+    transform: translateY(-100%);
+    opacity: 0;
+  }
+}
+
+.flash-message.hiding {
+  animation: slideOutUp 0.3s ease-in;
+}
+
+/* Mobile responsive */
+@media (max-width: 640px) {
+  .flash-messages-container {
+    margin: 0;
+  }
+  
+  .flash-message {
+    margin: 0.5rem;
+    border-radius: 0.375rem;
+  }
+  
+  .flash-content {
+    padding: 0.875rem 1rem;
+    gap: 0.5rem;
+  }
+}
+```
+
+#### Flash Message JavaScript
+
+```javascript
+// app/assets/javascripts/flash_messages.js
+document.addEventListener('DOMContentLoaded', function() {
+  // Auto-hide flash messages after 6 seconds
+  const flashMessages = document.querySelectorAll('.flash-message');
+  
+  flashMessages.forEach(function(message) {
+    setTimeout(function() {
+      hideFlashMessage(message);
+    }, 6000);
+  });
+});
+
+function closeFlashMessage(button) {
+  const message = button.closest('.flash-message');
+  hideFlashMessage(message);
+}
+
+function hideFlashMessage(message) {
+  message.classList.add('hiding');
+  
+  setTimeout(function() {
+    if (message.parentNode) {
+      message.parentNode.removeChild(message);
+    }
+  }, 300);
+}
+```
+
+#### Dynamic Header Detection
+
+The flash message system automatically detects page headers and adjusts positioning:
+
+```erb
+<!-- Include in layouts with conditional positioning -->
+<% content_for :flash_messages do %>
+  <% if flash.any? %>
+    <div id="flash-messages" class="flash-messages-container <%= 'with-header' if content_for?(:page_header) %>">
+      <!-- Flash message content -->
+    </div>
+  <% end %>
+<% end %>
+```
+
+```css
+/* Adjust for pages with headers */
+.flash-messages-container.with-header {
+  top: 4rem; /* Adjust based on header height */
+}
+```
+
+## Logout with Confirmation Modal
+
+### Logout Modal Implementation (v3.4)
+
+The v3.4 system includes a professional logout confirmation modal:
+
+#### Modal HTML Structure
+
+```erb
+<!-- app/views/dashboard/_logout_modal.html.erb -->
+<div id="logout-modal" class="logout-modal hidden" onclick="closeLogoutModal(event)">
+  <div class="logout-modal-backdrop"></div>
+  <div class="logout-modal-container" onclick="event.stopPropagation()">
+    <div class="logout-modal-content">
+      <div class="logout-modal-header">
+        <h3 class="logout-modal-title">Confirm Logout</h3>
+        <button type="button" class="logout-modal-close" onclick="closeLogoutModal()">
+          <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+            <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd"></path>
+          </svg>
+        </button>
+      </div>
+      
+      <div class="logout-modal-body">
+        <div class="logout-modal-icon">
+          <svg class="w-8 h-8 text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.732-.833-2.464 0L4.35 18.5c-.77.833.192 2.5 1.732 2.5z"></path>
+          </svg>
+        </div>
+        <p class="logout-modal-text">
+          Are you sure you want to sign out? You'll need to sign in again to access your dashboard.
+        </p>
+      </div>
+      
+      <div class="logout-modal-footer">
+        <button type="button" class="btn-cancel" onclick="closeLogoutModal()">
+          Cancel
+        </button>
+        <button type="button" class="btn-logout" onclick="confirmLogout()">
+          Sign Out
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Hidden form for logout -->
+<form id="logout-form" action="<%= destroy_session_path %>" method="post" style="display: none;">
+  <input type="hidden" name="_method" value="delete">
+  <%= hidden_field_tag :authenticity_token, form_authenticity_token %>
+</form>
+```
+
+#### Modal Styling
+
+```css
+/* app/assets/stylesheets/logout_modal.css */
+.logout-modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  visibility: hidden;
+  transition: all 0.3s ease;
+}
+
+.logout-modal:not(.hidden) {
+  opacity: 1;
+  visibility: visible;
+}
+
+.logout-modal-backdrop {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(4px);
+}
+
+.logout-modal-container {
+  position: relative;
+  background: white;
+  border-radius: 0.75rem;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+  max-width: 400px;
+  width: 90%;
+  transform: scale(0.95);
+  transition: transform 0.3s ease;
+}
+
+.logout-modal:not(.hidden) .logout-modal-container {
+  transform: scale(1);
+}
+
+.logout-modal-content {
+  padding: 0;
+}
+
+.logout-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1.5rem 1.5rem 0 1.5rem;
+}
+
+.logout-modal-title {
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: #1f2937;
+  margin: 0;
+}
+
+.logout-modal-close {
+  background: transparent;
+  border: none;
+  color: #6b7280;
+  cursor: pointer;
+  padding: 0.25rem;
+  border-radius: 0.25rem;
+  transition: all 0.2s;
+}
+
+.logout-modal-close:hover {
+  background: #f3f4f6;
+  color: #374151;
+}
+
+.logout-modal-body {
+  padding: 1.5rem;
+  text-align: center;
+}
+
+.logout-modal-icon {
+  margin: 0 auto 1rem auto;
+  width: 3rem;
+  height: 3rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #fef3c7;
+  border-radius: 50%;
+}
+
+.logout-modal-text {
+  color: #4b5563;
+  font-size: 0.875rem;
+  line-height: 1.5;
+  margin: 0;
+}
+
+.logout-modal-footer {
+  display: flex;
+  gap: 0.75rem;
+  padding: 0 1.5rem 1.5rem 1.5rem;
+}
+
+.btn-cancel {
+  flex: 1;
+  padding: 0.625rem 1rem;
+  background: #f9fafb;
+  border: 1px solid #d1d5db;
+  color: #374151;
+  border-radius: 0.5rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-cancel:hover {
+  background: #f3f4f6;
+  border-color: #9ca3af;
+}
+
+.btn-logout {
+  flex: 1;
+  padding: 0.625rem 1rem;
+  background: linear-gradient(to bottom right, #dc2626, #b91c1c);
+  border: none;
+  color: white;
+  border-radius: 0.5rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+}
+
+.btn-logout:hover {
+  background: linear-gradient(to bottom right, #b91c1c, #991b1b);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.1);
+}
+```
+
+#### Modal JavaScript
+
+```javascript
+// app/assets/javascripts/logout_modal.js
+function showLogoutModal() {
+  const modal = document.getElementById('logout-modal');
+  modal.classList.remove('hidden');
+  
+  // Focus trap
+  const focusableElements = modal.querySelectorAll('button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])');
+  const firstElement = focusableElements[0];
+  const lastElement = focusableElements[focusableElements.length - 1];
+  
+  firstElement?.focus();
+  
+  // Handle Escape key
+  document.addEventListener('keydown', handleEscapeKey);
+}
+
+function closeLogoutModal(event) {
+  if (event && event.target !== event.currentTarget && !event.target.closest('.logout-modal-close')) {
+    return;
+  }
+  
+  const modal = document.getElementById('logout-modal');
+  modal.classList.add('hidden');
+  
+  // Remove escape key listener
+  document.removeEventListener('keydown', handleEscapeKey);
+}
+
+function handleEscapeKey(event) {
+  if (event.key === 'Escape') {
+    closeLogoutModal();
+  }
+}
+
+function confirmLogout() {
+  // Submit the hidden logout form
+  document.getElementById('logout-form').submit();
+}
+
+// Logout button trigger
+document.addEventListener('DOMContentLoaded', function() {
+  const logoutButton = document.getElementById('logout-button');
+  if (logoutButton) {
+    logoutButton.addEventListener('click', function(e) {
+      e.preventDefault();
+      showLogoutModal();
+    });
+  }
+});
+```
+
+#### Usage in Dashboard
+
+```erb
+<!-- In dashboard layout or view -->
+<button id="logout-button" class="logout-button">
+  <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path>
+  </svg>
+  Sign Out
+</button>
+
+<%= render 'logout_modal' %>
 ```
 
 ## Transactional Email Templates
@@ -839,17 +1605,49 @@ class CreateUsers < ActiveRecord::Migration[8.0]
   end
 end
 
-# db/migrate/xxx_create_sessions.rb
+# db/migrate/xxx_create_sessions.rb (v3.4 Enhanced)
 class CreateSessions < ActiveRecord::Migration[8.0]
   def change
     create_table :sessions do |t|
       t.references :user, null: false, foreign_key: true
       t.string :user_agent
       t.string :ip_address
+      
+      # NEW in v3.4: Session expiration fields
+      t.datetime :expires_at            # Idle timeout (30 days from last activity)
+      t.datetime :max_lifetime_expires_at # Maximum lifetime (90 days from creation)
+      
       t.timestamps
     end
     
     add_index :sessions, :updated_at
+    add_index :sessions, :expires_at           # NEW in v3.4: For efficient cleanup
+    add_index :sessions, :max_lifetime_expires_at # NEW in v3.4: For expiration queries
+  end
+end
+
+# NEW in v3.4: Migration to add expiration fields to existing sessions table
+# db/migrate/xxx_add_expiration_to_sessions.rb
+class AddExpirationToSessions < ActiveRecord::Migration[8.0]
+  def change
+    add_column :sessions, :expires_at, :datetime
+    add_column :sessions, :max_lifetime_expires_at, :datetime
+    
+    add_index :sessions, :expires_at
+    add_index :sessions, :max_lifetime_expires_at
+    
+    # Set expiration times for existing sessions
+    reversible do |dir|
+      dir.up do
+        Session.find_each do |session|
+          created_at = session.created_at || Time.current
+          session.update_columns(
+            expires_at: created_at + 30.days,
+            max_lifetime_expires_at: created_at + 90.days
+          )
+        end
+      end
+    end
   end
 end
 
@@ -942,17 +1740,29 @@ end
 ### Development Phase
 - [ ] Run `rails generate authentication` if starting fresh
 - [ ] Create User model with required fields
-- [ ] Create Session model
+- [ ] Create Session model with v3.4 expiration fields
 - [ ] Create Current model for request context
 - [ ] Implement LoopsEmailService
-- [ ] Create Authentication concern
+- [ ] Create Authentication concern with session expiration logic
 - [ ] Implement UsersController
-- [ ] Implement SessionsController
-- [ ] Implement EmailConfirmationsController
+- [ ] Implement SessionsController with smart redirect
+- [ ] Implement EmailConfirmationsController with smart redirect
 - [ ] Implement PasswordsController
 - [ ] Configure routes
 - [ ] Create database migrations
 - [ ] Run migrations
+
+### NEW v3.4 Features
+- [ ] Add `has_restaurants?` method to User model
+- [ ] Add session expiration logic to Session model
+- [ ] Implement session cleanup task (lib/tasks/sessions.rake)
+- [ ] Add password change session termination to User model
+- [ ] Update Authentication concern with session extension
+- [ ] Add smart redirect logic to LandingController
+- [ ] Create professional flash message system
+- [ ] Implement logout confirmation modal
+- [ ] Add session expiration migration
+- [ ] Set up session cleanup cron job
 
 ### View Templates
 - [ ] Create signup form
@@ -960,8 +1770,17 @@ end
 - [ ] Create password reset request form
 - [ ] Create password reset form
 - [ ] Create email confirmation resend form
-- [ ] Add flash message display
+- [ ] Add professional flash message display (v3.4)
+- [ ] Create logout confirmation modal (v3.4)
 - [ ] Create dashboard view
+
+### JavaScript & CSS (v3.4)
+- [ ] Implement flash_messages.js with auto-hide
+- [ ] Create flash_messages.css with animations
+- [ ] Implement logout_modal.js with focus management
+- [ ] Create logout_modal.css with modern styling
+- [ ] Test mobile responsiveness of flash messages
+- [ ] Test keyboard navigation in logout modal
 
 ### Testing Phase
 - [ ] Test Loops API integration
@@ -973,6 +1792,12 @@ end
 - [ ] Test password reset flow
 - [ ] Test rate limiting
 - [ ] Test session management
+- [ ] Test session expiration and extension (v3.4)
+- [ ] Test smart redirect logic (v3.4)
+- [ ] Test flash message display and auto-hide (v3.4)
+- [ ] Test logout modal functionality (v3.4)
+- [ ] Test password change session termination (v3.4)
+- [ ] Test session cleanup task (v3.4)
 
 ### Production Deployment
 - [ ] Set production environment variables
@@ -1019,6 +1844,198 @@ All fixes have been tested and verified on production environment:
 - **User Registration Flow**: End-to-end tested
 - **Password Reset**: Verified working
 - **URL Generation**: Proper HTTPS URLs in production
+
+## Troubleshooting v3.4 Features
+
+### Session Management Issues
+
+#### Issue: Sessions expiring too quickly
+**Symptoms**: Users getting logged out unexpectedly
+**Solution**: Check session expiration constants in Session model
+```ruby
+# Verify in Session model
+IDLE_TIMEOUT = 30.days  # Should be 30 days
+MAX_LIFETIME = 90.days  # Should be 90 days
+```
+
+#### Issue: Sessions not extending automatically
+**Symptoms**: Users logged out after exactly 30 days regardless of activity
+**Solution**: Ensure `extend_session!` is called in `resume_session`
+```ruby
+# In Authentication concern
+def resume_session
+  # ... existing code ...
+  session.extend_session! if session.present? && !session.max_lifetime_expired?
+  # ... rest of method ...
+end
+```
+
+#### Issue: Database performance degradation
+**Symptoms**: Slow page loads, database timeouts
+**Solution**: Run session cleanup regularly and ensure indexes exist
+```bash
+# Run cleanup task
+rails sessions:cleanup
+
+# Verify indexes exist
+rails db:migrate
+```
+
+#### Issue: Expired sessions not being cleaned up
+**Symptoms**: Growing sessions table, memory issues
+**Solution**: Set up regular cleanup via cron job
+```bash
+# Add to crontab
+0 * * * * cd /path/to/app && rails sessions:cleanup RAILS_ENV=production
+```
+
+### Smart Redirect Issues
+
+#### Issue: Users not redirected to onboarding
+**Symptoms**: New users land on wrong page after confirmation
+**Solution**: Verify `has_restaurants?` method in User model
+```ruby
+# Ensure method exists and returns boolean
+def has_restaurants?
+  restaurants.exists?
+end
+```
+
+#### Issue: Authenticated users still see landing page
+**Symptoms**: Dashboard users can access marketing landing page
+**Solution**: Check `redirect_authenticated_users` in LandingController
+```ruby
+# Ensure before_action is present
+before_action :redirect_authenticated_users
+```
+
+### Flash Message Issues
+
+#### Issue: Flash messages not displaying
+**Symptoms**: User actions complete but no feedback shown
+**Solution**: Ensure flash messages partial is included in layout
+```erb
+<!-- In application layout -->
+<%= render 'layouts/flash_messages' %>
+```
+
+#### Issue: Flash messages not auto-hiding
+**Symptoms**: Messages stay visible indefinitely
+**Solution**: Verify JavaScript is loaded and executing
+```javascript
+// Check browser console for errors
+// Ensure flash_messages.js is included in asset pipeline
+```
+
+#### Issue: Flash messages appear under header
+**Symptoms**: Messages are hidden behind fixed navigation
+**Solution**: Adjust z-index and positioning
+```css
+.flash-messages-container {
+  z-index: 50; /* Ensure higher than header */
+  top: 0; /* Or adjust based on header height */
+}
+```
+
+#### Issue: Flash messages break on mobile
+**Symptoms**: Messages overflow or are cut off on small screens
+**Solution**: Verify mobile responsive styles are applied
+```css
+@media (max-width: 640px) {
+  .flash-message {
+    margin: 0.5rem;
+    border-radius: 0.375rem;
+  }
+}
+```
+
+### Logout Modal Issues
+
+#### Issue: Modal not appearing when logout clicked
+**Symptoms**: Clicking logout button has no effect
+**Solution**: Check JavaScript is loaded and button has correct ID
+```html
+<!-- Ensure button has correct ID -->
+<button id="logout-button" onclick="showLogoutModal()">Sign Out</button>
+
+<!-- Verify modal exists with correct ID -->
+<div id="logout-modal" class="logout-modal hidden">
+```
+
+#### Issue: Modal appears but logout doesn't work
+**Symptoms**: Modal shows but confirmation doesn't log user out
+**Solution**: Verify hidden form and CSRF token
+```erb
+<!-- Ensure form exists and has correct action -->
+<form id="logout-form" action="<%= destroy_session_path %>" method="post">
+  <input type="hidden" name="_method" value="delete">
+  <%= hidden_field_tag :authenticity_token, form_authenticity_token %>
+</form>
+```
+
+#### Issue: Modal styling broken
+**Symptoms**: Modal appears unstyled or layout is broken
+**Solution**: Ensure CSS is loaded and classes are correct
+```css
+/* Verify logout_modal.css is included in asset pipeline */
+/* Check for CSS class conflicts */
+```
+
+#### Issue: Modal doesn't close on Escape key
+**Symptoms**: Keyboard navigation doesn't work
+**Solution**: Verify event listeners are attached
+```javascript
+// Check handleEscapeKey function is defined and attached
+document.addEventListener('keydown', handleEscapeKey);
+```
+
+### Database Migration Issues
+
+#### Issue: Migration fails when adding expiration fields
+**Symptoms**: `AddExpirationToSessions` migration errors
+**Solution**: Ensure Session model exists and is properly defined
+```bash
+# Check if sessions table exists
+rails db:migrate:status
+
+# If sessions table missing, run initial migrations first
+rails db:migrate
+```
+
+#### Issue: Existing sessions have nil expiration times
+**Symptoms**: Users immediately logged out after migration
+**Solution**: Run the data migration part manually
+```ruby
+# In Rails console
+Session.where(expires_at: nil).find_each do |session|
+  created_at = session.created_at || Time.current
+  session.update_columns(
+    expires_at: created_at + 30.days,
+    max_lifetime_expires_at: created_at + 90.days
+  )
+end
+```
+
+### Performance Issues
+
+#### Issue: Slow authentication checks
+**Symptoms**: Page loads slowly after implementing v3.4
+**Solution**: Ensure database indexes are in place
+```sql
+-- Verify these indexes exist
+CREATE INDEX index_sessions_on_expires_at ON sessions (expires_at);
+CREATE INDEX index_sessions_on_max_lifetime_expires_at ON sessions (max_lifetime_expires_at);
+```
+
+#### Issue: Memory usage increasing
+**Symptoms**: Application consuming more memory over time
+**Solution**: Implement regular session cleanup
+```ruby
+# Add to scheduled job (e.g., whenever gem)
+every 1.hour do
+  runner "Session.cleanup_expired!"
+end
+```
 
 ## Common Issues and Solutions
 

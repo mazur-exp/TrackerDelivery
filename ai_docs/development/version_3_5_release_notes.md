@@ -187,6 +187,49 @@ function validateField(fieldName, isValid, showError) {
 - Proper cleanup of previous states before applying new ones
 - Efficient validation logic with early returns for performance
 
+## 🐛 Bug Fixes & Improvements
+
+### Contact Prefilling Logic Enhancement
+**Issue**: При добавлении нового ресторана (кнопка "Add Restaurant" на дашборде) форма онбординга не подтягивала существующие контакты пользователя, хотя у пользователя уже были рестораны с настроенными WhatsApp, Telegram и Email контактами.
+
+**Root Cause**: Логика в модели User использовала метод `latest_restaurant` (последний ресторан) для получения контактов, но при добавлении нового ресторана система ещё не знала, какой ресторан станет "последним".
+
+**Solution**: Обновили методы в User модели для сбора контактов от ВСЕХ ресторанов пользователя:
+
+```ruby
+def all_whatsapp_contacts
+  # Собираем уникальные WhatsApp контакты от всех ресторанов пользователя
+  restaurants.joins(:notification_contacts)
+            .where(notification_contacts: { contact_type: 'whatsapp', is_active: true })
+            .pluck('notification_contacts.contact_value')
+            .uniq
+end
+
+def all_telegram_contacts
+  restaurants.joins(:notification_contacts)
+            .where(notification_contacts: { contact_type: 'telegram', is_active: true })
+            .pluck('notification_contacts.contact_value')
+            .uniq
+end
+
+def all_email_contacts
+  restaurants.joins(:notification_contacts)
+            .where(notification_contacts: { contact_type: 'email', is_active: true })
+            .pluck('notification_contacts.contact_value')
+            .uniq
+end
+```
+
+**Benefits Achieved**:
+- Теперь при нажатии "Add Restaurant" в форме автоматически подтягиваются все уникальные контакты от всех предыдущих ресторанов пользователя
+- Улучшен UX - пользователю не нужно повторно вводить одинаковые контакты
+- Добавлена дедупликация контактов (уникальные значения)
+- Исправлены соответствующие методы `has_*_contact?` для корректной проверки наличия контактов
+
+**Files Modified**:
+- `app/models/user.rb` - обновлены методы all_*_contacts и has_*_contact?
+- `app/controllers/dev_controller.rb` - добавлена отладочная информация
+
 ## 📈 Future Considerations
 
 ### Accessibility Enhancement Opportunities
@@ -201,6 +244,6 @@ function validateField(fieldName, isValid, showError) {
 
 ---
 
-**Development Status**: Implementation complete for core visual validation system  
+**Development Status**: Implementation complete for core visual validation system and contact prefilling improvements  
 **Testing**: Manual testing completed across major browsers  
 **Integration**: Seamlessly integrated with existing onboarding flow and design system

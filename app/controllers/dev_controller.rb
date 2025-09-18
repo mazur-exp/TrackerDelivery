@@ -15,6 +15,16 @@ class DevController < ApplicationController
       @existing_email_contacts = current_user.all_email_contacts
       # Check if user already has restaurants
       @user_has_restaurants = current_user.has_restaurants?
+      
+      # Отладочная информация
+      Rails.logger.info "=== ONBOARDING DEBUG ==="
+      Rails.logger.info "User ID: #{current_user.id}"
+      Rails.logger.info "User has restaurants: #{@user_has_restaurants}"
+      Rails.logger.info "Restaurants count: #{current_user.restaurants.count}"
+      Rails.logger.info "WhatsApp contacts: #{@existing_whatsapp_contacts.inspect}"
+      Rails.logger.info "Telegram contacts: #{@existing_telegram_contacts.inspect}"
+      Rails.logger.info "Email contacts: #{@existing_email_contacts.inspect}"
+      Rails.logger.info "========================"
     end
   end
 end

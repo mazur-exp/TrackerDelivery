@@ -103,15 +103,27 @@ class User < ApplicationRecord
   end
 
   def all_whatsapp_contacts
-    latest_restaurant&.all_whatsapp_contacts || []
+    # Собираем уникальные WhatsApp контакты от всех ресторанов пользователя
+    restaurants.joins(:notification_contacts)
+              .where(notification_contacts: { contact_type: 'whatsapp', is_active: true })
+              .pluck('notification_contacts.contact_value')
+              .uniq
   end
 
   def all_telegram_contacts
-    latest_restaurant&.all_telegram_contacts || []
+    # Собираем уникальные Telegram контакты от всех ресторанов пользователя
+    restaurants.joins(:notification_contacts)
+              .where(notification_contacts: { contact_type: 'telegram', is_active: true })
+              .pluck('notification_contacts.contact_value')
+              .uniq
   end
 
   def all_email_contacts
-    latest_restaurant&.all_email_contacts || []
+    # Собираем уникальные Email контакты от всех ресторанов пользователя
+    restaurants.joins(:notification_contacts)
+              .where(notification_contacts: { contact_type: 'email', is_active: true })
+              .pluck('notification_contacts.contact_value')
+              .uniq
   end
 
   def has_required_contacts?
@@ -119,15 +131,21 @@ class User < ApplicationRecord
   end
 
   def has_whatsapp_contact?
-    latest_restaurant&.has_whatsapp_contact? || false
+    restaurants.joins(:notification_contacts)
+              .where(notification_contacts: { contact_type: 'whatsapp', is_active: true })
+              .exists?
   end
 
   def has_telegram_contact?
-    latest_restaurant&.has_telegram_contact? || false
+    restaurants.joins(:notification_contacts)
+              .where(notification_contacts: { contact_type: 'telegram', is_active: true })
+              .exists?
   end
 
   def has_email_contact?
-    latest_restaurant&.has_email_contact? || false
+    restaurants.joins(:notification_contacts)
+              .where(notification_contacts: { contact_type: 'email', is_active: true })
+              .exists?
   end
 
   private

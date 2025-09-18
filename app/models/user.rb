@@ -76,6 +76,28 @@ class User < ApplicationRecord
     restaurants.exists?
   end
 
+  # Get all unique notification contacts from user's restaurants
+  def all_whatsapp_contacts
+    restaurants.joins(:notification_contacts)
+               .where(notification_contacts: { contact_type: 'whatsapp', is_active: true })
+               .pluck('notification_contacts.contact_value')
+               .uniq
+  end
+
+  def all_telegram_contacts
+    restaurants.joins(:notification_contacts)
+               .where(notification_contacts: { contact_type: 'telegram', is_active: true })
+               .pluck('notification_contacts.contact_value')
+               .uniq
+  end
+
+  def all_email_contacts
+    restaurants.joins(:notification_contacts)
+               .where(notification_contacts: { contact_type: 'email', is_active: true })
+               .pluck('notification_contacts.contact_value')
+               .uniq
+  end
+
   private
 
   def password_required?

@@ -149,42 +149,69 @@
             </div>
             
             <!-- Platform Review Card -->
-            <div id="platform-review" class="bg-white border-2 border-green-200 rounded-lg p-6 hidden">
-              <div class="flex items-center gap-2 mb-4">
-                <div id="platform-logo" class="w-16 h-16 bg-gray-200 rounded-lg flex items-center justify-center overflow-hidden">
-                  <img id="restaurant-image" src="" alt="Restaurant" class="w-full h-full object-cover rounded-lg hidden">
-                  <span id="platform-logo-text" class="text-gray-500 text-xs font-bold">No Image</span>
+            <div id="platform-review" class="bg-white border-2 border-green-200 rounded-2xl p-6 hidden">
+              <!-- Top section with Avatar, Name, Rating -->
+              <div class="flex items-start gap-4 mb-6">
+                <!-- Avatar -->
+                <div class="flex-shrink-0">
+                  <div id="platform-logo" class="w-20 h-20 bg-gray-100 rounded-2xl flex items-center justify-center overflow-hidden border-2 border-gray-200">
+                    <img id="restaurant-image" src="" alt="Restaurant" class="w-full h-full object-cover rounded-2xl hidden">
+                    <span id="platform-logo-text" class="text-gray-400 text-sm font-medium">Avatar</span>
+                  </div>
                 </div>
-                <div>
-                  <h3 id="platform-name" class="text-lg font-semibold text-gray-900">Platform Name</h3>
-                  <p id="platform-subtitle" class="text-sm text-gray-500">Extracted data</p>
+
+                <!-- Name, Rating, Cuisines -->
+                <div class="flex-1 min-w-0">
+                  <!-- Name -->
+                  <div class="mb-3">
+                    <h3 id="platform-restaurant-name" class="text-xl font-semibold text-gray-900 mb-1 truncate">Restaurant Name</h3>
+                  </div>
+
+                  <!-- Rating and Cuisines Row -->
+                  <div class="flex items-center gap-4 mb-2">
+                    <!-- Rating -->
+                    <div class="flex items-center gap-1 bg-yellow-50 px-3 py-1 rounded-xl border border-yellow-200">
+                      <i data-lucide="star" class="w-4 h-4 text-yellow-500 fill-current"></i>
+                      <span id="platform-rating" class="text-sm font-medium text-gray-900">-</span>
+                    </div>
+
+                    <!-- Cuisines -->
+                    <div id="platform-cuisines" class="text-sm text-gray-600 bg-gray-50 px-3 py-1 rounded-xl border border-gray-200 truncate">-</div>
+                  </div>
                 </div>
               </div>
-              
-              <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div class="space-y-3">
-                  <div>
-                    <label class="text-sm font-medium text-gray-600">Restaurant Name</label>
-                    <div id="platform-restaurant-name" class="text-base font-medium text-gray-900 bg-gray-50 p-2 rounded-md">-</div>
+
+              <!-- Schedule Section -->
+              <div class="bg-gray-50 rounded-xl p-4 border border-gray-200">
+                <h4 class="text-sm font-semibold text-gray-700 mb-3 text-center">Schedule</h4>
+                <div class="space-y-2">
+                  <div class="flex items-center justify-between">
+                    <span class="text-sm text-gray-600 w-12">Mon</span>
+                    <div id="schedule-mon" class="flex-1 ml-3 h-8 bg-white border border-gray-200 rounded text-xs text-gray-600 flex items-center px-2">-</div>
                   </div>
-                  <div>
-                    <label class="text-sm font-medium text-gray-600">Address</label>
-                    <div id="platform-address" class="text-sm text-gray-700 bg-gray-50 p-2 rounded-md">-</div>
+                  <div class="flex items-center justify-between">
+                    <span class="text-sm text-gray-600 w-12">Tue</span>
+                    <div id="schedule-tue" class="flex-1 ml-3 h-8 bg-white border border-gray-200 rounded text-xs text-gray-600 flex items-center px-2">-</div>
                   </div>
-                  <div>
-                    <label class="text-sm font-medium text-gray-600">Cuisine Types</label>
-                    <div id="platform-cuisines" class="text-sm text-gray-700 bg-gray-50 p-2 rounded-md">-</div>
+                  <div class="flex items-center justify-between">
+                    <span class="text-sm text-gray-600 w-12">Wed</span>
+                    <div id="schedule-wed" class="flex-1 ml-3 h-8 bg-white border border-gray-200 rounded text-xs text-gray-600 flex items-center px-2">-</div>
                   </div>
-                </div>
-                
-                <div class="space-y-3">
-                  <div>
-                    <label class="text-sm font-medium text-gray-600">Rating</label>
-                    <div id="platform-rating" class="text-base font-medium text-gray-900 bg-gray-50 p-2 rounded-md">-</div>
+                  <div class="flex items-center justify-between">
+                    <span class="text-sm text-gray-600 w-12">Thu</span>
+                    <div id="schedule-thu" class="flex-1 ml-3 h-8 bg-white border border-gray-200 rounded text-xs text-gray-600 flex items-center px-2">-</div>
                   </div>
-                  <div>
-                    <label class="text-sm font-medium text-gray-600">Working Hours</label>
-                    <div id="platform-working-hours" class="text-xs text-gray-600 bg-gray-50 p-2 rounded-md max-h-20 overflow-y-auto">-</div>
+                  <div class="flex items-center justify-between">
+                    <span class="text-sm text-gray-600 w-12">Fri</span>
+                    <div id="schedule-fri" class="flex-1 ml-3 h-8 bg-white border border-gray-200 rounded text-xs text-gray-600 flex items-center px-2">-</div>
+                  </div>
+                  <div class="flex items-center justify-between">
+                    <span class="text-sm text-gray-600 w-12">Sat</span>
+                    <div id="schedule-sat" class="flex-1 ml-3 h-8 bg-white border border-gray-200 rounded text-xs text-gray-600 flex items-center px-2">-</div>
+                  </div>
+                  <div class="flex items-center justify-between">
+                    <span class="text-sm text-gray-600 w-12">Sun</span>
+                    <div id="schedule-sun" class="flex-1 ml-3 h-8 bg-white border border-gray-200 rounded text-xs text-gray-600 flex items-center px-2">-</div>
                   </div>
                 </div>
               </div>
@@ -727,8 +754,6 @@
       const platformTitle = platformName === 'grab' ? 'Grab' : 'GoJek';
       
       document.getElementById('platform-title').textContent = platformTitle;
-      document.getElementById('platform-name').textContent = platformTitle + ' Food';
-      document.getElementById('platform-subtitle').textContent = 'Extracted data from ' + platformTitle;
       
       // Update restaurant image
       const restaurantImage = document.getElementById('restaurant-image');
@@ -745,19 +770,42 @@
       }
       
       // Fill platform data
-      document.getElementById('platform-restaurant-name').textContent = data.name || 'Not found';
-      document.getElementById('platform-address').textContent = data.address || 'Not found';
-      document.getElementById('platform-cuisines').textContent = data.cuisines ? data.cuisines.join(', ') : 'Not found';
-      document.getElementById('platform-rating').textContent = data.rating ? data.rating + '⭐' : 'Not found';
+      document.getElementById('platform-restaurant-name').textContent = data.name || 'Restaurant Name';
+      document.getElementById('platform-cuisines').textContent = data.cuisines ? data.cuisines.join(', ') : '-';
+      document.getElementById('platform-rating').textContent = data.rating || '-';
       
-      // Format working hours
-      let workingHoursText = 'Not found';
+      // Fill schedule for each day
+      const days = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'];
+      const dayNames = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+      
+      // Initialize all days as closed first
+      days.forEach((day, index) => {
+        const scheduleElement = document.getElementById(`schedule-${day}`);
+        if (scheduleElement) {
+          scheduleElement.textContent = 'Closed';
+          scheduleElement.className = 'text-xs text-gray-500';
+        }
+      });
+      
+      // Fill actual working hours if available
       if (data.working_hours && data.working_hours.length > 0) {
-        workingHoursText = data.working_hours.map(wh => 
-          `${wh.day_name}: ${wh.is_closed ? 'Closed' : wh.opens_at + '-' + wh.closes_at}`
-        ).slice(0, 3).join('<br>');
+        data.working_hours.forEach(wh => {
+          const dayIndex = wh.day_of_week;
+          if (dayIndex >= 0 && dayIndex < days.length) {
+            const day = days[dayIndex];
+            const scheduleElement = document.getElementById(`schedule-${day}`);
+            if (scheduleElement) {
+              if (wh.is_closed) {
+                scheduleElement.textContent = 'Closed';
+                scheduleElement.className = 'text-xs text-gray-500';
+              } else {
+                scheduleElement.textContent = `${wh.opens_at || '09:00'} - ${wh.closes_at || '22:00'}`;
+                scheduleElement.className = 'text-xs text-gray-900 font-medium';
+              }
+            }
+          }
+        });
       }
-      document.getElementById('platform-working-hours').innerHTML = workingHoursText;
       
       // Hide loading and show platform review
       document.getElementById('platform-loading').classList.add('hidden');

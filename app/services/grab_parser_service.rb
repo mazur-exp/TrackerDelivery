@@ -1,65 +1,79 @@
-require "nokogiri"
-require "open-uri"
+require "selenium-webdriver"
 require "timeout"
 
 class GrabParserService
-  TIMEOUT_SECONDS = 10
+  TIMEOUT_SECONDS = 20
 
   def parse(url)
+    Rails.logger.info "=== Grab Selenium Parser Starting for URL: #{url} ==="
     return nil if url.blank?
 
+    driver = nil
     begin
       Timeout.timeout(TIMEOUT_SECONDS) do
-        # Fetch the page
-        page = fetch_page(url)
-        return nil unless page
-
-        doc = Nokogiri::HTML(page)
-
+        # Setup Chrome with headless options
+        driver = setup_chrome_driver
+        
+        Rails.logger.info "Grab: Navigating to URL with Selenium..."
+        driver.get(url)
+        
+        # Wait for page to load
+        Rails.logger.info "Grab: Waiting for page to load..."
+        sleep(2)
+        
+        # Wait for content to appear
+        wait = Selenium::WebDriver::Wait.new(timeout: 8)
+        wait.until { driver.execute_script("return document.readyState") == "complete" }
+        
+        current_url = driver.current_url
+        Rails.logger.info "Grab: Final URL: #{current_url}"
+        
         # Extract data from the page
-        {
-          name: extract_restaurant_name(doc),
-          address: extract_address(doc),
-          cuisines: extract_cuisines(doc),
-          working_hours: extract_working_hours(doc),
-          rating: extract_rating(doc),
-          image_url: extract_image_url(doc)
+        data = {
+          name: extract_restaurant_name_selenium(driver),
+          address: extract_address_selenium(driver),
+          cuisines: extract_cuisines_selenium(driver),
+          working_hours: extract_working_hours_selenium(driver),
+          rating: extract_rating_selenium(driver),
+          image_url: extract_image_url_selenium(driver)
         }
+        
+        Rails.logger.info "Grab: Extracted data: #{data.inspect}"
+        data
       end
     rescue Timeout::Error
       Rails.logger.error "Timeout while parsing Grab URL: #{url}"
       nil
     rescue => e
       Rails.logger.error "Error parsing Grab URL #{url}: #{e.message}"
+      Rails.logger.error e.backtrace.join("\n")
       nil
+    ensure
+      driver&.quit
+      Rails.logger.info "Grab: Browser closed"
     end
   end
 
   private
 
-  def fetch_page(url)
-    # Add user agent to avoid blocking
-    headers = {
-      "User-Agent" => "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36",
-      "Accept" => "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8",
-      "Accept-Language" => "en-US,en;q=0.5",
-      "DNT" => "1",
-      "Connection" => "keep-alive",
-      "Upgrade-Insecure-Requests" => "1"
-    }
-
-    begin
-      Rails.logger.info "Fetching Grab page: #{url}"
-      content = URI.open(url, headers).read
-      Rails.logger.info "Successfully fetched Grab page, size: #{content.length} bytes"
-      content
-    rescue => e
-      Rails.logger.error "Failed to fetch Grab page #{url}: #{e.class} - #{e.message}"
-      nil
-    end
+  def setup_chrome_driver
+    options = Selenium::WebDriver::Chrome::Options.new
+    
+    # Headless mode for server deployment
+    options.add_argument('--headless')
+    options.add_argument('--no-sandbox')
+    options.add_argument('--disable-dev-shm-usage')
+    options.add_argument('--disable-gpu')
+    options.add_argument('--window-size=1920,1080')
+    
+    # User agent to avoid detection
+    options.add_argument('--user-agent=Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36')
+    
+    Rails.logger.info "Grab: Starting Chrome driver in headless mode"
+    Selenium::WebDriver.for(:chrome, options: options)
   end
 
-  def extract_restaurant_name(doc)
+  def extract_restaurant_name_selenium(driver)
     # Try multiple selectors for restaurant name
     selectors = [
       'h1.name___1Ls94',  # Current Grab structure
@@ -74,25 +88,33 @@ class GrabParserService
     ]
 
     selectors.each do |selector|
-      element = doc.css(selector).first
-      if element && element.text.present?
-        name = element.text.strip
-        return name if name.length > 2
+      begin
+        element = driver.find_element(:css, selector)
+        if element&.text&.present?
+          name = element.text.strip
+          return name if name.length > 2
+        end
+      rescue Selenium::WebDriver::Error::NoSuchElementError
+        # Continue to next selector
       end
     end
 
     # Fallback: try to extract from title
-    title = doc.css("title").first
-    if title && title.text.present?
-      # Grab titles often have format "Restaurant Name ⭐ 4.7"
-      name = title.text.split("⭐").first&.strip
-      return name if name.present? && name.length > 3
+    begin
+      title = driver.title
+      if title.present?
+        # Grab titles often have format "Restaurant Name ⭐ 4.7"
+        name = title.split("⭐").first&.strip
+        return name if name.present? && name.length > 3
+      end
+    rescue
+      # Ignore
     end
 
     nil
   end
 
-  def extract_address(doc)
+  def extract_address_selenium(driver)
     # Try multiple selectors for address
     selectors = [
       '[data-testid="merchant-address"]',
@@ -105,17 +127,21 @@ class GrabParserService
     ]
 
     selectors.each do |selector|
-      element = doc.css(selector).first
-      if element && element.text.present?
-        address = element.text.strip
-        return address if address.length > 10 # Reasonable address length
+      begin
+        element = driver.find_element(:css, selector)
+        if element&.text&.present?
+          address = element.text.strip
+          return address if address.length > 10 # Reasonable address length
+        end
+      rescue Selenium::WebDriver::Error::NoSuchElementError
+        # Continue to next selector
       end
     end
 
     nil
   end
 
-  def extract_cuisines(doc)
+  def extract_cuisines_selenium(driver)
     cuisines = []
 
     # Try multiple selectors for cuisine types, including the specific Grab selector
@@ -132,26 +158,30 @@ class GrabParserService
     ]
 
     selectors.each do |selector|
-      elements = doc.css(selector)
-      elements.each do |element|
-        text = element.text.strip
-        if text.present? && text.length < 50 # Reasonable cuisine name length
-          # Split by common separators
-          text.split(/[,•·|&]/).each do |cuisine|
-            cleaned = cuisine.strip
-            cuisines << cleaned if cleaned.present?
+      begin
+        elements = driver.find_elements(:css, selector)
+        elements.each do |element|
+          text = element.text.strip
+          if text.present? && text.length < 50 # Reasonable cuisine name length
+            # Split by common separators
+            text.split(/[,•·|&]/).each do |cuisine|
+              cleaned = cuisine.strip
+              cuisines << cleaned if cleaned.present?
+            end
           end
         end
-      end
 
-      break if cuisines.any?
+        break if cuisines.any?
+      rescue Selenium::WebDriver::Error::NoSuchElementError
+        # Continue to next selector
+      end
     end
 
     # Clean and deduplicate cuisines
     cuisines.map(&:strip).uniq.reject(&:blank?).first(3)
   end
 
-  def extract_rating(doc)
+  def extract_rating_selenium(driver)
     # Try multiple selectors for rating
     selectors = [
       '.ratingText___1Q08c',  # Current Grab structure
@@ -163,33 +193,41 @@ class GrabParserService
     ]
 
     selectors.each do |selector|
-      element = doc.css(selector).first
-      if element && element.text.present?
-        # Extract number from text (e.g., "4.5" from "4.5⭐" or "Rating: 4.5")
-        rating_text = element.text.strip
-        rating_match = rating_text.match(/(\d+\.?\d*)/)
-        if rating_match
-          rating = rating_match[1].to_f
-          return rating if rating >= 1.0 && rating <= 5.0
+      begin
+        element = driver.find_element(:css, selector)
+        if element&.text&.present?
+          # Extract number from text (e.g., "4.5" from "4.5⭐" or "Rating: 4.5")
+          rating_text = element.text.strip
+          rating_match = rating_text.match(/(\d+\.?\d*)/)
+          if rating_match
+            rating = rating_match[1].to_f
+            return rating if rating >= 1.0 && rating <= 5.0
+          end
         end
+      rescue Selenium::WebDriver::Error::NoSuchElementError
+        # Continue to next selector
       end
     end
 
     # Try to extract from title as fallback
-    title = doc.css("title").first
-    if title && title.text.present?
-      # Grab titles often have format "Restaurant Name ⭐ 4.7"
-      title_match = title.text.match(/⭐\s*(\d+\.?\d*)/)
-      if title_match
-        rating = title_match[1].to_f
-        return rating if rating >= 1.0 && rating <= 5.0
+    begin
+      title = driver.title
+      if title.present?
+        # Grab titles often have format "Restaurant Name ⭐ 4.7"
+        title_match = title.match(/⭐\s*(\d+\.?\d*)/)
+        if title_match
+          rating = title_match[1].to_f
+          return rating if rating >= 1.0 && rating <= 5.0
+        end
       end
+    rescue
+      # Ignore
     end
 
     nil
   end
 
-  def extract_working_hours(doc)
+  def extract_working_hours_selenium(driver)
     working_hours = []
 
     # Try to find working hours section
@@ -204,17 +242,21 @@ class GrabParserService
     ]
 
     selectors.each do |selector|
-      elements = doc.css(selector)
-      if elements.any?
-        working_hours = parse_working_hours_from_elements(elements)
-        break if working_hours.any?
+      begin
+        elements = driver.find_elements(:css, selector)
+        if elements.any?
+          working_hours = parse_working_hours_from_selenium_elements(elements)
+          break if working_hours.any?
+        end
+      rescue
+        # Continue to next selector
       end
     end
 
     working_hours
   end
 
-  def parse_working_hours_from_elements(elements)
+  def parse_working_hours_from_selenium_elements(elements)
     hours = []
 
     elements.each do |element|
@@ -345,7 +387,7 @@ class GrabParserService
     sprintf("%02d:%02d", hour, minute)
   end
 
-  def extract_image_url(doc)
+  def extract_image_url_selenium(driver)
     # Try multiple selectors for restaurant image
     selectors = [
       '[data-testid="merchant-image"] img',
@@ -360,30 +402,38 @@ class GrabParserService
     ]
 
     selectors.each do |selector|
-      element = doc.css(selector).first
-      if element
-        src = element['src'] || element['data-src'] || element['data-lazy-src']
-        if src.present?
-          # Convert relative URLs to absolute
-          src = src.start_with?('http') ? src : "https:#{src}"
-          return src if src.match?(/\.(jpg|jpeg|png|webp)/i)
+      begin
+        element = driver.find_element(:css, selector)
+        if element
+          src = element.attribute('src') || element.attribute('data-src') || element.attribute('data-lazy-src')
+          if src.present?
+            # Convert relative URLs to absolute
+            src = src.start_with?('http') ? src : "https:#{src}"
+            return src if src.match?(/\.(jpg|jpeg|png|webp)/i)
+          end
         end
+      rescue Selenium::WebDriver::Error::NoSuchElementError
+        # Continue to next selector
       end
     end
 
     # Try to find any image in the header/hero section
     hero_sections = ['.hero', '.header', '.merchant-header', '[class*="header"]']
     hero_sections.each do |section_selector|
-      section = doc.css(section_selector).first
-      if section
-        img = section.css('img').first
-        if img
-          src = img['src'] || img['data-src'] || img['data-lazy-src']
-          if src.present?
-            src = src.start_with?('http') ? src : "https:#{src}"
-            return src if src.match?(/\.(jpg|jpeg|png|webp)/i)
+      begin
+        section = driver.find_element(:css, section_selector)
+        if section
+          img = section.find_element(:css, 'img')
+          if img
+            src = img.attribute('src') || img.attribute('data-src') || img.attribute('data-lazy-src')
+            if src.present?
+              src = src.start_with?('http') ? src : "https:#{src}"
+              return src if src.match?(/\.(jpg|jpeg|png|webp)/i)
+            end
           end
         end
+      rescue Selenium::WebDriver::Error::NoSuchElementError
+        # Continue to next section
       end
     end
 

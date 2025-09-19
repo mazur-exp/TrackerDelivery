@@ -23,6 +23,9 @@ gem "bcrypt", "~> 3.1.7"
 # HTTP client for API calls
 gem "httparty"
 
+# Browser automation for parsing dynamic content
+gem "selenium-webdriver"
+
 # Windows does not include zoneinfo files, so bundle the tzinfo-data gem
 gem "tzinfo-data", platforms: %i[ windows jruby ]
 
@@ -62,7 +65,6 @@ end
 group :test do
   # Use system testing [https://guides.rubyonrails.org/testing.html#system-testing]
   gem "capybara"
-  gem "selenium-webdriver"
 end
 
 gem "tailwindcss-ruby", "~> 4.1"

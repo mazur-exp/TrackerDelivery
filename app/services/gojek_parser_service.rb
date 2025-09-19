@@ -788,20 +788,95 @@ class GojekParserService
 
             schedule_rows.each_with_index do |row, j|
               begin
-                day_element = row.find_element(:css, "div.py-2.pr-9.gf-label-s")
-                time_element = row.find_element(:css, "div.text-left.gf-body-s")
+                Rails.logger.info "Processing schedule row #{j}..."
+                
+                # Try multiple selectors for day element
+                day_element = nil
+                day_selectors = [
+                  "div.py-2.pr-9.gf-label-s",
+                  "div[class*='gf-label-s']",
+                  "div[class*='py-2']",
+                  "div:first-child"
+                ]
+                
+                day_selectors.each do |selector|
+                  elements = row.find_elements(:css, selector)
+                  if elements.any?
+                    day_element = elements.first
+                    Rails.logger.info "Found day element with selector: #{selector}"
+                    break
+                  end
+                end
+                
+                # Try multiple selectors for time element  
+                time_element = nil
+                time_selectors = [
+                  "div.text-left.gf-body-s",
+                  "div[class*='gf-body-s']", 
+                  "div[class*='text-left']",
+                  "div:last-child",
+                  "div:nth-child(2)"
+                ]
+                
+                time_selectors.each do |selector|
+                  elements = row.find_elements(:css, selector)
+                  if elements.any?
+                    time_element = elements.first
+                    Rails.logger.info "Found time element with selector: #{selector}"
+                    break
+                  end
+                end
+                
+                # If specific selectors fail, try to get text from child divs
+                if day_element.nil? || time_element.nil?
+                  all_divs = row.find_elements(:css, "div")
+                  Rails.logger.info "Row #{j} has #{all_divs.length} div elements, trying fallback"
+                  
+                  if all_divs.length >= 2
+                    day_element = all_divs[0] if day_element.nil?
+                    time_element = all_divs[1] if time_element.nil?
+                    Rails.logger.info "Using fallback: first div for day, second div for time"
+                  end
+                end
 
-                day_text = day_element.text.strip
-                time_text = time_element.text.strip
+                if day_element && time_element
+                  day_text = day_element.text.strip
+                  time_text = time_element.text.strip
 
-                Rails.logger.info "Schedule row #{j}: #{day_text} -> #{time_text}"
+                  Rails.logger.info "Schedule row #{j}: #{day_text} -> #{time_text}"
 
-                # Parse Indonesian day names and times
-                day_hours = parse_indonesian_day_hours(day_text, time_text)
-                working_hours.concat(day_hours) if day_hours.any?
+                  # Parse Indonesian day names and times
+                  day_hours = parse_indonesian_day_hours(day_text, time_text)
+                  working_hours.concat(day_hours) if day_hours.any?
+                else
+                  Rails.logger.warn "Could not find day or time elements in row #{j}"
+                  
+                  # Last resort: try to parse row text directly
+                  row_text = row.text.strip
+                  Rails.logger.info "Row #{j} full text: '#{row_text}'"
+                  
+                  # Try to split by common patterns
+                  if row_text.include?("\t")
+                    parts = row_text.split("\t")
+                  elsif row_text.include?("  ") # Two spaces
+                    parts = row_text.split("  ").map(&:strip).reject(&:empty?)
+                  else
+                    parts = []
+                  end
+                  
+                  if parts.length >= 2
+                    day_text = parts[0].strip
+                    time_text = parts[1].strip
+                    Rails.logger.info "Parsed from row text: #{day_text} -> #{time_text}"
+                    
+                    day_hours = parse_indonesian_day_hours(day_text, time_text)
+                    working_hours.concat(day_hours) if day_hours.any?
+                  end
+                end
 
               rescue => e
-                Rails.logger.info "Error parsing schedule row #{j}: #{e.message}"
+                Rails.logger.warn "Error parsing schedule row #{j}: #{e.class} - #{e.message}"
+                Rails.logger.info "Row #{j} HTML: #{row.attribute('outerHTML')[0..200]}..." rescue "Could not get HTML"
               end
             end
 
@@ -971,7 +1046,7 @@ class GojekParserService
     day_num = indonesian_day_mapping[day_text.downcase.strip]
     return [] if day_num.nil?
 
-    # Parse time (format like "10:00-21:00")
+    # Parse time (check for closed status)
     if time_text.downcase.include?("tutup") || time_text.downcase.include?("closed") || time_text.downcase.include?("close")
       return [ {
         day_of_week: day_num,
@@ -981,7 +1056,53 @@ class GojekParserService
       } ]
     end
 
-    # Parse time range like "10:00-21:00"
+    # Check for complex schedule with breaks (like "08:00-12:00 & 17:00-22:00")
+    if time_text.include?("&") || time_text.include?(" & ")
+      Rails.logger.info "Found complex schedule with break: '#{time_text}'"
+      
+      # Split by & and process each time range
+      time_ranges = time_text.split(/\s*&\s*/).map(&:strip)
+      working_hours = []
+      
+      time_ranges.each_with_index do |range, i|
+        Rails.logger.info "Processing time range #{i}: '#{range}'"
+        
+        # Parse individual time range like "08:00-12:00"
+        range_parts = range.split("-").map(&:strip)
+        if range_parts.length == 2
+          opens_at = range_parts[0]
+          closes_at = range_parts[1]
+          
+          # Validate time format
+          if opens_at.match?(/^\d{1,2}:\d{2}$/) && closes_at.match?(/^\d{1,2}:\d{2}$/)
+            # For the first range, use normal working hours
+            # For subsequent ranges, we'll store as break_start/break_end or separate entries
+            if i == 0
+              working_hours << {
+                day_of_week: day_num,
+                opens_at: opens_at,
+                closes_at: closes_at,
+                is_closed: false
+              }
+            else
+              # For now, create a separate entry for the second shift
+              # In the future, you might want to enhance the model to support breaks
+              working_hours << {
+                day_of_week: day_num,
+                opens_at: opens_at,
+                closes_at: closes_at,
+                is_closed: false
+              }
+            end
+          end
+        end
+      end
+      
+      Rails.logger.info "Parsed complex schedule into #{working_hours.length} entries"
+      return working_hours
+    end
+
+    # Parse simple time range like "10:00-21:00"
     time_parts = time_text.split("-").map(&:strip)
     if time_parts.length == 2
       opens_at = time_parts[0]
@@ -998,6 +1119,7 @@ class GojekParserService
       end
     end
 
+    Rails.logger.warn "Could not parse time format: '#{time_text}'"
     []
   end
 

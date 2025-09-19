@@ -46,7 +46,8 @@ class GojekParserService
           cuisines: extract_cuisines_selenium(driver),
           working_hours: extract_working_hours_selenium(driver, skip_modal: true),
           rating: extract_rating_selenium(driver),
-          image_url: extract_image_url_selenium(driver)
+          image_url: extract_image_url_selenium(driver),
+          status: extract_restaurant_status_selenium(driver)
         }
 
         Rails.logger.info "GoJek: Initial extraction completed in #{Time.current - extraction_start}s"
@@ -990,6 +991,83 @@ class GojekParserService
 
     Rails.logger.info "=== No image found ==="
     nil
+  end
+
+  def extract_restaurant_status_selenium(driver)
+    Rails.logger.info "=== Extracting Restaurant Status ==="
+    
+    begin
+      # Search for "Tutup" text across all elements
+      all_elements = driver.find_elements(:css, "*")
+      tutup_found = false
+      opening_info = nil
+      
+      all_elements.each do |element|
+        text = element.text.strip rescue ""
+        next if text.empty? || text.length > 100
+        
+        text_lower = text.downcase
+        
+        # Check for "Tutup" (closed) indicator
+        if text_lower.include?("tutup")
+          Rails.logger.info "Found Tutup indicator: '#{text}'"
+          tutup_found = true
+          
+          # Try to extract opening time information
+          if text_lower.include?("buka")
+            opening_info = text
+            Rails.logger.info "Found opening info: '#{opening_info}'"
+          end
+          
+          break
+        end
+        
+        # Also check for "Buka hari" + day pattern (even without "Tutup")
+        if text_lower.include?("buka hari")
+          # List of Indonesian weekdays
+          indonesian_days = ["senin", "selasa", "rabu", "kamis", "jumat", "sabtu", "minggu"]
+          
+          # Check if any day of week is mentioned
+          if indonesian_days.any? { |day| text_lower.include?(day) }
+            Rails.logger.info "Found 'Buka hari [day]' pattern (closed): '#{text}'"
+            tutup_found = true
+            opening_info = text
+            Rails.logger.info "Found opening info: '#{opening_info}'"
+            break
+          end
+        end
+      end
+      
+      if tutup_found
+        status = {
+          is_open: false,
+          status_text: "closed",
+          opening_info: opening_info,
+          raw_status: opening_info || "Tutup"
+        }
+        Rails.logger.info "Restaurant Status: CLOSED - #{opening_info || 'Tutup'}"
+        return status
+      else
+        status = {
+          is_open: true,
+          status_text: "open",
+          opening_info: nil,
+          raw_status: "Open"
+        }
+        Rails.logger.info "Restaurant Status: OPEN"
+        return status
+      end
+      
+    rescue => e
+      Rails.logger.warn "Error extracting restaurant status: #{e.message}"
+      # Default to unknown status
+      return {
+        is_open: nil,
+        status_text: "unknown",
+        opening_info: nil,
+        raw_status: "Status unknown"
+      }
+    end
   end
 
   def parse_simple_hours_text(text)

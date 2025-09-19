@@ -168,15 +168,22 @@
                   </div>
 
                   <!-- Rating and Cuisines Row -->
-                  <div class="flex items-center gap-4 mb-2">
-                    <!-- Rating -->
-                    <div class="flex items-center gap-1 bg-yellow-50 px-3 py-1 rounded-xl border border-yellow-200">
-                      <i data-lucide="star" class="w-4 h-4 text-yellow-500 fill-current"></i>
-                      <span id="platform-rating" class="text-sm font-medium text-gray-900">-</span>
-                    </div>
+                  <div class="flex items-center gap-4 mb-2 justify-between">
+                    <div class="flex items-center gap-4">
+                      <!-- Rating -->
+                      <div class="flex items-center gap-1 bg-yellow-50 px-3 py-1 rounded-xl border border-yellow-200">
+                        <i data-lucide="star" class="w-4 h-4 text-yellow-500 fill-current"></i>
+                        <span id="platform-rating" class="text-sm font-medium text-gray-900">-</span>
+                      </div>
 
-                    <!-- Cuisines -->
-                    <div id="platform-cuisines" class="text-sm text-gray-600 bg-gray-50 px-3 py-1 rounded-xl border border-gray-200 truncate">-</div>
+                      <!-- Cuisines -->
+                      <div id="platform-cuisines" class="text-sm text-gray-600 bg-gray-50 px-3 py-1 rounded-xl border border-gray-200 truncate">-</div>
+                    </div>
+                    
+                    <!-- Status (Open/Closed) -->
+                    <div id="platform-status" class="text-xs font-bold px-3 py-1 rounded-xl border">
+                      LOADING
+                    </div>
                   </div>
                 </div>
               </div>
@@ -779,6 +786,24 @@
       document.getElementById('platform-cuisines').textContent = data.cuisines ? data.cuisines.join(', ') : '-';
       document.getElementById('platform-address').textContent = data.address || '-';
       document.getElementById('platform-rating').textContent = data.rating || 'NEW';
+      
+      // Update status based on restaurant open/closed state
+      const statusElement = document.getElementById('platform-status');
+      if (data.status && data.status.is_open !== undefined) {
+        if (data.status.is_open) {
+          // Restaurant is open
+          statusElement.textContent = 'OPEN';
+          statusElement.className = 'text-xs font-bold px-3 py-1 rounded-xl border bg-green-50 text-green-700 border-green-200';
+        } else {
+          // Restaurant is closed
+          statusElement.textContent = 'CLOSED';
+          statusElement.className = 'text-xs font-bold px-3 py-1 rounded-xl border bg-red-50 text-red-700 border-red-200';
+        }
+      } else {
+        // Status unknown
+        statusElement.textContent = 'UNKNOWN';
+        statusElement.className = 'text-xs font-bold px-3 py-1 rounded-xl border bg-gray-50 text-gray-500 border-gray-200';
+      }
       
       // Fill schedule for each day
       const days = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'];

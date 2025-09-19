@@ -139,30 +139,163 @@ class GojekParserService
   def extract_cuisines_selenium(driver)
     cuisines = []
 
-    # Look for font elements with dir="auto" that contain comma-separated text
+    # First get restaurant name to avoid confusion with cuisine categories
+    restaurant_name = extract_restaurant_name_selenium(driver)
+    Rails.logger.info "GoJek: Restaurant name: '#{restaurant_name}'"
+
+    # First try the specific GoJek cuisine selector
     begin
-      fonts = driver.find_elements(:css, 'font[dir="auto"]')
-      fonts.each do |font|
-        text = font.text.strip
+      cuisine_elements = driver.find_elements(:css, 'p.text-gf-content-secondary.line-clamp-1')
+      Rails.logger.info "GoJek: Found #{cuisine_elements.length} potential cuisine elements"
+      
+      # Also try alternative selectors
+      alt_elements = driver.find_elements(:css, 'p[class*="text-gf-content-secondary"]')
+      Rails.logger.info "GoJek: Found #{alt_elements.length} alternative elements"
+      
+      # Try looking for any p elements that might contain cuisines
+      all_p_elements = driver.find_elements(:css, 'p')
+      cuisine_candidates = all_p_elements.select { |p| 
+        text = p.text.strip
+        text.include?(',') && text.length > 5 && text.length < 100
+      }
+      Rails.logger.info "GoJek: Found #{cuisine_candidates.length} p elements with commas"
+      
+      cuisine_elements.each_with_index do |element, i|
+        text = element.text.strip
+        Rails.logger.info "GoJek: Cuisine element #{i}: '#{text}'"
         
-        # Check if it looks like cuisine text (contains commas, reasonable length)
-        if text.include?(',') && text.length > 5 && text.length < 100
-          # Skip if it looks like a restaurant name
-          next if text.downcase.include?('only eggs') || text.downcase.include?('restaurant')
+        # Skip if this text matches the restaurant name
+        if restaurant_name.present? && text.downcase == restaurant_name.downcase
+          Rails.logger.info "GoJek: Skipping restaurant name: '#{text}'"
+          next
+        end
+        
+        # Check each element directly against our known cuisine categories
+        text_normalized = text.downcase.strip
+        Rails.logger.info "GoJek: Checking text against known categories: '#{text_normalized}'"
+        
+        # Our complete list of known Indonesian cuisine categories
+        known_cuisine_categories = [
+          "aneka nasi", "ayam & bebek", "bakmie", "bakso & soto", "barat", 
+          "cepat saji", "chinese", "india", "indonesia", "jajanan", "jepang", 
+          "kopi", "korea", "makanan sehat", "martabak", "minuman", "nasi goreng", 
+          "pizza & pasta", "roti", "sate", "seafood", "steak", "sweets", 
+          "thailand", "timur tengah"
+        ]
+        
+        # Check if this text exactly matches one of our known categories
+        if known_cuisine_categories.include?(text_normalized)
+          Rails.logger.info "GoJek: Found exact match for cuisine category: '#{text_normalized}'"
+          cuisines << text_normalized
+        elsif text.include?(',') && text.length > 10 && text.length < 50
+          # If it contains commas, check if it's a list of cuisine categories
+          Rails.logger.info "GoJek: Checking comma-separated text for cuisine categories"
           
-          # Split by commas and clean up
-          text.split(',').each do |cuisine|
-            cleaned = cuisine.strip
-            if cleaned.present? && cleaned.length < 30
-              cuisines << cleaned
+          # Skip obvious non-cuisine text
+          next if text_normalized.include?('canggu') || text_normalized.include?('street') || 
+                  text_normalized.include?('eat street') || text_normalized.include?('restaurant') ||
+                  text_normalized.include?('promo') || text_normalized == restaurant_name&.downcase
+          
+          # Split by commas and check each part
+          text.split(',').each do |part|
+            part_normalized = part.strip.downcase
+            if known_cuisine_categories.include?(part_normalized)
+              Rails.logger.info "GoJek: Found cuisine in comma-separated list: '#{part_normalized}'"
+              cuisines << part_normalized
             end
           end
-          
-          break if cuisines.any?
+        else
+          Rails.logger.info "GoJek: Text does not match any known cuisine categories, skipping"
         end
       end
-    rescue Selenium::WebDriver::Error::NoSuchElementError
-      # Try broader search
+      
+      # If no cuisines found with primary selector, try alternative approaches
+      if cuisines.empty?
+        Rails.logger.info "GoJek: No cuisines found with primary selector, trying alternatives"
+        
+        # Try alternative elements and all p elements with commas
+        all_candidates = (alt_elements + cuisine_candidates).uniq
+        
+        all_candidates.each_with_index do |element, i|
+          text = element.text.strip
+          Rails.logger.info "GoJek: Alternative element #{i}: '#{text}'"
+          
+          # Skip if this text matches the restaurant name
+          if restaurant_name.present? && text.downcase == restaurant_name.downcase
+            Rails.logger.info "GoJek: Skipping restaurant name: '#{text}'"
+            next
+          end
+          
+          # Check if this looks like cuisine categories
+          if text.include?(',') && text.length > 10 && text.length < 100
+            # Skip location-based names
+            next if text.downcase.include?('canggu') || text.downcase.include?('street') || 
+                    text.downcase.include?('eat street') || text.downcase.include?('restaurant')
+            
+            # Check if any known cuisine categories are present
+            known_cuisines = %w[aneka nasi bakmie ayam bebek bakso soto barat cepat saji chinese india indonesia jajanan jepang kopi korea makanan sehat martabak minuman nasi goreng pizza pasta roti sate seafood steak sweets thailand timur tengah]
+            text_words = text.downcase.split(/[,\s&]+/).map(&:strip)
+            has_known_cuisine = known_cuisines.any? { |cuisine| text_words.include?(cuisine) }
+            
+            if has_known_cuisine
+              Rails.logger.info "GoJek: Alternative text contains known cuisine categories"
+              text.split(',').each do |cuisine|
+                cleaned = cuisine.strip.downcase
+                if cleaned.present? && cleaned.length > 2 && cleaned.length < 30
+                  cuisines << cleaned
+                end
+              end
+              # Don't break here - continue checking other elements
+              # break if cuisines.any?
+            end
+          end
+        end
+      end
+      
+    rescue Selenium::WebDriver::Error::NoSuchElementError => e
+      Rails.logger.info "GoJek: Could not find specific cuisine selector: #{e.message}"
+    end
+
+    # Fallback: Look for font elements with dir="auto" that contain comma-separated text
+    if cuisines.empty?
+      begin
+        fonts = driver.find_elements(:css, 'font[dir="auto"]')
+        fonts.each do |font|
+          text = font.text.strip
+          
+          # Check if it looks like cuisine text (contains commas, reasonable length)
+          if text.include?(',') && text.length > 5 && text.length < 100
+            # Skip if it looks like a restaurant name, food items, or contains unwanted text
+            next if text.downcase.include?('only eggs') || 
+                    text.downcase.include?('restaurant') ||
+                    text.downcase.include?('super partner') ||
+                    text.downcase.include?('soto') ||        # Skip food items like "Soto Daging Sapi"
+                    text.downcase.include?('daging') ||      # Skip meat dishes
+                    text.downcase.include?('sambal') ||      # Skip sauce/condiment names
+                    text.downcase.include?('goreng') ||      # Skip fried dishes
+                    text.downcase.include?('dan ') ||        # Skip Indonesian "and" - indicates food description
+                    text.include?("\n") # Skip multiline text that might contain "Super Partner\nBarat"
+            
+            # Split by commas and clean up
+            text.split(',').each do |cuisine|
+              cleaned = cuisine.strip.downcase
+              # Filter out non-cuisine terms
+              next if cleaned.include?('super partner') ||
+                      cleaned.include?('partner') ||
+                      cleaned.length < 3 || # Too short
+                      cleaned.length > 25   # Too long for a cuisine name
+              
+              if cleaned.present?
+                cuisines << cleaned
+              end
+            end
+            
+            break if cuisines.any?
+          end
+        end
+      rescue Selenium::WebDriver::Error::NoSuchElementError
+        # Try broader search
+      end
     end
     
     # If no cuisines found, try broader search
@@ -173,13 +306,26 @@ class GojekParserService
           text = element.text.strip
           
           # Look for text that might be cuisines
-          if text.match?(/^[A-Za-z\s,]+$/) && text.include?(',') && 
+          if text.match?(/^[A-Za-z\s,&]+$/) && text.include?(',') && 
              text.length > 10 && text.length < 50 &&
              !text.downcase.include?('only eggs') &&
-             !text.downcase.include?('restaurant')
+             !text.downcase.include?('restaurant') &&
+             !text.downcase.include?('super partner') &&
+             !text.downcase.include?('soto') &&
+             !text.downcase.include?('daging') &&
+             !text.downcase.include?('sambal') &&
+             !text.downcase.include?('goreng') &&
+             !text.downcase.include?('dan ') &&
+             !text.include?("\n")
             
             text.split(',').each do |cuisine|
               cleaned = cuisine.strip
+              # Filter out non-cuisine terms
+              next if cleaned.downcase.include?('super partner') ||
+                      cleaned.downcase.include?('partner') ||
+                      cleaned.length < 3 ||
+                      cleaned.length > 25
+              
               cuisines << cleaned if cleaned.present?
             end
             
@@ -191,8 +337,9 @@ class GojekParserService
       end
     end
 
-    # Clean and deduplicate cuisines
-    cuisines.map(&:strip).uniq.reject(&:blank?).first(3)
+    # Clean and deduplicate cuisines, then translate to English
+    raw_cuisines = cuisines.map(&:strip).uniq.reject(&:blank?).first(3)
+    CuisineTranslationService.translate_array(raw_cuisines)
   end
   
   def extract_rating_selenium(driver)

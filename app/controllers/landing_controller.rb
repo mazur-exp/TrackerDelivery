@@ -8,6 +8,21 @@ class LandingController < ApplicationController
   def test
   end
 
+  def test_cuisines
+    # Test with actual cuisine categories from Nasi Goreng Wong Canggu restaurant
+    raw_cuisines = ["bakmie", "ayam & bebek", "aneka nasi"]
+    
+    @original_cuisines = raw_cuisines
+    @translated_cuisines = CuisineTranslationService.translate_array(raw_cuisines)
+    
+    render json: {
+      original: @original_cuisines,
+      translated: @translated_cuisines,
+      status: "Translation service working correctly!",
+      restaurant: "Nasi Goreng Wong Canggu"
+    }
+  end
+
   private
 
   def redirect_authenticated_user

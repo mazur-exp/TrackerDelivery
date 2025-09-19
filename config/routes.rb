@@ -39,6 +39,7 @@ Rails.application.routes.draw do
 
   get "landing/index"
   get "landing/test"
+  get "landing/test_cuisines"
   get "index" => "landing#index"  # Для aidelivery.tech/index
 
   # Dev routes для новой версии с v0.dev

@@ -10,7 +10,15 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2025_09_19_022914) do
+ActiveRecord::Schema[8.0].define(version: 2025_09_19_064703) do
+  create_table "cuisine_translations", force: :cascade do |t|
+    t.string "indonesian", null: false
+    t.string "english", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["indonesian"], name: "index_cuisine_translations_on_indonesian", unique: true
+  end
+
   create_table "email_domain_blacklists", force: :cascade do |t|
     t.string "domain"
     t.string "reason"

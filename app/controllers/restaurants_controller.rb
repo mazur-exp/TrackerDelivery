@@ -33,7 +33,8 @@ class RestaurantsController < ApplicationController
           cuisines: grab_data[:cuisines],
           rating: grab_data[:rating],
           working_hours: format_working_hours_for_frontend(grab_data[:working_hours] || []),
-          image_url: grab_data[:image_url]
+          image_url: grab_data[:image_url],
+          status: grab_data[:status] || data[:status]
         }
       end
 
@@ -46,7 +47,8 @@ class RestaurantsController < ApplicationController
           cuisines: gojek_data[:cuisines],
           rating: gojek_data[:rating],
           working_hours: format_working_hours_for_frontend(gojek_data[:working_hours] || []),
-          image_url: gojek_data[:image_url]
+          image_url: gojek_data[:image_url],
+          status: gojek_data[:status] || data[:status]
         }
       end
 

@@ -25,10 +25,10 @@ class GojekParserService
         # Wait for page to load and JavaScript to execute
         Rails.logger.info "GoJek: Waiting for page to load..."
         page_load_start = Time.current
-        sleep(2) # Reduced from 3 to 2 seconds
+        sleep(3) # Wait for page to load
 
         # Wait for content to appear or redirects to complete
-        wait = Selenium::WebDriver::Wait.new(timeout: 8) # Reduced from 10 to 8
+        wait = Selenium::WebDriver::Wait.new(timeout: 10)
         wait.until { driver.execute_script("return document.readyState") == "complete" }
         Rails.logger.info "GoJek: Page load completed in #{Time.current - page_load_start}s"
 
@@ -204,36 +204,47 @@ class GojekParserService
     options.add_argument("--window-size=1920,1080")
     options.add_argument("--remote-debugging-port=9223")
 
+    # Detect Chrome binary with improved logic first
+    chrome_binary = detect_chrome_binary
+
     # Performance and stability improvements
     options.add_argument("--disable-extensions")
     options.add_argument("--disable-plugins")
-    options.add_argument("--disable-images")
+    
+    # Special settings for Chromium to enable GoFood redirects
+    if chrome_binary&.include?("chromium")
+      Rails.logger.info "GoJek: Detected Chromium, using redirect-friendly settings"
+      # Keep images enabled for Chromium to ensure proper page loading
+      # Keep background throttling disabled to allow JavaScript redirects
+      options.add_argument("--disable-background-timer-throttling")
+      options.add_argument("--disable-renderer-backgrounding")
+      options.add_argument("--disable-backgrounding-occluded-windows")
+    else
+      Rails.logger.info "GoJek: Detected Chrome, using standard settings"
+      options.add_argument("--disable-images")
+      options.add_argument("--disable-background-timer-throttling")
+      options.add_argument("--disable-renderer-backgrounding")
+      options.add_argument("--disable-backgrounding-occluded-windows")
+    end
+    
     # NOTE: JavaScript is required for GoJek SPA
     options.add_argument("--disable-web-security")
     options.add_argument("--disable-features=VizDisplayCompositor")
-    options.add_argument("--disable-background-timer-throttling")
-    options.add_argument("--disable-renderer-backgrounding")
-    options.add_argument("--disable-backgrounding-occluded-windows")
     options.add_argument("--memory-pressure-off")
     options.add_argument("--max_old_space_size=4096")
-    
+
     # Additional flags for Chromium compatibility
     options.add_argument("--disable-blink-features=AutomationControlled")
 
     # Timeout settings
     options.add_argument("--page-load-strategy=eager") # Don't wait for all resources
 
-    # Detect Chrome binary with improved logic
-    chrome_binary = detect_chrome_binary
-    
-    # Set architecture-appropriate user agent
-    arch = detect_architecture
-    if arch == "arm64" || chrome_binary&.include?("chromium")
-      options.add_argument("--user-agent=Mozilla/5.0 (X11; Linux aarch64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36")
-    else
-      options.add_argument("--user-agent=Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36")
-    end
-    
+    # Use standard Chrome desktop user agent for GoFood compatibility
+    # GoFood may block redirects for ARM64/Linux user agents
+    standard_ua = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+    options.add_argument("--user-agent=#{standard_ua}")
+    Rails.logger.info "GoJek: Using standard Chrome desktop user agent for GoFood compatibility"
+
     if File.exist?(chrome_binary)
       options.binary = chrome_binary
       Rails.logger.info "GoJek: Using Chrome binary: #{chrome_binary}"
@@ -254,11 +265,11 @@ class GojekParserService
       Rails.logger.info "GoJek: Created ChromeDriver service with path: #{chromedriver_path}"
       driver = Selenium::WebDriver.for(:chrome, service: service, options: options)
       Rails.logger.info "GoJek: Successfully created WebDriver instance"
-      
+
       # Set timeouts
       driver.manage.timeouts.page_load = 15 # 15 seconds max for page load
       driver.manage.timeouts.script_timeout = 10 # 10 seconds max for script execution
-      
+
       driver
     rescue => e
       Rails.logger.error "GoJek: Failed to create WebDriver: #{e.class} - #{e.message}"
@@ -274,7 +285,7 @@ class GojekParserService
   def detect_chrome_binary
     # Priority order for Chrome binary detection
     candidates = [
-      ENV['CHROME_BIN'],
+      ENV["CHROME_BIN"],
       "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome", # Mac
       "/Applications/Chromium.app/Contents/MacOS/Chromium", # Mac Chromium
       "/usr/bin/google-chrome-stable", # Linux
@@ -293,7 +304,7 @@ class GojekParserService
     # Last resort: search the filesystem
     Rails.logger.warn "GoJek: No Chrome binary found in standard locations, searching filesystem..."
     search_result = `find /usr -name "chrome*" -o -name "chromium*" -type f 2>/dev/null | grep -E "(chrome|chromium)$" | head -1`.strip
-    
+
     if search_result.present? && File.exist?(search_result)
       Rails.logger.info "GoJek: Found Chrome binary via search: #{search_result}"
       return search_result
@@ -306,7 +317,7 @@ class GojekParserService
   def detect_chromedriver_path
     # Priority order for ChromeDriver detection
     candidates = [
-      ENV['CHROMEDRIVER_PATH'],
+      ENV["CHROMEDRIVER_PATH"],
       "/usr/local/bin/chromedriver",
       "/usr/bin/chromedriver",
       "/usr/lib/chromium/chromedriver",
@@ -323,7 +334,7 @@ class GojekParserService
     # Last resort: search the filesystem
     Rails.logger.warn "GoJek: No ChromeDriver found in standard locations, searching filesystem..."
     search_result = `find /usr -name "chromedriver" -type f 2>/dev/null | head -1`.strip
-    
+
     if search_result.present? && File.exist?(search_result)
       Rails.logger.info "GoJek: Found ChromeDriver via search: #{search_result}"
       return search_result
@@ -902,7 +913,7 @@ class GojekParserService
             schedule_rows.each_with_index do |row, j|
               begin
                 Rails.logger.info "Processing schedule row #{j}..."
-                
+
                 # Try multiple selectors for day element
                 day_element = nil
                 day_selectors = [
@@ -911,7 +922,7 @@ class GojekParserService
                   "div[class*='py-2']",
                   "div:first-child"
                 ]
-                
+
                 day_selectors.each do |selector|
                   elements = row.find_elements(:css, selector)
                   if elements.any?
@@ -920,17 +931,17 @@ class GojekParserService
                     break
                   end
                 end
-                
-                # Try multiple selectors for time element  
+
+                # Try multiple selectors for time element
                 time_element = nil
                 time_selectors = [
                   "div.text-left.gf-body-s",
-                  "div[class*='gf-body-s']", 
+                  "div[class*='gf-body-s']",
                   "div[class*='text-left']",
                   "div:last-child",
                   "div:nth-child(2)"
                 ]
-                
+
                 time_selectors.each do |selector|
                   elements = row.find_elements(:css, selector)
                   if elements.any?
@@ -939,12 +950,12 @@ class GojekParserService
                     break
                   end
                 end
-                
+
                 # If specific selectors fail, try to get text from child divs
                 if day_element.nil? || time_element.nil?
                   all_divs = row.find_elements(:css, "div")
                   Rails.logger.info "Row #{j} has #{all_divs.length} div elements, trying fallback"
-                  
+
                   if all_divs.length >= 2
                     day_element = all_divs[0] if day_element.nil?
                     time_element = all_divs[1] if time_element.nil?
@@ -963,11 +974,11 @@ class GojekParserService
                   working_hours.concat(day_hours) if day_hours.any?
                 else
                   Rails.logger.warn "Could not find day or time elements in row #{j}"
-                  
+
                   # Last resort: try to parse row text directly
                   row_text = row.text.strip
                   Rails.logger.info "Row #{j} full text: '#{row_text}'"
-                  
+
                   # Try to split by common patterns
                   if row_text.include?("\t")
                     parts = row_text.split("\t")
@@ -976,12 +987,12 @@ class GojekParserService
                   else
                     parts = []
                   end
-                  
+
                   if parts.length >= 2
                     day_text = parts[0].strip
                     time_text = parts[1].strip
                     Rails.logger.info "Parsed from row text: #{day_text} -> #{time_text}"
-                    
+
                     day_hours = parse_indonesian_day_hours(day_text, time_text)
                     working_hours.concat(day_hours) if day_hours.any?
                   end
@@ -1107,38 +1118,54 @@ class GojekParserService
 
   def extract_restaurant_status_selenium(driver)
     Rails.logger.info "=== Extracting Restaurant Status ==="
-    
+
     begin
-      # Search for "Tutup" text across all elements
+      # Search for closed indicators across all elements
       all_elements = driver.find_elements(:css, "*")
       tutup_found = false
       opening_info = nil
       
+      # Log some sample text for debugging
+      Rails.logger.info "=== DEBUG: Sample page text (first 10 non-empty elements) ==="
+      debug_count = 0
       all_elements.each do |element|
         text = element.text.strip rescue ""
         next if text.empty? || text.length > 100
         
+        if debug_count < 10
+          Rails.logger.info "Element text: '#{text}'"
+          debug_count += 1
+        end
+      end
+      Rails.logger.info "=== END DEBUG ==="
+
+      all_elements.each do |element|
+        text = element.text.strip rescue ""
+        next if text.empty? || text.length > 100
+
         text_lower = text.downcase
+
+        # Check for closed indicators (both Indonesian and English)
+        closed_indicators = ["tutup", "closed", "ditutup", "tidak buka", "belum buka"]
         
-        # Check for "Tutup" (closed) indicator
-        if text_lower.include?("tutup")
-          Rails.logger.info "Found Tutup indicator: '#{text}'"
+        if closed_indicators.any? { |indicator| text_lower.include?(indicator) }
+          Rails.logger.info "Found closed indicator: '#{text}'"
           tutup_found = true
-          
+
           # Try to extract opening time information
-          if text_lower.include?("buka")
+          if text_lower.include?("buka") || text_lower.include?("open")
             opening_info = text
             Rails.logger.info "Found opening info: '#{opening_info}'"
           end
-          
+
           break
         end
-        
+
         # Also check for "Buka hari" + day pattern (even without "Tutup")
         if text_lower.include?("buka hari")
           # List of Indonesian weekdays
-          indonesian_days = ["senin", "selasa", "rabu", "kamis", "jumat", "sabtu", "minggu"]
-          
+          indonesian_days = [ "senin", "selasa", "rabu", "kamis", "jumat", "sabtu", "minggu" ]
+
           # Check if any day of week is mentioned
           if indonesian_days.any? { |day| text_lower.include?(day) }
             Rails.logger.info "Found 'Buka hari [day]' pattern (closed): '#{text}'"
@@ -1149,7 +1176,7 @@ class GojekParserService
           end
         end
       end
-      
+
       if tutup_found
         status = {
           is_open: false,
@@ -1158,7 +1185,7 @@ class GojekParserService
           raw_status: opening_info || "Tutup"
         }
         Rails.logger.info "Restaurant Status: CLOSED - #{opening_info || 'Tutup'}"
-        return status
+        status
       else
         status = {
           is_open: true,
@@ -1167,13 +1194,13 @@ class GojekParserService
           raw_status: "Open"
         }
         Rails.logger.info "Restaurant Status: OPEN"
-        return status
+        status
       end
-      
+
     rescue => e
       Rails.logger.warn "Error extracting restaurant status: #{e.message}"
       # Default to unknown status
-      return {
+      {
         is_open: nil,
         status_text: "unknown",
         opening_info: nil,
@@ -1249,20 +1276,20 @@ class GojekParserService
     # Check for complex schedule with breaks (like "08:00-12:00 & 17:00-22:00")
     if time_text.include?("&") || time_text.include?(" & ")
       Rails.logger.info "Found complex schedule with break: '#{time_text}'"
-      
+
       # Split by & and process each time range
       time_ranges = time_text.split(/\s*&\s*/).map(&:strip)
       working_hours = []
-      
+
       time_ranges.each_with_index do |range, i|
         Rails.logger.info "Processing time range #{i}: '#{range}'"
-        
+
         # Parse individual time range like "08:00-12:00"
         range_parts = range.split("-").map(&:strip)
         if range_parts.length == 2
           opens_at = range_parts[0]
           closes_at = range_parts[1]
-          
+
           # Validate time format
           if opens_at.match?(/^\d{1,2}:\d{2}$/) && closes_at.match?(/^\d{1,2}:\d{2}$/)
             # For the first range, use normal working hours
@@ -1287,7 +1314,7 @@ class GojekParserService
           end
         end
       end
-      
+
       Rails.logger.info "Parsed complex schedule into #{working_hours.length} entries"
       return working_hours
     end

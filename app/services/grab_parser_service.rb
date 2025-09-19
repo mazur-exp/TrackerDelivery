@@ -35,7 +35,7 @@ class GrabParserService
         if json_data && json_data.any?
           Rails.logger.info "Grab: Using JSON data extraction"
           data = json_data
-          
+
           # If address is missing, try to get it from DOM
           if data[:address].blank?
             Rails.logger.info "Grab: Address missing in JSON, trying DOM extraction"
@@ -77,24 +77,24 @@ class GrabParserService
     begin
       # Find script tags that contain restaurant data
       scripts = driver.find_elements(:css, "script")
-      
+
       scripts.each do |script|
         content = script.attribute("innerHTML")
-        next unless content && content.include?('"props"') && content.include?('ssrRestaurantData')
-        
+        next unless content && content.include?('"props"') && content.include?("ssrRestaurantData")
+
         # Extract JSON data
         json_start = content.index('{"props"')
         next unless json_start
-        
+
         json_content = content[json_start..-1]
-        
+
         # Find the end of JSON object
         brace_count = 0
         json_end = nil
         json_content.each_char.with_index do |char, i|
-          if char == '{'
+          if char == "{"
             brace_count += 1
-          elsif char == '}'
+          elsif char == "}"
             brace_count -= 1
             if brace_count == 0
               json_end = i
@@ -102,21 +102,21 @@ class GrabParserService
             end
           end
         end
-        
+
         next unless json_end
-        
+
         json_data = json_content[0..json_end]
         parsed = JSON.parse(json_data)
-        
+
         # Extract restaurant data from parsed JSON
-        restaurant_data = parsed.dig('props', 'pageProps', 'ssrRestaurantData')
+        restaurant_data = parsed.dig("props", "pageProps", "ssrRestaurantData")
         next unless restaurant_data
-        
+
         Rails.logger.info "Grab: Found restaurant data in JSON: #{restaurant_data.keys}"
-        
+
         return extract_restaurant_info_from_json(restaurant_data)
       end
-      
+
       nil
     rescue => e
       Rails.logger.error "Grab: Error extracting JSON data: #{e.message}"
@@ -127,49 +127,49 @@ class GrabParserService
   def extract_restaurant_info_from_json(restaurant_data)
     # Extract restaurant information from JSON data
     cuisines = []
-    if restaurant_data['cuisine'].present?
-      cuisines = [restaurant_data['cuisine']]
+    if restaurant_data["cuisine"].present?
+      cuisines = [ restaurant_data["cuisine"] ]
     end
-    
+
     # Extract working hours
-    working_hours = extract_working_hours_from_json(restaurant_data['openingHours'])
-    
+    working_hours = extract_working_hours_from_json(restaurant_data["openingHours"])
+
     # Extract rating if available
-    rating = restaurant_data['averageRating'] || restaurant_data['rating']
-    
+    rating = restaurant_data["averageRating"] || restaurant_data["rating"]
+
     # Extract status from opening hours
-    status = extract_status_from_json(restaurant_data['openingHours'])
-    
+    status = extract_status_from_json(restaurant_data["openingHours"])
+
     # Extract coordinates
     coordinates = extract_coordinates_from_json(restaurant_data)
-    
+
     # Extract address from restaurant data - use coordinates if no address
     address = extract_address_from_json(restaurant_data)
-    
+
     # If no address in JSON but we have coordinates, use coordinates as address
     if address.blank? && coordinates
       Rails.logger.info "Grab: No address in JSON, using coordinates as address: #{coordinates.inspect}"
       address = "#{coordinates[:latitude]}, #{coordinates[:longitude]}"
     end
-    
+
     {
-      name: restaurant_data['name'],
+      name: restaurant_data["name"],
       address: address,
       coordinates: coordinates,
       cuisines: cuisines,
       working_hours: working_hours,
       rating: rating,
-      image_url: restaurant_data['photoHref'],
+      image_url: restaurant_data["photoHref"],
       status: status
     }
   end
 
   def extract_coordinates_from_json(restaurant_data)
     # Extract coordinates from latlng field
-    if restaurant_data['latlng'].is_a?(Hash)
-      lat = restaurant_data['latlng']['latitude']
-      lng = restaurant_data['latlng']['longitude']
-      
+    if restaurant_data["latlng"].is_a?(Hash)
+      lat = restaurant_data["latlng"]["latitude"]
+      lng = restaurant_data["latlng"]["longitude"]
+
       if lat && lng
         Rails.logger.info "Grab: Found coordinates: #{lat}, #{lng}"
         return {
@@ -178,78 +178,78 @@ class GrabParserService
         }
       end
     end
-    
+
     nil
   end
 
   def extract_address_from_json(restaurant_data)
     # Try to extract address from JSON first
     address = nil
-    if restaurant_data['address']
-      addr_data = restaurant_data['address']
+    if restaurant_data["address"]
+      addr_data = restaurant_data["address"]
       if addr_data.is_a?(Hash)
         # Try to build address from parts
         address_parts = []
-        address_parts << addr_data['house'] if addr_data['house'].present?
-        address_parts << addr_data['street'] if addr_data['street'].present?
-        address_parts << addr_data['suburb'] if addr_data['suburb'].present?
-        address_parts << addr_data['city'] if addr_data['city'].present?
-        address_parts << addr_data['combinedAddress'] if addr_data['combinedAddress'].present?
-        
-        address = address_parts.join(', ') if address_parts.any?
-        address = addr_data['combinedAddress'] if address.blank? && addr_data['combinedAddress'].present?
+        address_parts << addr_data["house"] if addr_data["house"].present?
+        address_parts << addr_data["street"] if addr_data["street"].present?
+        address_parts << addr_data["suburb"] if addr_data["suburb"].present?
+        address_parts << addr_data["city"] if addr_data["city"].present?
+        address_parts << addr_data["combinedAddress"] if addr_data["combinedAddress"].present?
+
+        address = address_parts.join(", ") if address_parts.any?
+        address = addr_data["combinedAddress"] if address.blank? && addr_data["combinedAddress"].present?
       elsif addr_data.is_a?(String)
         address = addr_data
       end
     end
-    
+
     address
   end
 
   def extract_status_from_json(opening_hours_data)
     return { is_open: true, status_text: "open" } unless opening_hours_data.is_a?(Hash)
-    
+
     # Check if restaurant is currently open
-    is_currently_open = opening_hours_data['open']
-    displayed_hours = opening_hours_data['displayedHours']
-    temp_closed = opening_hours_data['tempClosed']
-    
+    is_currently_open = opening_hours_data["open"]
+    displayed_hours = opening_hours_data["displayedHours"]
+    temp_closed = opening_hours_data["tempClosed"]
+
     # Determine status
     if temp_closed == true
-      return { is_open: false, status_text: "temporarily_closed", opening_info: displayed_hours }
+      { is_open: false, status_text: "temporarily_closed", opening_info: displayed_hours }
     elsif is_currently_open == false
-      return { is_open: false, status_text: "closed", opening_info: displayed_hours }
+      { is_open: false, status_text: "closed", opening_info: displayed_hours }
     elsif is_currently_open == true
-      return { is_open: true, status_text: "open", opening_info: displayed_hours }
+      { is_open: true, status_text: "open", opening_info: displayed_hours }
     else
       # Fallback - check displayed hours text
-      if displayed_hours && displayed_hours.downcase.include?('closed')
-        return { is_open: false, status_text: "closed", opening_info: displayed_hours }
+      if displayed_hours && displayed_hours.downcase.include?("closed")
+        { is_open: false, status_text: "closed", opening_info: displayed_hours }
       else
-        return { is_open: true, status_text: "open", opening_info: displayed_hours }
+        { is_open: true, status_text: "open", opening_info: displayed_hours }
       end
     end
   end
 
   def extract_working_hours_from_json(opening_hours_data)
     return [] unless opening_hours_data.is_a?(Hash)
-    
+
     hours = []
     day_mapping = {
-      'mon' => 0, 'tue' => 1, 'wed' => 2, 'thu' => 3,
-      'fri' => 4, 'sat' => 5, 'sun' => 6
+      "mon" => 0, "tue" => 1, "wed" => 2, "thu" => 3,
+      "fri" => 4, "sat" => 5, "sun" => 6
     }
-    
+
     day_mapping.each do |day_key, day_num|
       day_hours = opening_hours_data[day_key]
       next unless day_hours
-      
+
       # Parse time format like "12:00am-11:59pm"
-      if day_hours.include?('-')
-        times = day_hours.split('-')
+      if day_hours.include?("-")
+        times = day_hours.split("-")
         opens_at = parse_grab_time(times[0])
         closes_at = parse_grab_time(times[1])
-        
+
         if opens_at && closes_at
           hours << {
             day_of_week: day_num,
@@ -260,29 +260,29 @@ class GrabParserService
         end
       end
     end
-    
+
     hours
   end
 
   def parse_grab_time(time_str)
     # Parse time format like "12:00am", "11:59pm"
     return nil unless time_str
-    
+
     time_str = time_str.strip.downcase
-    
+
     # Extract hour, minute, and am/pm
     if match = time_str.match(/(\d{1,2}):(\d{2})(am|pm)/)
       hour = match[1].to_i
       minute = match[2].to_i
       ampm = match[3]
-      
+
       # Convert to 24-hour format
-      if ampm == 'am'
+      if ampm == "am"
         hour = 0 if hour == 12
       else # pm
         hour += 12 unless hour == 12
       end
-      
+
       sprintf("%02d:%02d", hour, minute)
     end
   end
@@ -304,18 +304,18 @@ class GrabParserService
     options.add_argument("--disable-ipc-flooding-protection")
     options.add_argument("--window-size=1920,1080")
     options.add_argument("--remote-debugging-port=9222")
-    
+
     # Additional flags for Chromium compatibility
     options.add_argument("--disable-blink-features=AutomationControlled")
     options.add_argument("--disable-features=VizDisplayCompositor")
-    
+
     # Memory optimization for containers
     options.add_argument("--memory-pressure-off")
     options.add_argument("--max_old_space_size=4096")
 
     # Detect Chrome binary with improved logic
     chrome_binary = detect_chrome_binary
-    
+
     # Set architecture-appropriate user agent
     arch = detect_architecture
     if arch == "arm64" || chrome_binary&.include?("chromium")
@@ -323,7 +323,7 @@ class GrabParserService
     else
       options.add_argument("--user-agent=Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36")
     end
-    
+
     if File.exist?(chrome_binary)
       options.binary = chrome_binary
       Rails.logger.info "Grab: Using Chrome binary: #{chrome_binary}"
@@ -337,7 +337,7 @@ class GrabParserService
     Rails.logger.info "Grab: Using ChromeDriver: #{chromedriver_path}"
 
     Rails.logger.info "Grab: Starting Chrome driver in headless mode with production optimizations"
-    
+
     # Always use explicit service with detected ChromeDriver path
     begin
       service = Selenium::WebDriver::Service.chrome(path: chromedriver_path)
@@ -358,7 +358,7 @@ class GrabParserService
   def detect_chrome_binary
     # Priority order for Chrome binary detection
     candidates = [
-      ENV['CHROME_BIN'],
+      ENV["CHROME_BIN"],
       "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome", # Mac
       "/Applications/Chromium.app/Contents/MacOS/Chromium", # Mac Chromium
       "/usr/bin/google-chrome-stable", # Linux
@@ -377,7 +377,7 @@ class GrabParserService
     # Last resort: search the filesystem
     Rails.logger.warn "Grab: No Chrome binary found in standard locations, searching filesystem..."
     search_result = `find /usr -name "chrome*" -o -name "chromium*" -type f 2>/dev/null | grep -E "(chrome|chromium)$" | head -1`.strip
-    
+
     if search_result.present? && File.exist?(search_result)
       Rails.logger.info "Grab: Found Chrome binary via search: #{search_result}"
       return search_result
@@ -390,7 +390,7 @@ class GrabParserService
   def detect_chromedriver_path
     # Priority order for ChromeDriver detection
     candidates = [
-      ENV['CHROMEDRIVER_PATH'],
+      ENV["CHROMEDRIVER_PATH"],
       "/usr/local/bin/chromedriver",
       "/usr/bin/chromedriver",
       "/usr/lib/chromium/chromedriver",
@@ -407,7 +407,7 @@ class GrabParserService
     # Last resort: search the filesystem
     Rails.logger.warn "Grab: No ChromeDriver found in standard locations, searching filesystem..."
     search_result = `find /usr -name "chromedriver" -type f 2>/dev/null | head -1`.strip
-    
+
     if search_result.present? && File.exist?(search_result)
       Rails.logger.info "Grab: Found ChromeDriver via search: #{search_result}"
       return search_result

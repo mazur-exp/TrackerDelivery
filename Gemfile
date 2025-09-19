@@ -24,7 +24,7 @@ gem "bcrypt", "~> 3.1.7"
 gem "httparty"
 
 # Browser automation for parsing dynamic content
-gem "selenium-webdriver", "~> 4.11.0"
+gem "selenium-webdriver", "~> 4.35.0"
 
 # Windows does not include zoneinfo files, so bundle the tzinfo-data gem
 gem "tzinfo-data", platforms: %i[ windows jruby ]
@@ -52,6 +52,9 @@ group :development, :test do
 
   # Static analysis for security vulnerabilities [https://brakemanscanner.org/]
   gem "brakeman", require: false
+  
+  # Load environment variables from .env files
+  gem "dotenv-rails"
 
   # Omakase Ruby styling [https://github.com/rails/rubocop-rails-omakase/]
   gem "rubocop-rails-omakase", require: false

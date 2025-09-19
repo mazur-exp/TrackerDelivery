@@ -88,13 +88,13 @@ class RestaurantsController < ApplicationController
     begin
       start_time = Time.current
       Rails.logger.info "=== GoJek Individual Parser Starting ==="
-      
+
       gojek_data = GojekParserService.new.parse(gojek_url)
-      
+
       if gojek_data
         elapsed_time = Time.current - start_time
         Rails.logger.info "GoJek parsing completed in #{elapsed_time}s"
-        
+
         render json: {
           success: true,
           platform: "gojek",
@@ -140,13 +140,13 @@ class RestaurantsController < ApplicationController
     begin
       start_time = Time.current
       Rails.logger.info "=== Grab Individual Parser Starting ==="
-      
+
       grab_data = GrabParserService.new.parse(grab_url)
-      
+
       if grab_data
         elapsed_time = Time.current - start_time
         Rails.logger.info "Grab parsing completed in #{elapsed_time}s"
-        
+
         render json: {
           success: true,
           platform: "grab",

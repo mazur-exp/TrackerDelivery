@@ -168,22 +168,23 @@
                   </div>
 
                   <!-- Rating and Cuisines Row -->
-                  <div class="flex items-center gap-4 mb-2 justify-between">
-                    <div class="flex items-center gap-4">
+                  <div class="mb-2">
+                    <!-- Top row: Rating and Status -->
+                    <div class="flex items-center justify-between mb-2">
                       <!-- Rating -->
                       <div class="flex items-center gap-1 bg-yellow-50 px-3 py-1 rounded-xl border border-yellow-200">
                         <i data-lucide="star" class="w-4 h-4 text-yellow-500 fill-current"></i>
                         <span id="platform-rating" class="text-sm font-medium text-gray-900">-</span>
                       </div>
-
-                      <!-- Cuisines -->
-                      <div id="platform-cuisines" class="text-sm text-gray-600 bg-gray-50 px-3 py-1 rounded-xl border border-gray-200 truncate">-</div>
+                      
+                      <!-- Status (Open/Closed) -->
+                      <div id="platform-status" class="text-xs font-bold px-3 py-1 rounded-xl border flex-shrink-0">
+                        LOADING
+                      </div>
                     </div>
                     
-                    <!-- Status (Open/Closed) -->
-                    <div id="platform-status" class="text-xs font-bold px-3 py-1 rounded-xl border">
-                      LOADING
-                    </div>
+                    <!-- Bottom row: Cuisines (full width) -->
+                    <div id="platform-cuisines" class="text-sm text-gray-600 bg-gray-50 px-3 py-1 rounded-xl border border-gray-200 w-full">-</div>
                   </div>
                 </div>
               </div>

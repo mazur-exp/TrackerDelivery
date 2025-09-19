@@ -1,6 +1,7 @@
 require "selenium-webdriver"
 require "timeout"
 require "json"
+require "cgi"
 
 class GrabParserService
   TIMEOUT_SECONDS = 20
@@ -139,7 +140,50 @@ class GrabParserService
     # Extract status from opening hours
     status = extract_status_from_json(restaurant_data['openingHours'])
     
-    # Extract address from restaurant data
+    # Extract coordinates
+    coordinates = extract_coordinates_from_json(restaurant_data)
+    
+    # Extract address from restaurant data - use coordinates if no address
+    address = extract_address_from_json(restaurant_data)
+    
+    # If no address in JSON but we have coordinates, use coordinates as address
+    if address.blank? && coordinates
+      Rails.logger.info "Grab: No address in JSON, using coordinates as address: #{coordinates.inspect}"
+      address = "#{coordinates[:latitude]}, #{coordinates[:longitude]}"
+    end
+    
+    {
+      name: restaurant_data['name'],
+      address: address,
+      coordinates: coordinates,
+      cuisines: cuisines,
+      working_hours: working_hours,
+      rating: rating,
+      image_url: restaurant_data['photoHref'],
+      status: status
+    }
+  end
+
+  def extract_coordinates_from_json(restaurant_data)
+    # Extract coordinates from latlng field
+    if restaurant_data['latlng'].is_a?(Hash)
+      lat = restaurant_data['latlng']['latitude']
+      lng = restaurant_data['latlng']['longitude']
+      
+      if lat && lng
+        Rails.logger.info "Grab: Found coordinates: #{lat}, #{lng}"
+        return {
+          latitude: lat.to_f,
+          longitude: lng.to_f
+        }
+      end
+    end
+    
+    nil
+  end
+
+  def extract_address_from_json(restaurant_data)
+    # Try to extract address from JSON first
     address = nil
     if restaurant_data['address']
       addr_data = restaurant_data['address']
@@ -159,15 +203,7 @@ class GrabParserService
       end
     end
     
-    {
-      name: restaurant_data['name'],
-      address: address,
-      cuisines: cuisines,
-      working_hours: working_hours,
-      rating: rating,
-      image_url: restaurant_data['photoHref'],
-      status: status
-    }
+    address
   end
 
   def extract_status_from_json(opening_hours_data)

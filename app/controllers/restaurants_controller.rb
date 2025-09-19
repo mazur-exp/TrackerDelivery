@@ -153,6 +153,7 @@ class RestaurantsController < ApplicationController
           data: {
             name: grab_data[:name],
             address: grab_data[:address],
+            coordinates: grab_data[:coordinates],
             cuisines: grab_data[:cuisines],
             rating: grab_data[:rating],
             working_hours: format_working_hours_for_frontend(grab_data[:working_hours] || []),

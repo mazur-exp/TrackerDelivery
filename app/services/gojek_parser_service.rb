@@ -25,10 +25,18 @@ class GojekParserService
         # Wait for page to load and JavaScript to execute
         Rails.logger.info "GoJek: Waiting for page to load..."
         page_load_start = Time.current
-        sleep(3) # Wait for page to load
+        
+        # Longer wait for production Chromium
+        chrome_binary = detect_chrome_binary
+        if chrome_binary&.include?("chromium")
+          sleep(5) # Longer wait for Chromium in production
+          Rails.logger.info "GoJek: Using extended wait time for Chromium"
+        else
+          sleep(3) # Standard wait for Chrome
+        end
 
         # Wait for content to appear or redirects to complete
-        wait = Selenium::WebDriver::Wait.new(timeout: 10)
+        wait = Selenium::WebDriver::Wait.new(timeout: 15) # Increased from 10 to 15
         wait.until { driver.execute_script("return document.readyState") == "complete" }
         Rails.logger.info "GoJek: Page load completed in #{Time.current - page_load_start}s"
 
@@ -213,12 +221,24 @@ class GojekParserService
     
     # Special settings for Chromium to enable GoFood redirects
     if chrome_binary&.include?("chromium")
-      Rails.logger.info "GoJek: Detected Chromium, using redirect-friendly settings"
+      Rails.logger.info "GoJek: Detected Chromium, using enhanced redirect-friendly settings"
       # Keep images enabled for Chromium to ensure proper page loading
-      # Keep background throttling disabled to allow JavaScript redirects
+      # Disable throttling that may prevent JavaScript redirects
       options.add_argument("--disable-background-timer-throttling")
-      options.add_argument("--disable-renderer-backgrounding")
+      options.add_argument("--disable-renderer-backgrounding") 
       options.add_argument("--disable-backgrounding-occluded-windows")
+      
+      # Additional Chromium-specific flags for better JavaScript execution
+      options.add_argument("--enable-automation")
+      options.add_argument("--disable-background-networking")
+      options.add_argument("--disable-default-apps")
+      options.add_argument("--disable-sync")
+      options.add_argument("--metrics-recording-only")
+      options.add_argument("--no-first-run")
+      
+      # Ensure proper network and DNS resolution
+      options.add_argument("--aggressive-cache-discard")
+      options.add_argument("--disable-component-extensions-with-background-pages")
     else
       Rails.logger.info "GoJek: Detected Chrome, using standard settings"
       options.add_argument("--disable-images")

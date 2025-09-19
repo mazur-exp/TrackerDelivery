@@ -1,6 +1,6 @@
 class RestaurantsController < ApplicationController
-  before_action :require_authentication, except: [ :extract_data ]
-  skip_before_action :verify_authenticity_token, only: [ :extract_data ]
+  before_action :require_authentication, except: [ :extract_data, :extract_gojek_data, :extract_grab_data ]
+  skip_before_action :verify_authenticity_token, only: [ :extract_data, :extract_gojek_data, :extract_grab_data ]
 
   def extract_data
     grab_url = params[:grab_url]
@@ -70,6 +70,110 @@ class RestaurantsController < ApplicationController
       render json: {
         success: false,
         errors: result[:errors] || [ "Failed to extract restaurant data" ]
+      }, status: :unprocessable_entity
+    end
+  end
+
+  def extract_gojek_data
+    gojek_url = params[:gojek_url]
+
+    if gojek_url.blank?
+      render json: {
+        success: false,
+        errors: [ "GoJek URL is required" ]
+      }, status: :unprocessable_entity
+      return
+    end
+
+    begin
+      start_time = Time.current
+      Rails.logger.info "=== GoJek Individual Parser Starting ==="
+      
+      gojek_data = GojekParserService.new.parse(gojek_url)
+      
+      if gojek_data
+        elapsed_time = Time.current - start_time
+        Rails.logger.info "GoJek parsing completed in #{elapsed_time}s"
+        
+        render json: {
+          success: true,
+          platform: "gojek",
+          data: {
+            name: gojek_data[:name],
+            address: gojek_data[:address],
+            cuisines: gojek_data[:cuisines],
+            rating: gojek_data[:rating],
+            working_hours: format_working_hours_for_frontend(gojek_data[:working_hours] || []),
+            image_url: gojek_data[:image_url],
+            status: gojek_data[:status]
+          }
+        }
+      else
+        render json: {
+          success: false,
+          platform: "gojek",
+          errors: [ "Failed to extract GoJek restaurant data" ]
+        }, status: :unprocessable_entity
+      end
+    rescue => e
+      elapsed_time = Time.current - start_time
+      Rails.logger.error "GoJek parsing failed after #{elapsed_time}s: #{e.class} - #{e.message}"
+      render json: {
+        success: false,
+        platform: "gojek",
+        errors: [ "GoJek parsing failed: #{e.message}" ]
+      }, status: :unprocessable_entity
+    end
+  end
+
+  def extract_grab_data
+    grab_url = params[:grab_url]
+
+    if grab_url.blank?
+      render json: {
+        success: false,
+        errors: [ "Grab URL is required" ]
+      }, status: :unprocessable_entity
+      return
+    end
+
+    begin
+      start_time = Time.current
+      Rails.logger.info "=== Grab Individual Parser Starting ==="
+      
+      grab_data = GrabParserService.new.parse(grab_url)
+      
+      if grab_data
+        elapsed_time = Time.current - start_time
+        Rails.logger.info "Grab parsing completed in #{elapsed_time}s"
+        
+        render json: {
+          success: true,
+          platform: "grab",
+          data: {
+            name: grab_data[:name],
+            address: grab_data[:address],
+            cuisines: grab_data[:cuisines],
+            rating: grab_data[:rating],
+            working_hours: format_working_hours_for_frontend(grab_data[:working_hours] || []),
+            image_url: grab_data[:image_url],
+            status: grab_data[:status]
+          }
+        }
+      else
+        render json: {
+          success: false,
+          platform: "grab",
+          errors: [ "Failed to extract Grab restaurant data" ]
+        }, status: :unprocessable_entity
+      end
+    rescue => e
+      elapsed_time = Time.current - start_time
+      Rails.logger.error "Grab parsing failed after #{elapsed_time}s: #{e.class} - #{e.message}"
+      render json: {
+        success: false,
+        platform: "grab",
+        errors: [ "Grab parsing failed: #{e.message}" ]
       }, status: :unprocessable_entity
     end
   end

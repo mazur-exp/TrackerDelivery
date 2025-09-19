@@ -34,6 +34,8 @@ Rails.application.routes.draw do
   resources :restaurants, only: [ :create ] do
     collection do
       post :extract_data
+      post :extract_gojek_data
+      post :extract_grab_data
     end
   end
 

@@ -127,7 +127,7 @@
             <p class="text-green-600 mt-2">Please verify the extracted information</p>
           </div>
           <div class="p-6 space-y-6">
-            <!-- Loading State -->
+            <!-- Loading State with Platform Progress -->
             <div id="platform-loading" class="flex flex-col items-center justify-center py-16">
               <div class="relative">
                 <!-- Animated Spinner -->
@@ -139,8 +139,42 @@
               </div>
               <h3 class="text-lg font-semibold text-green-800 mt-6">Extracting Restaurant Data</h3>
               <p class="text-green-600 mt-2 text-center max-w-md">
-                We're analyzing your restaurant pages to get the most accurate information...
+                We're analyzing your restaurant pages in parallel for faster results...
               </p>
+              
+              <!-- Platform Progress Indicators -->
+              <div id="platform-progress" class="mt-6 space-y-3 w-full max-w-sm">
+                <div id="gojek-progress" class="hidden">
+                  <div class="flex items-center justify-between mb-1">
+                    <div class="flex items-center gap-2">
+                      <div class="w-5 h-5 bg-green-600 rounded flex items-center justify-center">
+                        <span class="text-white text-xs font-bold">G</span>
+                      </div>
+                      <span class="text-sm font-medium text-gray-700">GoJek</span>
+                    </div>
+                    <span id="gojek-status" class="text-xs text-gray-500">Parsing...</span>
+                  </div>
+                  <div class="w-full bg-gray-200 rounded-full h-2">
+                    <div id="gojek-bar" class="bg-green-600 h-2 rounded-full animate-pulse" style="width: 60%"></div>
+                  </div>
+                </div>
+                
+                <div id="grab-progress" class="hidden">
+                  <div class="flex items-center justify-between mb-1">
+                    <div class="flex items-center gap-2">
+                      <div class="w-5 h-5 bg-green-600 rounded flex items-center justify-center">
+                        <span class="text-white text-xs font-bold">G</span>
+                      </div>
+                      <span class="text-sm font-medium text-gray-700">Grab</span>
+                    </div>
+                    <span id="grab-status" class="text-xs text-gray-500">Parsing...</span>
+                  </div>
+                  <div class="w-full bg-gray-200 rounded-full h-2">
+                    <div id="grab-bar" class="bg-green-600 h-2 rounded-full animate-pulse" style="width: 60%"></div>
+                  </div>
+                </div>
+              </div>
+              
               <div class="flex items-center gap-2 mt-4">
                 <div class="w-2 h-2 bg-green-600 rounded-full animate-bounce" style="animation-delay: 0ms"></div>
                 <div class="w-2 h-2 bg-green-600 rounded-full animate-bounce" style="animation-delay: 150ms"></div>
@@ -372,6 +406,10 @@
     let currentPlatformIndex = 0;
     let platformData = {};
     let mergedData = {};
+    
+    // Parallel parsing tracking
+    let completedPlatforms = 0;
+    let hasShownFirstPlatform = false;
 
     const steps = [
       { id: 1, title: "Platform URLs" },
@@ -681,81 +719,141 @@
       isExtracting = true;
       updateButtons();
       
-      // Show loading state during extraction on step 2
+      // Initialize parallel extraction
+      platformsToShow = [];
+      platformData = {};
+      completedPlatforms = 0;
+      hasShownFirstPlatform = false;
+      const promises = [];
       
-      // Prepare data for API call
-      const extractData = {
-        grab_url: formData.grabUrl,
-        gojek_url: formData.gofoodUrl
-      };
-      
-      // Make real API call to extract data
-      fetch('/restaurants/extract_data', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'X-CSRF-Token': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content')
-        },
-        body: JSON.stringify(extractData)
-      })
-      .then(response => {
-        if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`);
-        }
-        return response.json();
-      })
-      .then(data => {
-        if (data.success) {
-          // Store platform data
-          platformsToShow = data.platforms || [];
-          platformData = data.platform_data || {};
-          mergedData = data.merged_data || {};
-          currentPlatformIndex = 0;
+      // Function to handle individual platform results
+      function handlePlatformResult(result, platformName) {
+        if (result.success) {
+          platformData[result.platform] = result.data;
           
-          // Update form data with merged data
-          formData.restaurantName = mergedData.name || '';
-          formData.address = mergedData.address || '';
-          formData.cuisines = mergedData.cuisines || [];
-          formData.cuisine = formData.cuisines.join(', ');
-          formData.workingHours = mergedData.working_hours || [];
-          
-          // Extraction completed
-          
-          // Show platforms step by step or go directly to form
-          if (platformsToShow.length > 1) {
-            // Multiple platforms - show first platform
-            showPlatformReview(platformsToShow[0]);
-          } else if (platformsToShow.length === 1) {
-            // Single platform - show platform then continue
-            showPlatformReview(platformsToShow[0]);
+          // Show first completed platform, then queue others in completion order
+          if (!hasShownFirstPlatform) {
+            // First platform to complete - show it immediately
+            hasShownFirstPlatform = true;
+            currentPlatformIndex = 0;
+            platformsToShow = [result.platform];
+            
+            // Update merged data with first completing platform data
+            updateMergedData(result.data);
+            
+            // Show first completed platform review
+            showPlatformReview(result.platform);
           } else {
-            // No platform data - go to step 3
+            // Subsequent platform - add to queue in completion order
+            if (!platformsToShow.includes(result.platform)) {
+              platformsToShow.push(result.platform);
+            }
+            
+            // If user is waiting for next platform, show it
+            if (window.waitingForNextPlatform) {
+              window.waitingForNextPlatform = false;
+              showPlatformReview(result.platform);
+            }
+          }
+        } else {
+          console.error(`${platformName} extraction failed:`, result.errors);
+        }
+        
+        completedPlatforms++;
+        
+        // If all platforms completed
+        if (completedPlatforms === getTotalExpectedPlatforms()) {
+          if (Object.keys(platformData).length === 0) {
+            showErrorMessage('Failed to extract restaurant data from any platform. Please enter details manually.');
+            showStep(3);
+          } else if (window.waitingForNextPlatform) {
+            // User was waiting but no more platforms - go to step 3
+            window.waitingForNextPlatform = false;
             showStep(3);
           }
           
-        } else {
-          // Handle extraction errors
-          console.error('Extraction failed:', data.errors);
-          showErrorMessage('Failed to extract restaurant data: ' + (data.errors ? data.errors.join(', ') : 'Unknown error'));
-          
-          // Skip platform review and go to step 3
-          showStep(3);
+          isExtracting = false;
+          updateButtons();
         }
+      }
+      
+      // Launch parallel requests
+      console.log(`🚀 Starting parallel extraction at ${new Date().toISOString()}`);
+      
+      if (formData.gofoodUrl) {
+        console.log(`🔵 Launching GoJek request at ${new Date().toISOString()}`);
+        // Show GoJek progress indicator
+        document.getElementById('gojek-progress').classList.remove('hidden');
         
-        isExtracting = false;
-        updateButtons();
-      })
-      .catch(error => {
-        console.error('Network error during extraction:', error);
-        showErrorMessage('Network error. Please enter restaurant details manually.');
+        const gojekPromise = fetch('/restaurants/extract_gojek_data', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-Token': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content')
+          },
+          body: JSON.stringify({ gojek_url: formData.gofoodUrl })
+        })
+        .then(response => response.json())
+        .then(data => {
+          console.log(`🔵 GoJek completed at ${new Date().toISOString()}:`, data.success);
+          // Update progress indicator
+          updatePlatformProgress('gojek', data.success ? 'completed' : 'failed');
+          handlePlatformResult(data, 'GoJek');
+        })
+        .catch(error => {
+          console.error('GoJek extraction error:', error);
+          updatePlatformProgress('gojek', 'failed');
+          completedPlatforms++;
+        });
         
-        // Hide loading and go to step 3
-        document.getElementById('platform-loading').classList.add('hidden');
+        promises.push(gojekPromise);
+      }
+      
+      if (formData.grabUrl) {
+        console.log(`🟢 Launching Grab request at ${new Date().toISOString()}`);
+        // Show Grab progress indicator
+        document.getElementById('grab-progress').classList.remove('hidden');
+        
+        const grabPromise = fetch('/restaurants/extract_grab_data', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-Token': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content')
+          },
+          body: JSON.stringify({ grab_url: formData.grabUrl })
+        })
+        .then(response => response.json())
+        .then(data => {
+          console.log(`🟢 Grab completed at ${new Date().toISOString()}:`, data.success);
+          // Update progress indicator
+          updatePlatformProgress('grab', data.success ? 'completed' : 'failed');
+          handlePlatformResult(data, 'Grab');
+        })
+        .catch(error => {
+          console.error('Grab extraction error:', error);
+          updatePlatformProgress('grab', 'failed');
+          completedPlatforms++;
+        });
+        
+        promises.push(grabPromise);
+      }
+      
+      // If no URLs provided, go directly to step 3
+      if (promises.length === 0) {
+        showErrorMessage('Please provide at least one platform URL.');
         showStep(3);
-        
         isExtracting = false;
         updateButtons();
-      });
+      }
+    }
+    
+    // Helper function to update merged data from platform result
+    function updateMergedData(platformData) {
+      formData.restaurantName = platformData.name || '';
+      formData.address = platformData.address || '';
+      formData.cuisines = platformData.cuisines || [];
+      formData.cuisine = formData.cuisines.join(', ');
+      formData.workingHours = platformData.working_hours || [];
     }
 
     // Platform review functions
@@ -851,17 +949,44 @@
       currentPlatformIndex++;
       
       if (currentPlatformIndex < platformsToShow.length) {
-        // Hide current review and show loading for next platform
+        // Next platform already available - show it immediately
+        showPlatformReview(platformsToShow[currentPlatformIndex]);
+      } else if (isExtracting && completedPlatforms < getTotalExpectedPlatforms()) {
+        // Still waiting for more platforms - show waiting state
         document.getElementById('platform-review').classList.add('hidden');
         document.getElementById('platform-loading').classList.remove('hidden');
         
-        // Small delay to show loading animation, then show next platform
-        setTimeout(() => {
-          showPlatformReview(platformsToShow[currentPlatformIndex]);
-        }, 1000);
+        // Set flag to show next platform when it arrives
+        window.waitingForNextPlatform = true;
       } else {
-        // All platforms shown, go to step 3
+        // All platforms reviewed, go to step 3
         showStep(3);
+      }
+    }
+    
+    // Helper function to get total expected platforms
+    function getTotalExpectedPlatforms() {
+      let total = 0;
+      if (formData.gofoodUrl) total++;
+      if (formData.grabUrl) total++;
+      return total;
+    }
+    
+    // Update platform progress indicator
+    function updatePlatformProgress(platform, status) {
+      const statusElement = document.getElementById(`${platform}-status`);
+      const barElement = document.getElementById(`${platform}-bar`);
+      
+      if (status === 'completed') {
+        statusElement.textContent = 'Completed ✓';
+        statusElement.className = 'text-xs text-green-600 font-medium';
+        barElement.style.width = '100%';
+        barElement.className = 'bg-green-600 h-2 rounded-full';
+      } else if (status === 'failed') {
+        statusElement.textContent = 'Failed ✗';
+        statusElement.className = 'text-xs text-red-600 font-medium';
+        barElement.style.width = '100%';
+        barElement.className = 'bg-red-600 h-2 rounded-full';
       }
     }
 
@@ -983,6 +1108,16 @@
       if (currentStep === 1 && userHasRestaurants) {
         // On first step with existing restaurants, go back to dashboard
         window.location.href = '/dashboard';
+      } else if (currentStep === 2) {
+        // In platform review mode - handle platform navigation
+        if (currentPlatformIndex > 0) {
+          // Go back to previous platform review
+          currentPlatformIndex--;
+          showPlatformReview(platformsToShow[currentPlatformIndex]);
+        } else {
+          // On first platform review - go back to URL input (step 1)
+          showStep(currentStep - 1);
+        }
       } else if (currentStep > 1) {
         showStep(currentStep - 1);
       }

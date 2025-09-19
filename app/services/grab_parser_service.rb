@@ -1,5 +1,6 @@
 require "selenium-webdriver"
 require "timeout"
+require "json"
 
 class GrabParserService
   TIMEOUT_SECONDS = 20
@@ -28,15 +29,30 @@ class GrabParserService
         current_url = driver.current_url
         Rails.logger.info "Grab: Final URL: #{current_url}"
 
-        # Extract data from the page
-        data = {
-          name: extract_restaurant_name_selenium(driver),
-          address: extract_address_selenium(driver),
-          cuisines: extract_cuisines_selenium(driver),
-          working_hours: extract_working_hours_selenium(driver),
-          rating: extract_rating_selenium(driver),
-          image_url: extract_image_url_selenium(driver)
-        }
+        # First try to extract from JSON data (more reliable)
+        json_data = extract_json_data_selenium(driver)
+        if json_data && json_data.any?
+          Rails.logger.info "Grab: Using JSON data extraction"
+          data = json_data
+          
+          # If address is missing, try to get it from DOM
+          if data[:address].blank?
+            Rails.logger.info "Grab: Address missing in JSON, trying DOM extraction"
+            dom_address = extract_address_selenium(driver)
+            data[:address] = dom_address if dom_address.present?
+          end
+        else
+          Rails.logger.info "Grab: Falling back to DOM extraction"
+          # Extract data from the page DOM (fallback)
+          data = {
+            name: extract_restaurant_name_selenium(driver),
+            address: extract_address_selenium(driver),
+            cuisines: extract_cuisines_selenium(driver),
+            working_hours: extract_working_hours_selenium(driver),
+            rating: extract_rating_selenium(driver),
+            image_url: extract_image_url_selenium(driver)
+          }
+        end
 
         Rails.logger.info "Grab: Extracted data: #{data.inspect}"
         data
@@ -55,6 +71,185 @@ class GrabParserService
   end
 
   private
+
+  def extract_json_data_selenium(driver)
+    begin
+      # Find script tags that contain restaurant data
+      scripts = driver.find_elements(:css, "script")
+      
+      scripts.each do |script|
+        content = script.attribute("innerHTML")
+        next unless content && content.include?('"props"') && content.include?('ssrRestaurantData')
+        
+        # Extract JSON data
+        json_start = content.index('{"props"')
+        next unless json_start
+        
+        json_content = content[json_start..-1]
+        
+        # Find the end of JSON object
+        brace_count = 0
+        json_end = nil
+        json_content.each_char.with_index do |char, i|
+          if char == '{'
+            brace_count += 1
+          elsif char == '}'
+            brace_count -= 1
+            if brace_count == 0
+              json_end = i
+              break
+            end
+          end
+        end
+        
+        next unless json_end
+        
+        json_data = json_content[0..json_end]
+        parsed = JSON.parse(json_data)
+        
+        # Extract restaurant data from parsed JSON
+        restaurant_data = parsed.dig('props', 'pageProps', 'ssrRestaurantData')
+        next unless restaurant_data
+        
+        Rails.logger.info "Grab: Found restaurant data in JSON: #{restaurant_data.keys}"
+        
+        return extract_restaurant_info_from_json(restaurant_data)
+      end
+      
+      nil
+    rescue => e
+      Rails.logger.error "Grab: Error extracting JSON data: #{e.message}"
+      nil
+    end
+  end
+
+  def extract_restaurant_info_from_json(restaurant_data)
+    # Extract restaurant information from JSON data
+    cuisines = []
+    if restaurant_data['cuisine'].present?
+      cuisines = [restaurant_data['cuisine']]
+    end
+    
+    # Extract working hours
+    working_hours = extract_working_hours_from_json(restaurant_data['openingHours'])
+    
+    # Extract rating if available
+    rating = restaurant_data['averageRating'] || restaurant_data['rating']
+    
+    # Extract status from opening hours
+    status = extract_status_from_json(restaurant_data['openingHours'])
+    
+    # Extract address from restaurant data
+    address = nil
+    if restaurant_data['address']
+      addr_data = restaurant_data['address']
+      if addr_data.is_a?(Hash)
+        # Try to build address from parts
+        address_parts = []
+        address_parts << addr_data['house'] if addr_data['house'].present?
+        address_parts << addr_data['street'] if addr_data['street'].present?
+        address_parts << addr_data['suburb'] if addr_data['suburb'].present?
+        address_parts << addr_data['city'] if addr_data['city'].present?
+        address_parts << addr_data['combinedAddress'] if addr_data['combinedAddress'].present?
+        
+        address = address_parts.join(', ') if address_parts.any?
+        address = addr_data['combinedAddress'] if address.blank? && addr_data['combinedAddress'].present?
+      elsif addr_data.is_a?(String)
+        address = addr_data
+      end
+    end
+    
+    {
+      name: restaurant_data['name'],
+      address: address,
+      cuisines: cuisines,
+      working_hours: working_hours,
+      rating: rating,
+      image_url: restaurant_data['photoHref'],
+      status: status
+    }
+  end
+
+  def extract_status_from_json(opening_hours_data)
+    return { is_open: true, status_text: "open" } unless opening_hours_data.is_a?(Hash)
+    
+    # Check if restaurant is currently open
+    is_currently_open = opening_hours_data['open']
+    displayed_hours = opening_hours_data['displayedHours']
+    temp_closed = opening_hours_data['tempClosed']
+    
+    # Determine status
+    if temp_closed == true
+      return { is_open: false, status_text: "temporarily_closed", opening_info: displayed_hours }
+    elsif is_currently_open == false
+      return { is_open: false, status_text: "closed", opening_info: displayed_hours }
+    elsif is_currently_open == true
+      return { is_open: true, status_text: "open", opening_info: displayed_hours }
+    else
+      # Fallback - check displayed hours text
+      if displayed_hours && displayed_hours.downcase.include?('closed')
+        return { is_open: false, status_text: "closed", opening_info: displayed_hours }
+      else
+        return { is_open: true, status_text: "open", opening_info: displayed_hours }
+      end
+    end
+  end
+
+  def extract_working_hours_from_json(opening_hours_data)
+    return [] unless opening_hours_data.is_a?(Hash)
+    
+    hours = []
+    day_mapping = {
+      'mon' => 0, 'tue' => 1, 'wed' => 2, 'thu' => 3,
+      'fri' => 4, 'sat' => 5, 'sun' => 6
+    }
+    
+    day_mapping.each do |day_key, day_num|
+      day_hours = opening_hours_data[day_key]
+      next unless day_hours
+      
+      # Parse time format like "12:00am-11:59pm"
+      if day_hours.include?('-')
+        times = day_hours.split('-')
+        opens_at = parse_grab_time(times[0])
+        closes_at = parse_grab_time(times[1])
+        
+        if opens_at && closes_at
+          hours << {
+            day_of_week: day_num,
+            opens_at: opens_at,
+            closes_at: closes_at,
+            is_closed: false
+          }
+        end
+      end
+    end
+    
+    hours
+  end
+
+  def parse_grab_time(time_str)
+    # Parse time format like "12:00am", "11:59pm"
+    return nil unless time_str
+    
+    time_str = time_str.strip.downcase
+    
+    # Extract hour, minute, and am/pm
+    if match = time_str.match(/(\d{1,2}):(\d{2})(am|pm)/)
+      hour = match[1].to_i
+      minute = match[2].to_i
+      ampm = match[3]
+      
+      # Convert to 24-hour format
+      if ampm == 'am'
+        hour = 0 if hour == 12
+      else # pm
+        hour += 12 unless hour == 12
+      end
+      
+      sprintf("%02d:%02d", hour, minute)
+    end
+  end
 
   def setup_chrome_driver
     options = Selenium::WebDriver::Chrome::Options.new

@@ -456,7 +456,7 @@
         document.getElementById('address').value = mockData.address;
         document.getElementById('cuisine').value = mockData.cuisine;
         
-        document.getElementById('extracted-rating').textContent = mockData.rating;
+        document.getElementById('extracted-rating').textContent = mockData.rating || 'NEW';
         document.getElementById('extracted-delivery').textContent = mockData.delivery;
         
         formData.restaurantName = mockData.name;

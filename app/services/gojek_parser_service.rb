@@ -29,6 +29,9 @@ class GojekParserService
         current_url = driver.current_url
         Rails.logger.info "GoJek: Final URL after redirects: #{current_url}"
         
+        # Try to click on restaurant info button to get detailed info
+        click_restaurant_info_button(driver)
+        
         # Extract data from the page
         data = {
           name: extract_restaurant_name_selenium(driver),
@@ -56,6 +59,51 @@ class GojekParserService
   end
 
   private
+  
+  def click_restaurant_info_button(driver)
+    Rails.logger.info "=== Attempting to click restaurant info button ==="
+    
+    begin
+      # Look for clickable elements that might open the info modal
+      # Try SVG path elements with the arrow pattern
+      arrow_elements = driver.find_elements(:css, 'svg path[d*="M8.297 6.71a1 1 0 0 1 1.406-1.42l5.954 5.89"]')
+      
+      if arrow_elements.any?
+        Rails.logger.info "Found #{arrow_elements.length} arrow SVG elements"
+        # Click the first arrow element's parent button/clickable area
+        arrow_elements.first.find_element(:xpath, '../..').click
+        Rails.logger.info "Clicked arrow element, waiting for modal to appear..."
+        sleep(2) # Wait for modal to appear
+        return true
+      end
+      
+      # Alternative: look for any clickable element near restaurant name
+      clickable_selectors = [
+        'button[aria-expanded]',
+        '[role="button"]',
+        'div[class*="cursor-pointer"]',
+        'div[class*="clickable"]'
+      ]
+      
+      clickable_selectors.each do |selector|
+        elements = driver.find_elements(:css, selector)
+        Rails.logger.info "Found #{elements.length} elements with selector: #{selector}"
+        
+        if elements.any?
+          elements.first.click
+          Rails.logger.info "Clicked element with selector: #{selector}"
+          sleep(2)
+          return true
+        end
+      end
+      
+    rescue => e
+      Rails.logger.info "Error clicking restaurant info button: #{e.message}"
+    end
+    
+    Rails.logger.info "=== No clickable info button found ==="
+    false
+  end
   
   def setup_chrome_driver
     options = Selenium::WebDriver::Chrome::Options.new
@@ -112,7 +160,32 @@ class GojekParserService
   end
   
   def extract_address_selenium(driver)
-    # Try multiple selectors for address
+    Rails.logger.info "=== Extracting Address ==="
+    
+    # First try to find address in modal window
+    begin
+      # Look for the specific address structure in modal
+      modal_address_elements = driver.find_elements(:css, 'div.text-gf-content-muted.gf-body-s font[dir="auto"]')
+      Rails.logger.info "Found #{modal_address_elements.length} modal address elements"
+      
+      modal_address_elements.each_with_index do |element, i|
+        text = element.text.strip
+        Rails.logger.info "Modal address element #{i}: '#{text}'"
+        
+        # Check if this looks like an address (contains location indicators)
+        if text.length > 20 && 
+           (text.downcase.include?('jl.') || text.downcase.include?('street') || 
+            text.downcase.include?('canggu') || text.downcase.include?('bali') ||
+            text.downcase.include?('kec.') || text.downcase.include?('regency'))
+          Rails.logger.info "Found address in modal: #{text}"
+          return text
+        end
+      end
+    rescue => e
+      Rails.logger.info "Error searching modal address: #{e.message}"
+    end
+    
+    # Fallback to original selectors
     selectors = [
       '[data-testid="merchant-address"]',
       ".merchant-address", 
@@ -126,6 +199,7 @@ class GojekParserService
         element = driver.find_element(:css, selector)
         if element&.text&.present?
           address = element.text.strip
+          Rails.logger.info "Found address with selector #{selector}: #{address}"
           return address if address.length > 10 # Reasonable address length
         end
       rescue Selenium::WebDriver::Error::NoSuchElementError
@@ -133,6 +207,7 @@ class GojekParserService
       end
     end
 
+    Rails.logger.info "=== No address found ==="
     nil
   end
   
@@ -412,29 +487,78 @@ class GojekParserService
   end
   
   def extract_working_hours_selenium(driver)
+    Rails.logger.info "=== Extracting Working Hours ==="
     working_hours = []
 
-    # Try to find working hours section
-    selectors = [
-      '[data-testid="operating-hours"]',
-      ".operating-hours",
-      ".working-hours", 
-      ".hours",
-      '[class*="hours"]'
-    ]
-
-    selectors.each do |selector|
-      begin
-        elements = driver.find_elements(:css, selector)
-        if elements.any?
-          working_hours = parse_working_hours_from_selenium_elements(elements)
+    # First try to extract from modal window
+    begin
+      # Look for "Opening hours" section
+      opening_hours_headers = driver.find_elements(:css, 'h4.gf-label-m')
+      Rails.logger.info "Found #{opening_hours_headers.length} h4 headers"
+      
+      opening_hours_headers.each_with_index do |header, i|
+        header_text = header.text.strip.downcase
+        Rails.logger.info "Header #{i}: '#{header_text}'"
+        
+        if header_text.include?('opening hours') || header_text.include?('hours')
+          Rails.logger.info "Found opening hours header, looking for schedule data..."
+          
+          # Find the parent container with schedule data
+          parent = header.find_element(:xpath, '..')
+          schedule_rows = parent.find_elements(:css, 'div.flex.items-center.justify-between')
+          Rails.logger.info "Found #{schedule_rows.length} schedule rows"
+          
+          schedule_rows.each_with_index do |row, j|
+            begin
+              day_element = row.find_element(:css, 'div.py-2.pr-9.gf-label-s')
+              time_element = row.find_element(:css, 'div.text-left.gf-body-s')
+              
+              day_text = day_element.text.strip
+              time_text = time_element.text.strip
+              
+              Rails.logger.info "Schedule row #{j}: #{day_text} -> #{time_text}"
+              
+              # Parse day and time
+              day_hours = parse_modal_day_hours(day_text, time_text)
+              working_hours.concat(day_hours) if day_hours.any?
+              
+            rescue => e
+              Rails.logger.info "Error parsing schedule row #{j}: #{e.message}"
+            end
+          end
+          
           break if working_hours.any?
         end
-      rescue
-        # Continue to next selector
+      end
+    rescue => e
+      Rails.logger.info "Error extracting modal working hours: #{e.message}"
+    end
+
+    # Fallback to original selectors
+    if working_hours.empty?
+      Rails.logger.info "No modal hours found, trying fallback selectors"
+      selectors = [
+        '[data-testid="operating-hours"]',
+        ".operating-hours",
+        ".working-hours", 
+        ".hours",
+        '[class*="hours"]'
+      ]
+
+      selectors.each do |selector|
+        begin
+          elements = driver.find_elements(:css, selector)
+          if elements.any?
+            working_hours = parse_working_hours_from_selenium_elements(elements)
+            break if working_hours.any?
+          end
+        rescue
+          # Continue to next selector
+        end
       end
     end
 
+    Rails.logger.info "=== Extracted #{working_hours.length} working hour entries ==="
     working_hours
   end
   
@@ -514,6 +638,51 @@ class GojekParserService
     nil
   end
   
+  def parse_modal_day_hours(day_text, time_text)
+    # Map day names to day numbers
+    day_mapping = {
+      "monday" => 0, "mon" => 0,
+      "tuesday" => 1, "tue" => 1, "tues" => 1,
+      "wednesday" => 2, "wed" => 2,
+      "thursday" => 3, "thu" => 3, "thurs" => 3,
+      "friday" => 4, "fri" => 4,
+      "saturday" => 5, "sat" => 5,
+      "sunday" => 6, "sun" => 6
+    }
+
+    day_num = day_mapping[day_text.downcase.strip]
+    return [] unless day_num
+
+    # Parse time (format like "07:00-23:00")
+    if time_text.downcase.include?('closed') || time_text.downcase.include?('close')
+      return [{
+        day_of_week: day_num,
+        opens_at: nil,
+        closes_at: nil,
+        is_closed: true
+      }]
+    end
+
+    # Parse time range like "07:00-23:00"
+    time_parts = time_text.split('-').map(&:strip)
+    if time_parts.length == 2
+      opens_at = time_parts[0]
+      closes_at = time_parts[1]
+      
+      # Validate time format
+      if opens_at.match?(/^\d{2}:\d{2}$/) && closes_at.match?(/^\d{2}:\d{2}$/)
+        return [{
+          day_of_week: day_num,
+          opens_at: opens_at,
+          closes_at: closes_at,
+          is_closed: false
+        }]
+      end
+    end
+
+    []
+  end
+
   def parse_working_hours_from_selenium_elements(elements)
     hours = []
 

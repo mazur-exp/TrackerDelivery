@@ -13,21 +13,21 @@ class GrabParserService
       Timeout.timeout(TIMEOUT_SECONDS) do
         # Setup Chrome with headless options
         driver = setup_chrome_driver
-        
+
         Rails.logger.info "Grab: Navigating to URL with Selenium..."
         driver.get(url)
-        
+
         # Wait for page to load
         Rails.logger.info "Grab: Waiting for page to load..."
         sleep(2)
-        
+
         # Wait for content to appear
         wait = Selenium::WebDriver::Wait.new(timeout: 8)
         wait.until { driver.execute_script("return document.readyState") == "complete" }
-        
+
         current_url = driver.current_url
         Rails.logger.info "Grab: Final URL: #{current_url}"
-        
+
         # Extract data from the page
         data = {
           name: extract_restaurant_name_selenium(driver),
@@ -37,7 +37,7 @@ class GrabParserService
           rating: extract_rating_selenium(driver),
           image_url: extract_image_url_selenium(driver)
         }
-        
+
         Rails.logger.info "Grab: Extracted data: #{data.inspect}"
         data
       end
@@ -58,17 +58,17 @@ class GrabParserService
 
   def setup_chrome_driver
     options = Selenium::WebDriver::Chrome::Options.new
-    
+
     # Headless mode for server deployment
-    options.add_argument('--headless')
-    options.add_argument('--no-sandbox')
-    options.add_argument('--disable-dev-shm-usage')
-    options.add_argument('--disable-gpu')
-    options.add_argument('--window-size=1920,1080')
-    
+    options.add_argument("--headless")
+    options.add_argument("--no-sandbox")
+    options.add_argument("--disable-dev-shm-usage")
+    options.add_argument("--disable-gpu")
+    options.add_argument("--window-size=1920,1080")
+
     # User agent to avoid detection
-    options.add_argument('--user-agent=Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36')
-    
+    options.add_argument("--user-agent=Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36")
+
     Rails.logger.info "Grab: Starting Chrome driver in headless mode"
     Selenium::WebDriver.for(:chrome, options: options)
   end
@@ -76,7 +76,7 @@ class GrabParserService
   def extract_restaurant_name_selenium(driver)
     # Try multiple selectors for restaurant name
     selectors = [
-      'h1.name___1Ls94',  # Current Grab structure
+      "h1.name___1Ls94",  # Current Grab structure
       'h1[data-testid="merchant-name"]',
       "h1.merchant-name",
       "h1",
@@ -146,8 +146,8 @@ class GrabParserService
 
     # Try multiple selectors for cuisine types, including the specific Grab selector
     selectors = [
-      'h3.cuisine___3sorn.infoRow___3TzCZ',  # Current Grab specific selector
-      'h3.cuisine___3sorn',  # Alternative without infoRow class
+      "h3.cuisine___3sorn.infoRow___3TzCZ",  # Current Grab specific selector
+      "h3.cuisine___3sorn",  # Alternative without infoRow class
       '[data-testid="merchant-cuisine"]',
       ".cuisine-type",
       ".category",
@@ -184,7 +184,7 @@ class GrabParserService
   def extract_rating_selenium(driver)
     # Try multiple selectors for rating
     selectors = [
-      '.ratingText___1Q08c',  # Current Grab structure
+      ".ratingText___1Q08c",  # Current Grab structure
       '[data-testid="merchant-rating"]',
       ".rating",
       ".star-rating",
@@ -391,12 +391,12 @@ class GrabParserService
     # Try multiple selectors for restaurant image
     selectors = [
       '[data-testid="merchant-image"] img',
-      '.merchant-image img',
-      '.restaurant-image img',
-      '.MerchantHeader__image img',
+      ".merchant-image img",
+      ".restaurant-image img",
+      ".MerchantHeader__image img",
       '[class*="image"] img',
-      '.cover-image img',
-      '.hero-image img',
+      ".cover-image img",
+      ".hero-image img",
       'img[alt*="restaurant"]',
       'img[alt*="merchant"]'
     ]
@@ -405,10 +405,10 @@ class GrabParserService
       begin
         element = driver.find_element(:css, selector)
         if element
-          src = element.attribute('src') || element.attribute('data-src') || element.attribute('data-lazy-src')
+          src = element.attribute("src") || element.attribute("data-src") || element.attribute("data-lazy-src")
           if src.present?
             # Convert relative URLs to absolute
-            src = src.start_with?('http') ? src : "https:#{src}"
+            src = src.start_with?("http") ? src : "https:#{src}"
             return src if src.match?(/\.(jpg|jpeg|png|webp)/i)
           end
         end
@@ -418,16 +418,16 @@ class GrabParserService
     end
 
     # Try to find any image in the header/hero section
-    hero_sections = ['.hero', '.header', '.merchant-header', '[class*="header"]']
+    hero_sections = [ ".hero", ".header", ".merchant-header", '[class*="header"]' ]
     hero_sections.each do |section_selector|
       begin
         section = driver.find_element(:css, section_selector)
         if section
-          img = section.find_element(:css, 'img')
+          img = section.find_element(:css, "img")
           if img
-            src = img.attribute('src') || img.attribute('data-src') || img.attribute('data-lazy-src')
+            src = img.attribute("src") || img.attribute("data-src") || img.attribute("data-lazy-src")
             if src.present?
-              src = src.start_with?('http') ? src : "https:#{src}"
+              src = src.start_with?("http") ? src : "https:#{src}"
               return src if src.match?(/\.(jpg|jpeg|png|webp)/i)
             end
           end

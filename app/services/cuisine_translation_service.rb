@@ -31,21 +31,21 @@ class CuisineTranslationService
 
   def self.translate(indonesian_text)
     return nil if indonesian_text.blank?
-    
+
     normalized_text = indonesian_text.downcase.strip
-    
+
     # 1. Check static dictionary first (fastest)
     static_translation = STATIC_TRANSLATIONS[normalized_text]
     return static_translation if static_translation
-    
+
     # 2. Check database cache
     cached_translation = CuisineTranslation.find_by(indonesian: normalized_text)
     return cached_translation.english if cached_translation
-    
+
     # 3. For now, return capitalized version as fallback
     # TODO: Add Google Translate API integration in future
-    fallback_translation = indonesian_text.split.map(&:capitalize).join(' ')
-    
+    fallback_translation = indonesian_text.split.map(&:capitalize).join(" ")
+
     # Cache the fallback translation for future use
     begin
       CuisineTranslation.create!(
@@ -55,13 +55,13 @@ class CuisineTranslationService
     rescue ActiveRecord::RecordNotUnique
       # Translation was created by another process, that's fine
     end
-    
+
     fallback_translation
   end
-  
+
   def self.translate_array(cuisines_array)
     return [] if cuisines_array.blank?
-    
+
     cuisines_array.map { |cuisine| translate(cuisine) }.compact.uniq
   end
 end

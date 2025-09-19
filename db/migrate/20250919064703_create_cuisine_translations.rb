@@ -6,7 +6,7 @@ class CreateCuisineTranslations < ActiveRecord::Migration[8.0]
 
       t.timestamps
     end
-    
+
     add_index :cuisine_translations, :indonesian, unique: true
   end
 end

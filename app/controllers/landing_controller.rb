@@ -10,11 +10,11 @@ class LandingController < ApplicationController
 
   def test_cuisines
     # Test with actual cuisine categories from Nasi Goreng Wong Canggu restaurant
-    raw_cuisines = ["bakmie", "ayam & bebek", "aneka nasi"]
-    
+    raw_cuisines = [ "bakmie", "ayam & bebek", "aneka nasi" ]
+
     @original_cuisines = raw_cuisines
     @translated_cuisines = CuisineTranslationService.translate_array(raw_cuisines)
-    
+
     render json: {
       original: @original_cuisines,
       translated: @translated_cuisines,

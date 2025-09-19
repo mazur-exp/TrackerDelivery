@@ -1,6 +1,6 @@
 class RestaurantsController < ApplicationController
-  before_action :require_authentication, except: [:extract_data]
-  skip_before_action :verify_authenticity_token, only: [:extract_data]
+  before_action :require_authentication, except: [ :extract_data ]
+  skip_before_action :verify_authenticity_token, only: [ :extract_data ]
 
   def extract_data
     grab_url = params[:grab_url]
@@ -60,7 +60,8 @@ class RestaurantsController < ApplicationController
           cuisines: data[:cuisines],
           rating: data[:rating],
           working_hours: format_working_hours_for_frontend(data[:working_hours]),
-          image_url: data[:image_url]
+          image_url: data[:image_url],
+          status: data[:status]
         }
       }
     else

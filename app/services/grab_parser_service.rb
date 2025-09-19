@@ -337,7 +337,15 @@ class GrabParserService
     end
 
     Rails.logger.info "Grab: Starting Chrome driver in headless mode with production optimizations"
-    Selenium::WebDriver.for(:chrome, options: options)
+    
+    # Explicitly set ChromeDriver service if path is specified
+    if ENV['CHROMEDRIVER_PATH'] && File.exist?(ENV['CHROMEDRIVER_PATH'])
+      service = Selenium::WebDriver::Service.chrome(path: ENV['CHROMEDRIVER_PATH'])
+      Rails.logger.info "Grab: Using explicit ChromeDriver service: #{ENV['CHROMEDRIVER_PATH']}"
+      Selenium::WebDriver.for(:chrome, service: service, options: options)
+    else
+      Selenium::WebDriver.for(:chrome, options: options)
+    end
   end
 
   def extract_restaurant_name_selenium(driver)

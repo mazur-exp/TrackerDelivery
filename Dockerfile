@@ -72,19 +72,23 @@ RUN ARCH=$(dpkg --print-architecture) && \
         echo "ChromeDriver symlink setup complete"; \
     fi
 
-# Set production environment
+# Set Chrome binary path based on what was installed
+RUN if [ -f "/usr/bin/google-chrome-stable" ]; then \
+        echo "CHROME_BIN=/usr/bin/google-chrome-stable" > /tmp/chrome_path; \
+    elif [ -f "/usr/bin/chromium" ]; then \
+        echo "CHROME_BIN=/usr/bin/chromium" > /tmp/chrome_path; \
+    fi
+
+# Set production environment with Chrome path
+RUN CHROME_PATH=$(cat /tmp/chrome_path 2>/dev/null || echo "CHROME_BIN=/usr/bin/chromium") && \
+    export $CHROME_PATH
+
 ENV RAILS_ENV="production" \
     BUNDLE_DEPLOYMENT="1" \
     BUNDLE_PATH="/usr/local/bundle" \
     BUNDLE_WITHOUT="development" \
-    CHROMEDRIVER_PATH="/usr/local/bin/chromedriver"
-
-# Set Chrome binary path based on what was installed
-RUN if [ -f "/usr/bin/google-chrome-stable" ]; then \
-        echo 'export CHROME_BIN="/usr/bin/google-chrome-stable"' >> /etc/environment; \
-    elif [ -f "/usr/bin/chromium" ]; then \
-        echo 'export CHROME_BIN="/usr/bin/chromium"' >> /etc/environment; \
-    fi
+    CHROMEDRIVER_PATH="/usr/local/bin/chromedriver" \
+    CHROME_BIN="/usr/bin/chromium"
 
 # Throw-away build stage to reduce size of final image
 FROM base AS build

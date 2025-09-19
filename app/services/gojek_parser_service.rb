@@ -248,8 +248,14 @@ class GojekParserService
 
     Rails.logger.info "GoJek: Starting Chrome driver with optimized settings for production"
 
-    # Set timeouts
-    driver = Selenium::WebDriver.for(:chrome, options: options)
+    # Explicitly set ChromeDriver service if path is specified
+    if ENV['CHROMEDRIVER_PATH'] && File.exist?(ENV['CHROMEDRIVER_PATH'])
+      service = Selenium::WebDriver::Service.chrome(path: ENV['CHROMEDRIVER_PATH'])
+      Rails.logger.info "GoJek: Using explicit ChromeDriver service: #{ENV['CHROMEDRIVER_PATH']}"
+      driver = Selenium::WebDriver.for(:chrome, service: service, options: options)
+    else
+      driver = Selenium::WebDriver.for(:chrome, options: options)
+    end
     driver.manage.timeouts.page_load = 15 # 15 seconds max for page load
     driver.manage.timeouts.script_timeout = 10 # 10 seconds max for script execution
 

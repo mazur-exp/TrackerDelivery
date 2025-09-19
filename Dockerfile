@@ -36,33 +36,55 @@ RUN apt-get update -qq && \
     libgbm1 && \
     rm -rf /var/lib/apt/lists /var/cache/apt/archives
 
-# Install Chrome using new key management
-RUN wget -q -O - https://dl-ssl.google.com/linux/linux_signing_key.pub | gpg --dearmor -o /usr/share/keyrings/googlechrome-linux-keyring.gpg && \
-    sh -c 'echo "deb [arch=amd64 signed-by=/usr/share/keyrings/googlechrome-linux-keyring.gpg] http://dl.google.com/linux/chrome/deb/ stable main" >> /etc/apt/sources.list.d/google.list' && \
-    apt-get update && \
-    apt-get install -y google-chrome-stable && \
-    rm -rf /var/lib/apt/lists/*
+# Install Chrome using new key management (detect architecture)
+RUN ARCH=$(dpkg --print-architecture) && \
+    if [ "$ARCH" = "amd64" ]; then \
+        wget -q -O - https://dl-ssl.google.com/linux/linux_signing_key.pub | gpg --dearmor -o /usr/share/keyrings/googlechrome-linux-keyring.gpg && \
+        sh -c 'echo "deb [arch=amd64 signed-by=/usr/share/keyrings/googlechrome-linux-keyring.gpg] http://dl.google.com/linux/chrome/deb/ stable main" >> /etc/apt/sources.list.d/google.list' && \
+        apt-get update && \
+        apt-get install -y google-chrome-stable && \
+        rm -rf /var/lib/apt/lists/*; \
+    else \
+        echo "Chrome not available for $ARCH, installing Chromium instead" && \
+        apt-get update && \
+        apt-get install -y chromium chromium-driver && \
+        rm -rf /var/lib/apt/lists/*; \
+    fi
 
-# Install ChromeDriver using Google's JSON API for latest version
-RUN CHROME_VERSION=$(google-chrome --version | awk '{print $3}' | cut -d. -f1-3) && \
-    echo "Chrome version: $CHROME_VERSION" && \
-    CHROMEDRIVER_VERSION=$(curl -s "https://googlechromelabs.github.io/chrome-for-testing/json/versions.json" | \
-    jq -r ".versions[] | select(.version | startswith(\"$CHROME_VERSION\")) | .version" | head -1) && \
-    echo "ChromeDriver version: $CHROMEDRIVER_VERSION" && \
-    wget -q "https://storage.googleapis.com/chrome-for-testing-public/$CHROMEDRIVER_VERSION/linux64/chromedriver-linux64.zip" && \
-    unzip chromedriver-linux64.zip && \
-    mv chromedriver-linux64/chromedriver /usr/local/bin/chromedriver && \
-    chmod +x /usr/local/bin/chromedriver && \
-    rm -rf chromedriver-linux64* && \
-    chromedriver --version
+# Install ChromeDriver (skip for ARM64 if using Chromium)
+RUN ARCH=$(dpkg --print-architecture) && \
+    if [ "$ARCH" = "amd64" ]; then \
+        CHROME_VERSION=$(google-chrome --version | awk '{print $3}' | cut -d. -f1-3) && \
+        echo "Chrome version: $CHROME_VERSION" && \
+        CHROMEDRIVER_VERSION=$(curl -s "https://googlechromelabs.github.io/chrome-for-testing/json/versions.json" | \
+        jq -r ".versions[] | select(.version | startswith(\"$CHROME_VERSION\")) | .version" | head -1) && \
+        echo "ChromeDriver version: $CHROMEDRIVER_VERSION" && \
+        wget -q "https://storage.googleapis.com/chrome-for-testing-public/$CHROMEDRIVER_VERSION/linux64/chromedriver-linux64.zip" && \
+        unzip chromedriver-linux64.zip && \
+        mv chromedriver-linux64/chromedriver /usr/local/bin/chromedriver && \
+        chmod +x /usr/local/bin/chromedriver && \
+        rm -rf chromedriver-linux64* && \
+        chromedriver --version; \
+    else \
+        echo "Using Chromium driver for $ARCH - already installed with chromium-driver package" && \
+        ln -s /usr/bin/chromedriver /usr/local/bin/chromedriver 2>/dev/null || \
+        ln -s /usr/lib/chromium/chromedriver /usr/local/bin/chromedriver 2>/dev/null || \
+        echo "ChromeDriver symlink setup complete"; \
+    fi
 
 # Set production environment
 ENV RAILS_ENV="production" \
     BUNDLE_DEPLOYMENT="1" \
     BUNDLE_PATH="/usr/local/bundle" \
     BUNDLE_WITHOUT="development" \
-    CHROME_BIN="/usr/bin/google-chrome-stable" \
     CHROMEDRIVER_PATH="/usr/local/bin/chromedriver"
+
+# Set Chrome binary path based on what was installed
+RUN if [ -f "/usr/bin/google-chrome-stable" ]; then \
+        echo 'export CHROME_BIN="/usr/bin/google-chrome-stable"' >> /etc/environment; \
+    elif [ -f "/usr/bin/chromium" ]; then \
+        echo 'export CHROME_BIN="/usr/bin/chromium"' >> /etc/environment; \
+    fi
 
 # Throw-away build stage to reduce size of final image
 FROM base AS build

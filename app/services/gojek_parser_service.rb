@@ -224,10 +224,14 @@ class GojekParserService
     options.add_argument("--user-agent=Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36")
 
     # Set binary path (for Docker containers)
-    chrome_binary = ENV['CHROME_BIN'] || "/usr/bin/google-chrome-stable"
+    chrome_binary = ENV['CHROME_BIN'] || 
+                   (File.exist?("/usr/bin/google-chrome-stable") ? "/usr/bin/google-chrome-stable" : "/usr/bin/chromium")
+    
     if File.exist?(chrome_binary)
       options.binary = chrome_binary
       Rails.logger.info "GoJek: Using Chrome binary: #{chrome_binary}"
+    else
+      Rails.logger.warn "GoJek: No Chrome binary found at expected locations"
     end
 
     # Set ChromeDriver path if specified

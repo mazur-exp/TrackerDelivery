@@ -1,9 +1,51 @@
 #!/usr/bin/env ruby
 
+# Mock Rails logger for testing
+class MockLogger
+  def info(message)
+    puts "[INFO] #{message}"
+  end
+  
+  def error(message)
+    puts "[ERROR] #{message}"
+  end
+  
+  def warn(message)
+    puts "[WARN] #{message}"
+  end
+end
+
+module Rails
+  def self.logger
+    @logger ||= MockLogger.new
+  end
+end
+
+# Mock ActiveSupport methods
+class String
+  def blank?
+    self.nil? || self.strip.empty?
+  end
+  
+  def present?
+    !blank?
+  end
+end
+
+class NilClass
+  def blank?
+    true
+  end
+  
+  def present?
+    false
+  end
+end
+
 require_relative 'app/services/grab_parser_service'
 
-# Test the Grab parser with a sample URL
-test_url = "https://food.grab.com/id/en/restaurant/aastha-vegetarian-restaurant-denpasar/IDFOODT81000008KI2"
+# Test the Grab parser with Prana Kitchen mobile URL
+test_url = "https://r.grab.com/g/6-20250919_142036_8015D1829687499383E150126C5CEFCA_MEXMPS-6-C4J1HGK3N33WR2"
 
 puts "Testing Grab parser with URL: #{test_url}"
 puts "=" * 80

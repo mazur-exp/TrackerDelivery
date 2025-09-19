@@ -439,19 +439,60 @@ class GojekParserService
   end
   
   def extract_image_url_selenium(driver)
-    # Simple approach - find any img with GoJek characteristics
+    Rails.logger.info "=== GoJek Image Extraction Starting ==="
+    
     begin
-      images = driver.find_elements(:css, 'img')
+      # First try to find the specific restaurant avatar image with object-cover class
+      restaurant_images = driver.find_elements(:css, 'img.object-cover')
+      Rails.logger.info "Found #{restaurant_images.length} images with object-cover class"
       
-      images.each do |img|
+      restaurant_images.each_with_index do |img, i|
+        src = img.attribute('src') || img.attribute('data-src') || img.attribute('data-lazy-src')
+        alt_text = img.attribute('alt').to_s
+        width = img.attribute('width')
+        height = img.attribute('height')
+        fetchpriority = img.attribute('fetchpriority')
+        data_nimg = img.attribute('data-nimg')
+        
+        Rails.logger.info "Image #{i}: src='#{src}' alt='#{alt_text}' width='#{width}' height='#{height}'"
+        
+        next unless src.present?
+        
+        # Check if it's the restaurant avatar (usually has dimensions like 98x98, high priority, etc.)
+        if (width == '98' && height == '98') || 
+           (fetchpriority == 'high') ||
+           (data_nimg == '1' && alt_text.length > 10)
+          
+          # Check if it's a GoJek image URL
+          if src.include?('gojekapi.com') || src.include?('gofood') || src.include?('darkroom')
+            # Convert relative URLs to absolute
+            src = src.start_with?('http') ? src : "https:#{src}"
+            if src.match?(/\.(jpg|jpeg|png|webp)/i)
+              Rails.logger.info "Found restaurant avatar: #{src}"
+              return src
+            end
+          end
+        end
+      end
+      
+      # Fallback: find any img with GoJek characteristics
+      all_images = driver.find_elements(:css, 'img')
+      Rails.logger.info "Fallback: Found #{all_images.length} total images"
+      
+      all_images.each_with_index do |img, i|
         src = img.attribute('src') || img.attribute('data-src') || img.attribute('data-lazy-src')
         next unless src.present?
         
+        Rails.logger.info "Fallback image #{i}: #{src}"
+        
         # Check if it's a GoJek image URL
-        if src.include?('gojekapi.com') || src.include?('gofood')
+        if src.include?('gojekapi.com') || src.include?('gofood') || src.include?('darkroom')
           # Convert relative URLs to absolute
           src = src.start_with?('http') ? src : "https:#{src}"
-          return src if src.match?(/\.(jpg|jpeg|png|webp)/i)
+          if src.match?(/\.(jpg|jpeg|png|webp)/i)
+            Rails.logger.info "Found GoJek image: #{src}"
+            return src
+          end
         end
         
         # Check for other indicators it's a restaurant image
@@ -459,13 +500,17 @@ class GojekParserService
         if (img.attribute('data-nimg') == '1' || img.attribute('fetchpriority') == 'high') && 
            (alt_text.include?('restaurant') || alt_text.include?('eggs') || alt_text.length > 10)
           src = src.start_with?('http') ? src : "https:#{src}"
-          return src if src.match?(/\.(jpg|jpeg|png|webp)/i)
+          if src.match?(/\.(jpg|jpeg|png|webp)/i)
+            Rails.logger.info "Found restaurant image by characteristics: #{src}"
+            return src
+          end
         end
       end
     rescue => e
-      Rails.logger.info "Error extracting image: #{e.message}"
+      Rails.logger.error "Error extracting image: #{e.message}"
     end
 
+    Rails.logger.info "=== No image found ==="
     nil
   end
   

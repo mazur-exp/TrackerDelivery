@@ -777,6 +777,7 @@
       // Fill platform data
       document.getElementById('platform-restaurant-name').textContent = data.name || 'Restaurant Name';
       document.getElementById('platform-cuisines').textContent = data.cuisines ? data.cuisines.join(', ') : '-';
+      document.getElementById('platform-address').textContent = data.address || '-';
       document.getElementById('platform-rating').textContent = data.rating || '-';
       
       // Fill schedule for each day

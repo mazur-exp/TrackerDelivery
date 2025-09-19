@@ -216,16 +216,23 @@ class GojekParserService
     options.add_argument("--disable-backgrounding-occluded-windows")
     options.add_argument("--memory-pressure-off")
     options.add_argument("--max_old_space_size=4096")
+    
+    # Additional flags for Chromium compatibility
+    options.add_argument("--disable-blink-features=AutomationControlled")
 
     # Timeout settings
     options.add_argument("--page-load-strategy=eager") # Don't wait for all resources
 
-    # User agent to avoid detection
-    options.add_argument("--user-agent=Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36")
-
     # Set binary path (for Docker containers)
     chrome_binary = ENV['CHROME_BIN'] || 
                    (File.exist?("/usr/bin/google-chrome-stable") ? "/usr/bin/google-chrome-stable" : "/usr/bin/chromium")
+
+    # User agent to avoid detection (adapt for browser type)
+    if chrome_binary&.include?("chromium")
+      options.add_argument("--user-agent=Mozilla/5.0 (X11; Linux aarch64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36")
+    else
+      options.add_argument("--user-agent=Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36")
+    end
     
     if File.exist?(chrome_binary)
       options.binary = chrome_binary

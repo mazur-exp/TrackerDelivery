@@ -313,12 +313,12 @@ class GrabParserService
     options.add_argument("--memory-pressure-off")
     options.add_argument("--max_old_space_size=4096")
 
-    # Set binary path (for Docker containers)
-    chrome_binary = ENV['CHROME_BIN'] || 
-                   (File.exist?("/usr/bin/google-chrome-stable") ? "/usr/bin/google-chrome-stable" : "/usr/bin/chromium")
-
-    # User agent to avoid detection (adapt for browser type)
-    if chrome_binary&.include?("chromium")
+    # Detect Chrome binary with improved logic
+    chrome_binary = detect_chrome_binary
+    
+    # Set architecture-appropriate user agent
+    arch = detect_architecture
+    if arch == "arm64" || chrome_binary&.include?("chromium")
       options.add_argument("--user-agent=Mozilla/5.0 (X11; Linux aarch64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36")
     else
       options.add_argument("--user-agent=Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36")
@@ -328,23 +328,104 @@ class GrabParserService
       options.binary = chrome_binary
       Rails.logger.info "Grab: Using Chrome binary: #{chrome_binary}"
     else
-      Rails.logger.warn "Grab: No Chrome binary found at expected locations"
+      Rails.logger.error "Grab: Chrome binary not found at: #{chrome_binary}"
+      raise "Chrome binary not accessible at #{chrome_binary}"
     end
 
-    # Set ChromeDriver path if specified
-    if ENV['CHROMEDRIVER_PATH'] && File.exist?(ENV['CHROMEDRIVER_PATH'])
-      Rails.logger.info "Grab: Using ChromeDriver: #{ENV['CHROMEDRIVER_PATH']}"
-    end
+    # Detect and validate ChromeDriver
+    chromedriver_path = detect_chromedriver_path
+    Rails.logger.info "Grab: Using ChromeDriver: #{chromedriver_path}"
 
     Rails.logger.info "Grab: Starting Chrome driver in headless mode with production optimizations"
     
-    # Explicitly set ChromeDriver service if path is specified
-    if ENV['CHROMEDRIVER_PATH'] && File.exist?(ENV['CHROMEDRIVER_PATH'])
-      service = Selenium::WebDriver::Service.chrome(path: ENV['CHROMEDRIVER_PATH'])
-      Rails.logger.info "Grab: Using explicit ChromeDriver service: #{ENV['CHROMEDRIVER_PATH']}"
-      Selenium::WebDriver.for(:chrome, service: service, options: options)
+    # Always use explicit service with detected ChromeDriver path
+    begin
+      service = Selenium::WebDriver::Service.chrome(path: chromedriver_path)
+      Rails.logger.info "Grab: Created ChromeDriver service with path: #{chromedriver_path}"
+      driver = Selenium::WebDriver.for(:chrome, service: service, options: options)
+      Rails.logger.info "Grab: Successfully created WebDriver instance"
+      driver
+    rescue => e
+      Rails.logger.error "Grab: Failed to create WebDriver: #{e.class} - #{e.message}"
+      Rails.logger.error "Grab: Chrome binary: #{chrome_binary} (exists: #{File.exist?(chrome_binary)})"
+      Rails.logger.error "Grab: ChromeDriver: #{chromedriver_path} (exists: #{File.exist?(chromedriver_path)})"
+      raise e
+    end
+  end
+
+  private
+
+  def detect_chrome_binary
+    # Priority order for Chrome binary detection
+    candidates = [
+      ENV['CHROME_BIN'],
+      "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome", # Mac
+      "/Applications/Chromium.app/Contents/MacOS/Chromium", # Mac Chromium
+      "/usr/bin/google-chrome-stable", # Linux
+      "/usr/bin/google-chrome", # Linux
+      "/usr/bin/chromium", # Linux
+      "/usr/bin/chromium-browser" # Linux
+    ].compact
+
+    candidates.each do |path|
+      if File.exist?(path) && File.executable?(path)
+        Rails.logger.info "Grab: Found Chrome binary at: #{path}"
+        return path
+      end
+    end
+
+    # Last resort: search the filesystem
+    Rails.logger.warn "Grab: No Chrome binary found in standard locations, searching filesystem..."
+    search_result = `find /usr -name "chrome*" -o -name "chromium*" -type f 2>/dev/null | grep -E "(chrome|chromium)$" | head -1`.strip
+    
+    if search_result.present? && File.exist?(search_result)
+      Rails.logger.info "Grab: Found Chrome binary via search: #{search_result}"
+      return search_result
+    end
+
+    Rails.logger.error "Grab: No Chrome binary found anywhere"
+    raise "No Chrome/Chromium binary found on system"
+  end
+
+  def detect_chromedriver_path
+    # Priority order for ChromeDriver detection
+    candidates = [
+      ENV['CHROMEDRIVER_PATH'],
+      "/usr/local/bin/chromedriver",
+      "/usr/bin/chromedriver",
+      "/usr/lib/chromium/chromedriver",
+      "/usr/lib/chromium-browser/chromedriver"
+    ].compact
+
+    candidates.each do |path|
+      if File.exist?(path) && File.executable?(path)
+        Rails.logger.info "Grab: Found ChromeDriver at: #{path}"
+        return path
+      end
+    end
+
+    # Last resort: search the filesystem
+    Rails.logger.warn "Grab: No ChromeDriver found in standard locations, searching filesystem..."
+    search_result = `find /usr -name "chromedriver" -type f 2>/dev/null | head -1`.strip
+    
+    if search_result.present? && File.exist?(search_result)
+      Rails.logger.info "Grab: Found ChromeDriver via search: #{search_result}"
+      return search_result
+    end
+
+    Rails.logger.error "Grab: No ChromeDriver found anywhere"
+    raise "ChromeDriver not found on system"
+  end
+
+  def detect_architecture
+    arch = `uname -m`.strip rescue "unknown"
+    case arch
+    when "aarch64", "arm64"
+      "arm64"
+    when "x86_64", "amd64"
+      "amd64"
     else
-      Selenium::WebDriver.for(:chrome, options: options)
+      arch
     end
   end
 

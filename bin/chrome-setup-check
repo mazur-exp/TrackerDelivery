@@ -1,0 +1,70 @@
+#!/bin/bash
+set -e
+
+echo "=== Chrome/ChromeDriver Setup Check ==="
+
+# Check architecture
+ARCH=$(uname -m)
+echo "Architecture: $ARCH"
+
+# Check environment variables
+echo "Environment variables:"
+echo "  CHROME_BIN: ${CHROME_BIN:-not set}"
+echo "  CHROMEDRIVER_PATH: ${CHROMEDRIVER_PATH:-not set}"
+
+# Check Chrome binary
+echo "Checking Chrome binary..."
+if [ -n "$CHROME_BIN" ] && [ -f "$CHROME_BIN" ]; then
+    echo "  ✓ Chrome binary found at: $CHROME_BIN"
+    if [ -x "$CHROME_BIN" ]; then
+        echo "  ✓ Chrome binary is executable"
+        VERSION=$($CHROME_BIN --version 2>/dev/null || echo "version check failed")
+        echo "  ✓ Chrome version: $VERSION"
+    else
+        echo "  ✗ Chrome binary is not executable"
+        exit 1
+    fi
+else
+    echo "  ✗ Chrome binary not found or CHROME_BIN not set"
+    echo "  Searching for Chrome binaries..."
+    for path in /usr/bin/google-chrome-stable /usr/bin/google-chrome /usr/bin/chromium /usr/bin/chromium-browser; do
+        if [ -f "$path" ]; then
+            echo "    Found: $path"
+        fi
+    done
+    exit 1
+fi
+
+# Check ChromeDriver
+echo "Checking ChromeDriver..."
+if [ -n "$CHROMEDRIVER_PATH" ] && [ -f "$CHROMEDRIVER_PATH" ]; then
+    echo "  ✓ ChromeDriver found at: $CHROMEDRIVER_PATH"
+    if [ -x "$CHROMEDRIVER_PATH" ]; then
+        echo "  ✓ ChromeDriver is executable"
+        VERSION=$($CHROMEDRIVER_PATH --version 2>/dev/null || echo "version check failed")
+        echo "  ✓ ChromeDriver version: $VERSION"
+    else
+        echo "  ✗ ChromeDriver is not executable"
+        exit 1
+    fi
+else
+    echo "  ✗ ChromeDriver not found or CHROMEDRIVER_PATH not set"
+    echo "  Searching for ChromeDriver binaries..."
+    for path in /usr/local/bin/chromedriver /usr/bin/chromedriver /usr/lib/chromium/chromedriver /usr/lib/chromium-browser/chromedriver; do
+        if [ -f "$path" ]; then
+            echo "    Found: $path"
+        fi
+    done
+    exit 1
+fi
+
+# Test basic functionality
+echo "Testing basic Chrome functionality..."
+if timeout 30 $CHROME_BIN --headless --disable-gpu --no-sandbox --dump-dom about:blank > /dev/null 2>&1; then
+    echo "  ✓ Chrome headless test successful"
+else
+    echo "  ✗ Chrome headless test failed"
+    exit 1
+fi
+
+echo "=== Setup check completed successfully ==="

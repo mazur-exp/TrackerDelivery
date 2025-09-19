@@ -51,7 +51,7 @@ RUN ARCH=$(dpkg --print-architecture) && \
         rm -rf /var/lib/apt/lists/*; \
     fi
 
-# Install ChromeDriver (skip for ARM64 if using Chromium)
+# Install ChromeDriver (architecture-specific handling)
 RUN ARCH=$(dpkg --print-architecture) && \
     if [ "$ARCH" = "amd64" ]; then \
         CHROME_VERSION=$(google-chrome --version | awk '{print $3}' | cut -d. -f1-3) && \
@@ -66,29 +66,62 @@ RUN ARCH=$(dpkg --print-architecture) && \
         rm -rf chromedriver-linux64* && \
         chromedriver --version; \
     else \
-        echo "Using Chromium driver for $ARCH - already installed with chromium-driver package" && \
-        ln -s /usr/bin/chromedriver /usr/local/bin/chromedriver 2>/dev/null || \
-        ln -s /usr/lib/chromium/chromedriver /usr/local/bin/chromedriver 2>/dev/null || \
-        echo "ChromeDriver symlink setup complete"; \
+        echo "Setting up ChromeDriver for ARM64 architecture" && \
+        # Ensure chromium-driver is properly installed and find correct path
+        if [ -f "/usr/bin/chromedriver" ]; then \
+            echo "Found chromedriver at /usr/bin/chromedriver" && \
+            cp /usr/bin/chromedriver /usr/local/bin/chromedriver && \
+            chmod +x /usr/local/bin/chromedriver; \
+        elif [ -f "/usr/lib/chromium/chromedriver" ]; then \
+            echo "Found chromedriver at /usr/lib/chromium/chromedriver" && \
+            cp /usr/lib/chromium/chromedriver /usr/local/bin/chromedriver && \
+            chmod +x /usr/local/bin/chromedriver; \
+        elif [ -f "/usr/lib/chromium-browser/chromedriver" ]; then \
+            echo "Found chromedriver at /usr/lib/chromium-browser/chromedriver" && \
+            cp /usr/lib/chromium-browser/chromedriver /usr/local/bin/chromedriver && \
+            chmod +x /usr/local/bin/chromedriver; \
+        else \
+            echo "ERROR: Could not find chromedriver binary" && \
+            find /usr -name "chromedriver" -type f 2>/dev/null || echo "No chromedriver found" && \
+            exit 1; \
+        fi && \
+        echo "ChromeDriver version:" && \
+        /usr/local/bin/chromedriver --version; \
     fi
 
-# Set Chrome binary path based on what was installed
-RUN if [ -f "/usr/bin/google-chrome-stable" ]; then \
-        echo "CHROME_BIN=/usr/bin/google-chrome-stable" > /tmp/chrome_path; \
+# Set Chrome binary path dynamically based on architecture and what was installed
+RUN ARCH=$(dpkg --print-architecture) && \
+    if [ -f "/usr/bin/google-chrome-stable" ]; then \
+        CHROME_BIN_PATH="/usr/bin/google-chrome-stable"; \
     elif [ -f "/usr/bin/chromium" ]; then \
-        echo "CHROME_BIN=/usr/bin/chromium" > /tmp/chrome_path; \
-    fi
+        CHROME_BIN_PATH="/usr/bin/chromium"; \
+    elif [ -f "/usr/bin/chromium-browser" ]; then \
+        CHROME_BIN_PATH="/usr/bin/chromium-browser"; \
+    else \
+        echo "ERROR: No Chrome/Chromium binary found" && \
+        find /usr -name "chrome*" -o -name "chromium*" -type f 2>/dev/null | grep -E "(chrome|chromium)$" | head -5 && \
+        exit 1; \
+    fi && \
+    echo "Using Chrome binary: $CHROME_BIN_PATH" && \
+    echo "CHROME_BIN=$CHROME_BIN_PATH" > /tmp/chrome_env && \
+    echo "CHROMEDRIVER_PATH=/usr/local/bin/chromedriver" >> /tmp/chrome_env
 
-# Set production environment with Chrome path
-RUN CHROME_PATH=$(cat /tmp/chrome_path 2>/dev/null || echo "CHROME_BIN=/usr/bin/chromium") && \
-    export $CHROME_PATH
+# Set environment variables from the detected paths
+RUN . /tmp/chrome_env && \
+    echo "Chrome binary: $CHROME_BIN" && \
+    echo "ChromeDriver path: $CHROMEDRIVER_PATH" && \
+    # Verify both binaries work
+    $CHROME_BIN --version && \
+    $CHROMEDRIVER_PATH --version
 
 ENV RAILS_ENV="production" \
     BUNDLE_DEPLOYMENT="1" \
     BUNDLE_PATH="/usr/local/bundle" \
     BUNDLE_WITHOUT="development" \
-    CHROMEDRIVER_PATH="/usr/local/bin/chromedriver" \
-    CHROME_BIN="/usr/bin/chromium"
+    CHROMEDRIVER_PATH="/usr/local/bin/chromedriver"
+
+# Set CHROME_BIN dynamically (will be overridden by runtime detection in Rails app)
+ENV CHROME_BIN="/usr/bin/chromium"
 
 # Throw-away build stage to reduce size of final image
 FROM base AS build
@@ -122,6 +155,9 @@ FROM base
 # Copy built artifacts: gems, application
 COPY --from=build "${BUNDLE_PATH}" "${BUNDLE_PATH}"
 COPY --from=build /rails /rails
+
+# Make chrome setup check executable and run validation
+RUN chmod +x /rails/bin/chrome-setup-check
 
 # Run and own only the runtime files as a non-root user for security
 RUN groupadd --system --gid 1000 rails && \

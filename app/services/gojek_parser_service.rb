@@ -223,12 +223,12 @@ class GojekParserService
     # Timeout settings
     options.add_argument("--page-load-strategy=eager") # Don't wait for all resources
 
-    # Set binary path (for Docker containers)
-    chrome_binary = ENV['CHROME_BIN'] || 
-                   (File.exist?("/usr/bin/google-chrome-stable") ? "/usr/bin/google-chrome-stable" : "/usr/bin/chromium")
-
-    # User agent to avoid detection (adapt for browser type)
-    if chrome_binary&.include?("chromium")
+    # Detect Chrome binary with improved logic
+    chrome_binary = detect_chrome_binary
+    
+    # Set architecture-appropriate user agent
+    arch = detect_architecture
+    if arch == "arm64" || chrome_binary&.include?("chromium")
       options.add_argument("--user-agent=Mozilla/5.0 (X11; Linux aarch64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36")
     else
       options.add_argument("--user-agent=Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36")
@@ -238,31 +238,111 @@ class GojekParserService
       options.binary = chrome_binary
       Rails.logger.info "GoJek: Using Chrome binary: #{chrome_binary}"
     else
-      Rails.logger.warn "GoJek: No Chrome binary found at expected locations"
+      Rails.logger.error "GoJek: Chrome binary not found at: #{chrome_binary}"
+      raise "Chrome binary not accessible at #{chrome_binary}"
     end
 
-    # Set ChromeDriver path if specified
-    if ENV['CHROMEDRIVER_PATH'] && File.exist?(ENV['CHROMEDRIVER_PATH'])
-      Rails.logger.info "GoJek: Using ChromeDriver: #{ENV['CHROMEDRIVER_PATH']}"
-    end
+    # Detect and validate ChromeDriver
+    chromedriver_path = detect_chromedriver_path
+    Rails.logger.info "GoJek: Using ChromeDriver: #{chromedriver_path}"
 
     Rails.logger.info "GoJek: Starting Chrome driver with optimized settings for production"
 
-    # Explicitly set ChromeDriver service if path is specified
-    if ENV['CHROMEDRIVER_PATH'] && File.exist?(ENV['CHROMEDRIVER_PATH'])
-      service = Selenium::WebDriver::Service.chrome(path: ENV['CHROMEDRIVER_PATH'])
-      Rails.logger.info "GoJek: Using explicit ChromeDriver service: #{ENV['CHROMEDRIVER_PATH']}"
+    # Always use explicit service with detected ChromeDriver path
+    begin
+      service = Selenium::WebDriver::Service.chrome(path: chromedriver_path)
+      Rails.logger.info "GoJek: Created ChromeDriver service with path: #{chromedriver_path}"
       driver = Selenium::WebDriver.for(:chrome, service: service, options: options)
-    else
-      driver = Selenium::WebDriver.for(:chrome, options: options)
+      Rails.logger.info "GoJek: Successfully created WebDriver instance"
+      
+      # Set timeouts
+      driver.manage.timeouts.page_load = 15 # 15 seconds max for page load
+      driver.manage.timeouts.script_timeout = 10 # 10 seconds max for script execution
+      
+      driver
+    rescue => e
+      Rails.logger.error "GoJek: Failed to create WebDriver: #{e.class} - #{e.message}"
+      Rails.logger.error "GoJek: Chrome binary: #{chrome_binary} (exists: #{File.exist?(chrome_binary)})"
+      Rails.logger.error "GoJek: ChromeDriver: #{chromedriver_path} (exists: #{File.exist?(chromedriver_path)})"
+      raise e
     end
-    driver.manage.timeouts.page_load = 15 # 15 seconds max for page load
-    driver.manage.timeouts.script_timeout = 10 # 10 seconds max for script execution
-
-    driver
   rescue => e
     Rails.logger.error "GoJek: Failed to setup Chrome driver: #{e.message}"
     raise
+  end
+
+  def detect_chrome_binary
+    # Priority order for Chrome binary detection
+    candidates = [
+      ENV['CHROME_BIN'],
+      "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome", # Mac
+      "/Applications/Chromium.app/Contents/MacOS/Chromium", # Mac Chromium
+      "/usr/bin/google-chrome-stable", # Linux
+      "/usr/bin/google-chrome", # Linux
+      "/usr/bin/chromium", # Linux
+      "/usr/bin/chromium-browser" # Linux
+    ].compact
+
+    candidates.each do |path|
+      if File.exist?(path) && File.executable?(path)
+        Rails.logger.info "GoJek: Found Chrome binary at: #{path}"
+        return path
+      end
+    end
+
+    # Last resort: search the filesystem
+    Rails.logger.warn "GoJek: No Chrome binary found in standard locations, searching filesystem..."
+    search_result = `find /usr -name "chrome*" -o -name "chromium*" -type f 2>/dev/null | grep -E "(chrome|chromium)$" | head -1`.strip
+    
+    if search_result.present? && File.exist?(search_result)
+      Rails.logger.info "GoJek: Found Chrome binary via search: #{search_result}"
+      return search_result
+    end
+
+    Rails.logger.error "GoJek: No Chrome binary found anywhere"
+    raise "No Chrome/Chromium binary found on system"
+  end
+
+  def detect_chromedriver_path
+    # Priority order for ChromeDriver detection
+    candidates = [
+      ENV['CHROMEDRIVER_PATH'],
+      "/usr/local/bin/chromedriver",
+      "/usr/bin/chromedriver",
+      "/usr/lib/chromium/chromedriver",
+      "/usr/lib/chromium-browser/chromedriver"
+    ].compact
+
+    candidates.each do |path|
+      if File.exist?(path) && File.executable?(path)
+        Rails.logger.info "GoJek: Found ChromeDriver at: #{path}"
+        return path
+      end
+    end
+
+    # Last resort: search the filesystem
+    Rails.logger.warn "GoJek: No ChromeDriver found in standard locations, searching filesystem..."
+    search_result = `find /usr -name "chromedriver" -type f 2>/dev/null | head -1`.strip
+    
+    if search_result.present? && File.exist?(search_result)
+      Rails.logger.info "GoJek: Found ChromeDriver via search: #{search_result}"
+      return search_result
+    end
+
+    Rails.logger.error "GoJek: No ChromeDriver found anywhere"
+    raise "ChromeDriver not found on system"
+  end
+
+  def detect_architecture
+    arch = `uname -m`.strip rescue "unknown"
+    case arch
+    when "aarch64", "arm64"
+      "arm64"
+    when "x86_64", "amd64"
+      "amd64"
+    else
+      arch
+    end
   end
 
   def extract_restaurant_name_selenium(driver)

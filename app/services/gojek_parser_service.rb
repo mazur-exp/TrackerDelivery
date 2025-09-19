@@ -195,12 +195,14 @@ class GojekParserService
   def setup_chrome_driver
     options = Selenium::WebDriver::Chrome::Options.new
 
-    # Headless mode for server deployment
-    options.add_argument("--headless")
+    # Essential headless mode flags for production servers
+    options.add_argument("--headless=new")
     options.add_argument("--no-sandbox")
     options.add_argument("--disable-dev-shm-usage")
     options.add_argument("--disable-gpu")
+    options.add_argument("--disable-software-rasterizer")
     options.add_argument("--window-size=1920,1080")
+    options.add_argument("--remote-debugging-port=9223")
 
     # Performance and stability improvements
     options.add_argument("--disable-extensions")
@@ -213,14 +215,27 @@ class GojekParserService
     options.add_argument("--disable-renderer-backgrounding")
     options.add_argument("--disable-backgrounding-occluded-windows")
     options.add_argument("--memory-pressure-off")
+    options.add_argument("--max_old_space_size=4096")
 
     # Timeout settings
     options.add_argument("--page-load-strategy=eager") # Don't wait for all resources
 
     # User agent to avoid detection
-    options.add_argument("--user-agent=Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36")
+    options.add_argument("--user-agent=Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36")
 
-    Rails.logger.info "GoJek: Starting Chrome driver with optimized settings"
+    # Set binary path (for Docker containers)
+    chrome_binary = ENV['CHROME_BIN'] || "/usr/bin/google-chrome-stable"
+    if File.exist?(chrome_binary)
+      options.binary = chrome_binary
+      Rails.logger.info "GoJek: Using Chrome binary: #{chrome_binary}"
+    end
+
+    # Set ChromeDriver path if specified
+    if ENV['CHROMEDRIVER_PATH'] && File.exist?(ENV['CHROMEDRIVER_PATH'])
+      Rails.logger.info "GoJek: Using ChromeDriver: #{ENV['CHROMEDRIVER_PATH']}"
+    end
+
+    Rails.logger.info "GoJek: Starting Chrome driver with optimized settings for production"
 
     # Set timeouts
     driver = Selenium::WebDriver.for(:chrome, options: options)

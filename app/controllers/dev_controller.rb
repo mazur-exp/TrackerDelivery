@@ -15,7 +15,7 @@ class DevController < ApplicationController
       @existing_email_contacts = current_user.all_email_contacts
       # Check if user already has restaurants
       @user_has_restaurants = current_user.has_restaurants?
-      
+
       # Отладочная информация
       Rails.logger.info "=== ONBOARDING DEBUG ==="
       Rails.logger.info "User ID: #{current_user.id}"

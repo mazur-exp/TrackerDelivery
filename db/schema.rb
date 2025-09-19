@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2025_09_18_090512) do
+ActiveRecord::Schema[8.0].define(version: 2025_09_19_022914) do
   create_table "email_domain_blacklists", force: :cascade do |t|
     t.string "domain"
     t.string "reason"
@@ -43,7 +43,10 @@ ActiveRecord::Schema[8.0].define(version: 2025_09_18_090512) do
     t.datetime "updated_at", null: false
     t.string "address"
     t.string "phone"
-    t.string "cuisine_type"
+    t.string "cuisine_primary"
+    t.string "cuisine_secondary"
+    t.string "cuisine_tertiary"
+    t.string "image_url"
     t.index ["user_id"], name: "index_restaurants_on_user_id"
   end
 
@@ -75,7 +78,22 @@ ActiveRecord::Schema[8.0].define(version: 2025_09_18_090512) do
     t.index ["password_reset_token"], name: "index_users_on_password_reset_token", unique: true
   end
 
+  create_table "working_hours", force: :cascade do |t|
+    t.integer "restaurant_id", null: false
+    t.integer "day_of_week", null: false
+    t.time "opens_at"
+    t.time "closes_at"
+    t.time "break_start"
+    t.time "break_end"
+    t.boolean "is_closed", default: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["restaurant_id", "day_of_week"], name: "index_working_hours_on_restaurant_id_and_day_of_week", unique: true
+    t.index ["restaurant_id"], name: "index_working_hours_on_restaurant_id"
+  end
+
   add_foreign_key "notification_contacts", "restaurants"
   add_foreign_key "restaurants", "users"
   add_foreign_key "sessions", "users"
+  add_foreign_key "working_hours", "restaurants"
 end

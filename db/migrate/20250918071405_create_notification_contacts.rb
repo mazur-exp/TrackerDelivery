@@ -10,11 +10,11 @@ class CreateNotificationContacts < ActiveRecord::Migration[8.0]
 
       t.timestamps
     end
-    
+
     # Индексы для быстрого поиска (user_id уже создан через references)
-    add_index :notification_contacts, [:user_id, :contact_type]
-    add_index :notification_contacts, [:user_id, :is_primary]
-    add_index :notification_contacts, [:user_id, :contact_type, :is_primary], 
+    add_index :notification_contacts, [ :user_id, :contact_type ]
+    add_index :notification_contacts, [ :user_id, :is_primary ]
+    add_index :notification_contacts, [ :user_id, :contact_type, :is_primary ],
               name: 'index_notification_contacts_on_user_type_primary'
   end
 end

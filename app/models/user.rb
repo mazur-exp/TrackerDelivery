@@ -5,19 +5,19 @@ class User < ApplicationRecord
   has_many :restaurants, dependent: :destroy
 
   # Validations
-  validates :email_address, presence: true, 
-            uniqueness: { case_sensitive: false }, 
+  validates :email_address, presence: true,
+            uniqueness: { case_sensitive: false },
             format: { with: URI::MailTo::EMAIL_REGEXP }
   validates :password, length: { minimum: 8 }, if: :password_required?
-  
+
   # Normalization
   normalizes :email_address, with: ->(e) { e.strip.downcase }
-  
+
   # Token generation
   generates_token_for :password_reset, expires_in: 2.hours do
     password_salt&.last(10)
   end
-  
+
   generates_token_for :email_confirmation, expires_in: 24.hours do
     email_address
   end
@@ -68,7 +68,7 @@ class User < ApplicationRecord
 
   # Display name helper
   def display_name
-    name.present? ? name : email_address.split('@').first.capitalize
+    name.present? ? name : email_address.split("@").first.capitalize
   end
 
   # Check if user has any restaurants configured
@@ -79,22 +79,22 @@ class User < ApplicationRecord
   # Get all unique notification contacts from user's restaurants
   def all_whatsapp_contacts
     restaurants.joins(:notification_contacts)
-               .where(notification_contacts: { contact_type: 'whatsapp', is_active: true })
-               .pluck('notification_contacts.contact_value')
+               .where(notification_contacts: { contact_type: "whatsapp", is_active: true })
+               .pluck("notification_contacts.contact_value")
                .uniq
   end
 
   def all_telegram_contacts
     restaurants.joins(:notification_contacts)
-               .where(notification_contacts: { contact_type: 'telegram', is_active: true })
-               .pluck('notification_contacts.contact_value')
+               .where(notification_contacts: { contact_type: "telegram", is_active: true })
+               .pluck("notification_contacts.contact_value")
                .uniq
   end
 
   def all_email_contacts
     restaurants.joins(:notification_contacts)
-               .where(notification_contacts: { contact_type: 'email', is_active: true })
-               .pluck('notification_contacts.contact_value')
+               .where(notification_contacts: { contact_type: "email", is_active: true })
+               .pluck("notification_contacts.contact_value")
                .uniq
   end
 
@@ -125,7 +125,7 @@ class User < ApplicationRecord
 
   def email_domain_not_blacklisted
     return if email_address.blank?
-    
+
     if EmailDomainBlacklist.blacklisted?(email_address)
       domain = EmailDomainBlacklist.extract_domain(email_address)
       errors.add(:email_address, "This email domain (#{domain}) is not supported.")

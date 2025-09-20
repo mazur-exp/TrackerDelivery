@@ -1,10 +1,17 @@
 require "selenium-webdriver"
 require "timeout"
+require_relative "retryable_parser"
 
-class GojekParserService
+class GojekParserService < RetryableParser
   TIMEOUT_SECONDS = 20  # Reduced from 30 to prevent hanging
 
   def parse(url)
+    parse_with_retry(url)
+  end
+
+  private
+
+  def parse_implementation(url)
     Rails.logger.info "=== GoJek Selenium Parser Starting for URL: #{url} ==="
     return nil if url.blank?
 
@@ -200,6 +207,26 @@ class GojekParserService
     false
   end
 
+  def cleanup_driver_resources
+    # Force cleanup any existing drivers
+    begin
+      @current_driver&.quit
+    rescue => e
+      Rails.logger.warn "GoJek: Error during driver cleanup: #{e.message}"
+    ensure
+      @current_driver = nil
+    end
+    
+    # Kill any remaining Chrome processes (macOS/Linux)
+    begin
+      if RUBY_PLATFORM.include?("darwin") || RUBY_PLATFORM.include?("linux")
+        system("pkill -f 'chrome.*--headless' > /dev/null 2>&1")
+      end
+    rescue => e
+      Rails.logger.warn "GoJek: Error killing Chrome processes: #{e.message}"
+    end
+  end
+
   def setup_chrome_driver
     options = Selenium::WebDriver::Chrome::Options.new
 
@@ -284,6 +311,7 @@ class GojekParserService
       service = Selenium::WebDriver::Service.chrome(path: chromedriver_path)
       Rails.logger.info "GoJek: Created ChromeDriver service with path: #{chromedriver_path}"
       driver = Selenium::WebDriver.for(:chrome, service: service, options: options)
+      @current_driver = driver
       Rails.logger.info "GoJek: Successfully created WebDriver instance"
 
       # Set timeouts
@@ -766,9 +794,24 @@ class GojekParserService
       Rails.logger.info "Found #{p_elements.length} p elements"
 
       p_elements.each_with_index do |p, i|
-        text = p.text.strip
+        text = p.text.strip.upcase
         classes = p.attribute("class").to_s
 
+        # Check for "NEW" indicator first (both English and Indonesian)
+        if (text.match?(/\bNEW\b/) || text.match?(/\bBARU\b/)) && classes.match?(/gf|label/i)
+          Rails.logger.info "Found NEW/BARU indicator P#{i}: text='#{text}' classes='#{classes}'"
+          # Check if parent has SVG or star-like structure
+          parent = p.find_element(:xpath, "..")
+          has_svg = !parent.find_elements(:css, "svg").empty?
+          Rails.logger.info "  -> Parent has SVG: #{has_svg}"
+          
+          if has_svg
+            Rails.logger.info "  -> RETURNING 'NEW' (no rating yet)"
+            return "NEW"
+          end
+        end
+        
+        # Check for numeric rating
         if text.match?(/^\d+(\.\d+)?$/) && classes.match?(/gf|label/i)
           rating = text.to_f
           Rails.logger.info "Found potential rating P#{i}: text='#{text}' classes='#{classes}' rating=#{rating}"
@@ -886,7 +929,7 @@ class GojekParserService
           all_elements = driver.find_elements(:css, "div, p, span, font")
           Rails.logger.info "Searching #{all_elements.length} elements for time patterns on main page"
 
-          all_elements.each do |element|
+          status_elements.each do |element|
             text = element.text.strip
             next if text.length < 5 || text.length > 100
 
@@ -1140,26 +1183,50 @@ class GojekParserService
     Rails.logger.info "=== Extracting Restaurant Status ==="
 
     begin
-      # Search for closed indicators across all elements
-      all_elements = driver.find_elements(:css, "*")
+      # Use fast specific selectors instead of searching all elements
+      status_selectors = [
+        "div[class*='status']",
+        "span[class*='status']", 
+        "p[class*='status']",
+        "div[class*='tutup']",
+        "div[class*='buka']",
+        "div[class*='open']",
+        "div[class*='close']",
+        # Common GoFood status containers
+        "div.gf-label-s",
+        "div.gf-body-s", 
+        "p.gf-label-s",
+        "span.gf-label-s",
+        # Restaurant info containers
+        "div[class*='restaurant']",
+        "div[class*='merchant']"
+      ]
+      
+      status_elements = []
+      status_selectors.each do |selector|
+        elements = driver.find_elements(:css, selector)
+        status_elements.concat(elements)
+      end
+      
+      Rails.logger.info "Found #{status_elements.length} potential status elements"
       tutup_found = false
       opening_info = nil
       
       # Log some sample text for debugging
-      Rails.logger.info "=== DEBUG: Sample page text (first 10 non-empty elements) ==="
+      Rails.logger.info "=== DEBUG: Sample status elements (first 10) ==="
       debug_count = 0
-      all_elements.each do |element|
+      status_elements.each do |element|
         text = element.text.strip rescue ""
         next if text.empty? || text.length > 100
         
         if debug_count < 10
-          Rails.logger.info "Element text: '#{text}'"
+          Rails.logger.info "Status element text: '#{text}'"
           debug_count += 1
         end
       end
       Rails.logger.info "=== END DEBUG ==="
 
-      all_elements.each do |element|
+      status_elements.each do |element|
         text = element.text.strip rescue ""
         next if text.empty? || text.length > 100
 

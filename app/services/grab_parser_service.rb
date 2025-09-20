@@ -2,11 +2,18 @@ require "selenium-webdriver"
 require "timeout"
 require "json"
 require "cgi"
+require_relative "retryable_parser"
 
-class GrabParserService
+class GrabParserService < RetryableParser
   TIMEOUT_SECONDS = 20
 
   def parse(url)
+    parse_with_retry(url)
+  end
+
+  private
+
+  def parse_implementation(url)
     Rails.logger.info "=== Grab Selenium Parser Starting for URL: #{url} ==="
     return nil if url.blank?
 
@@ -287,6 +294,26 @@ class GrabParserService
     end
   end
 
+  def cleanup_driver_resources
+    # Force cleanup any existing drivers
+    begin
+      @current_driver&.quit
+    rescue => e
+      Rails.logger.warn "Grab: Error during driver cleanup: #{e.message}"
+    ensure
+      @current_driver = nil
+    end
+    
+    # Kill any remaining Chrome processes (macOS/Linux)
+    begin
+      if RUBY_PLATFORM.include?("darwin") || RUBY_PLATFORM.include?("linux")
+        system("pkill -f 'chrome.*--headless' > /dev/null 2>&1")
+      end
+    rescue => e
+      Rails.logger.warn "Grab: Error killing Chrome processes: #{e.message}"
+    end
+  end
+
   def setup_chrome_driver
     options = Selenium::WebDriver::Chrome::Options.new
 
@@ -344,6 +371,7 @@ class GrabParserService
       Rails.logger.info "Grab: Created ChromeDriver service with path: #{chromedriver_path}"
       driver = Selenium::WebDriver.for(:chrome, service: service, options: options)
       Rails.logger.info "Grab: Successfully created WebDriver instance"
+      @current_driver = driver
       driver
     rescue => e
       Rails.logger.error "Grab: Failed to create WebDriver: #{e.class} - #{e.message}"

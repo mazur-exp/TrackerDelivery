@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2025_09_19_064703) do
+ActiveRecord::Schema[8.0].define(version: 2025_09_20_154400) do
   create_table "cuisine_translations", force: :cascade do |t|
     t.string "indonesian", null: false
     t.string "english", null: false
@@ -45,8 +45,6 @@ ActiveRecord::Schema[8.0].define(version: 2025_09_19_064703) do
   create_table "restaurants", force: :cascade do |t|
     t.integer "user_id", null: false
     t.string "name"
-    t.string "gojek_url"
-    t.string "grab_url"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.string "address"
@@ -55,6 +53,10 @@ ActiveRecord::Schema[8.0].define(version: 2025_09_19_064703) do
     t.string "cuisine_secondary"
     t.string "cuisine_tertiary"
     t.string "image_url"
+    t.string "platform", null: false
+    t.string "platform_url", null: false
+    t.text "coordinates"
+    t.index ["platform"], name: "index_restaurants_on_platform"
     t.index ["user_id"], name: "index_restaurants_on_user_id"
   end
 

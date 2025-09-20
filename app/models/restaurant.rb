@@ -3,43 +3,55 @@ class Restaurant < ApplicationRecord
   has_many :notification_contacts, dependent: :destroy
   has_many :working_hours, dependent: :destroy
 
+  # Enums
+  enum :platform, { grab: "grab", gojek: "gojek" }
+
   # Validations
   validates :name, presence: true, length: { minimum: 2, maximum: 100 }
   validates :user_id, presence: true
-  validate :at_least_one_platform_url
-  validate :valid_platform_urls
+  validates :platform, presence: true, inclusion: { in: platforms.keys }
+  validates :platform_url, presence: true
+  validate :valid_platform_url
 
   # Scopes
-  scope :with_grab, -> { where.not(grab_url: [ nil, "" ]) }
-  scope :with_gojek, -> { where.not(gojek_url: [ nil, "" ]) }
+  scope :grab_restaurants, -> { where(platform: "grab") }
+  scope :gojek_restaurants, -> { where(platform: "gojek") }
 
   # Instance methods
   def display_name
     name.present? ? name : "Restaurant ##{id}"
   end
 
-  def has_grab_url?
-    grab_url.present?
+  def platform_name
+    platform.humanize
   end
 
-  def has_gojek_url?
-    gojek_url.present?
+  def is_grab?
+    platform == "grab"
   end
 
-  def platform_count
-    count = 0
-    count += 1 if has_grab_url?
-    count += 1 if has_gojek_url?
-    count
+  def is_gojek?
+    platform == "gojek"
   end
 
-  def extract_name_from_urls
-    # Try to extract restaurant name from URLs if name is not provided
-    return name if name.present?
+  # Coordinates methods
+  def coordinates_hash
+    return nil unless coordinates.present?
+    JSON.parse(coordinates) rescue nil
+  end
 
-    # This would be implemented with actual URL parsing logic
-    # For now, return a placeholder
-    "Restaurant from URLs"
+  def latitude
+    coords = coordinates_hash
+    coords&.dig("latitude") || coords&.dig("lat")
+  end
+
+  def longitude
+    coords = coordinates_hash
+    coords&.dig("longitude") || coords&.dig("lng") || coords&.dig("long")
+  end
+
+  def set_coordinates(lat, lng)
+    self.coordinates = { latitude: lat, longitude: lng }.to_json
   end
 
   # Notification contact methods
@@ -105,29 +117,18 @@ class Restaurant < ApplicationRecord
 
   private
 
-  def at_least_one_platform_url
-    unless grab_url.present? || gojek_url.present?
-      errors.add(:base, "At least one platform URL (Grab or GoJek) is required")
+  def valid_platform_url
+    return unless platform_url.present? && platform.present?
+
+    case platform
+    when "grab"
+      unless platform_url.match?(/r\.grab\.com|grabfood|grab\.com/i)
+        errors.add(:platform_url, "is not a valid Grab URL")
+      end
+    when "gojek"
+      unless platform_url.match?(/gofood\.link|gofood\.co\.id|gojek/i)
+        errors.add(:platform_url, "is not a valid GoJek/GoFood URL")
+      end
     end
-  end
-
-  def valid_platform_urls
-    if grab_url.present? && !valid_grab_url?
-      errors.add(:grab_url, "is not a valid Grab URL")
-    end
-
-    if gojek_url.present? && !valid_gojek_url?
-      errors.add(:gojek_url, "is not a valid GoJek/GoFood URL")
-    end
-  end
-
-  def valid_grab_url?
-    return false unless grab_url.present?
-    grab_url.match?(/r\.grab\.com|grabfood|grab\.com/i)
-  end
-
-  def valid_gojek_url?
-    return false unless gojek_url.present?
-    gojek_url.match?(/gofood\.link|gofood\.co\.id|gojek/i)
   end
 end

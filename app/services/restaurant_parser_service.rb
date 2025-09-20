@@ -5,9 +5,11 @@ class RestaurantParserService
     @errors = []
   end
 
+  # DEPRECATED: This method is kept for backward compatibility with extract_data endpoint
+  # New onboarding should use individual platform parsers directly
   def parse_restaurant_data(grab_url: nil, gojek_url: nil)
     start_time = Time.current
-    Rails.logger.info "=== Restaurant Parser Starting ==="
+    Rails.logger.info "=== Restaurant Parser Starting (Legacy Mode) ==="
     Rails.logger.info "URLs - Grab: #{grab_url.present?}, GoJek: #{gojek_url.present?}"
 
     data = {
@@ -57,6 +59,39 @@ class RestaurantParserService
       Rails.logger.error "Fatal error parsing restaurant data after #{total_time}s: #{e.class} - #{e.message}"
       Rails.logger.error "Backtrace: #{e.backtrace.first(3).join("\n")}"
       @errors << "Failed to parse restaurant data: #{e.message}"
+      { success: false, errors: @errors }
+    end
+  end
+
+  # New method for parsing individual platforms
+  def parse_single_platform(platform, url)
+    start_time = Time.current
+    Rails.logger.info "=== Single Platform Parser Starting: #{platform.upcase} ==="
+
+    begin
+      data = parse_with_retry(platform.humanize, url) do
+        case platform.to_s
+        when "grab"
+          GrabParserService.new.parse(url)
+        when "gojek"
+          GojekParserService.new.parse(url)
+        else
+          raise ArgumentError, "Unsupported platform: #{platform}"
+        end
+      end
+
+      total_time = Time.current - start_time
+      if data
+        Rails.logger.info "=== #{platform.humanize} Parser Completed in #{total_time}s ==="
+        { success: true, data: data }
+      else
+        Rails.logger.error "=== #{platform.humanize} Parser Failed in #{total_time}s ==="
+        { success: false, errors: @errors }
+      end
+    rescue => e
+      total_time = Time.current - start_time
+      Rails.logger.error "Fatal error parsing #{platform} data after #{total_time}s: #{e.class} - #{e.message}"
+      @errors << "Failed to parse #{platform} data: #{e.message}"
       { success: false, errors: @errors }
     end
   end

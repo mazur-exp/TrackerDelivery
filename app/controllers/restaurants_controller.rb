@@ -181,115 +181,73 @@ class RestaurantsController < ApplicationController
 
   def create
     @contact_errors = []
+    @created_restaurants = []
 
     ActiveRecord::Base.transaction do
-      # Create restaurant
-      @restaurant = current_user.restaurants.build(restaurant_params)
+      # Check if we have multiple URLs - create separate restaurants for each platform
+      grab_url = params.dig(:restaurant, :grab_url) || params[:grab_url]
+      gojek_url = params.dig(:restaurant, :gojek_url) || params[:gojek_url]
 
-      # Set cuisines from array
-      if params[:cuisines].present?
-        @restaurant.set_cuisines(params[:cuisines])
-      end
-
-      unless @restaurant.save
+      if grab_url.blank? && gojek_url.blank?
         render json: {
           success: false,
-          errors: @restaurant.errors.full_messages
+          errors: [ "At least one platform URL (Grab or GoJek) is required" ]
         }, status: :unprocessable_entity
         return
       end
 
-      # Create working hours if provided
-      if params[:working_hours].present?
-        create_working_hours(@restaurant, params[:working_hours])
+      # Create Grab restaurant if URL provided
+      if grab_url.present?
+        grab_restaurant = create_platform_restaurant("grab", grab_url)
+        @created_restaurants << grab_restaurant if grab_restaurant
       end
 
-      # Create notification contacts
+      # Create GoJek restaurant if URL provided
+      if gojek_url.present?
+        gojek_restaurant = create_platform_restaurant("gojek", gojek_url)
+        @created_restaurants << gojek_restaurant if gojek_restaurant
+      end
 
-      # Create WhatsApp contacts (skip if they already exist)
-      if params[:whatsapp_contacts].present?
-        params[:whatsapp_contacts].each do |contact_value|
-          normalized_value = contact_value.strip
-          # Check if contact already exists for this restaurant
-          existing_contact = @restaurant.notification_contacts.find_by(
-            contact_type: "whatsapp",
-            contact_value: normalized_value
-          )
+      if @created_restaurants.empty?
+        @contact_errors << "Failed to create any restaurants"
+        raise ActiveRecord::Rollback
+      end
 
-          unless existing_contact
-            contact = @restaurant.notification_contacts.build(
-              contact_type: "whatsapp",
-              contact_value: normalized_value
-            )
-            unless contact.save
-              @contact_errors.concat(contact.errors.full_messages)
-            end
-          end
+      # Create notification contacts for all created restaurants
+      @created_restaurants.each do |restaurant|
+        create_notification_contacts(restaurant)
+
+        # Validate that restaurant has required contacts
+        unless restaurant.has_required_contacts?
+          @contact_errors << "At least one WhatsApp or Telegram contact is required for #{restaurant.platform_name} restaurant"
         end
-      end
-
-      # Create Telegram contacts (skip if they already exist)
-      if params[:telegram_contacts].present?
-        params[:telegram_contacts].each do |contact_value|
-          normalized_value = contact_value.strip
-          # Check if contact already exists for this restaurant
-          existing_contact = @restaurant.notification_contacts.find_by(
-            contact_type: "telegram",
-            contact_value: normalized_value
-          )
-
-          unless existing_contact
-            contact = @restaurant.notification_contacts.build(
-              contact_type: "telegram",
-              contact_value: normalized_value
-            )
-            unless contact.save
-              @contact_errors.concat(contact.errors.full_messages)
-            end
-          end
-        end
-      end
-
-      # Create Email contacts (skip if they already exist)
-      if params[:email_contacts].present?
-        params[:email_contacts].each do |contact_value|
-          normalized_value = contact_value.strip
-          # Check if contact already exists for this restaurant
-          existing_contact = @restaurant.notification_contacts.find_by(
-            contact_type: "email",
-            contact_value: normalized_value
-          )
-
-          unless existing_contact
-            contact = @restaurant.notification_contacts.build(
-              contact_type: "email",
-              contact_value: normalized_value
-            )
-            unless contact.save
-              @contact_errors.concat(contact.errors.full_messages)
-            end
-          end
-        end
-      end
-
-      # Validate that restaurant has required contacts
-      unless @restaurant.has_required_contacts?
-        @contact_errors << "At least one WhatsApp or Telegram contact is required"
       end
 
       if @contact_errors.any?
         raise ActiveRecord::Rollback
       end
 
+      # Prepare response data
+      restaurants_data = @created_restaurants.map do |restaurant|
+        {
+          id: restaurant.id,
+          name: restaurant.name,
+          platform: restaurant.platform,
+          platform_url: restaurant.platform_url,
+          address: restaurant.address,
+          coordinates: restaurant.coordinates_hash,
+          contacts: {
+            whatsapp: restaurant.all_whatsapp_contacts,
+            telegram: restaurant.all_telegram_contacts,
+            email: restaurant.all_email_contacts
+          }
+        }
+      end
+
       render json: {
         success: true,
-        message: "Restaurant and notification contacts added successfully!",
-        restaurant: @restaurant,
-        contacts: {
-          whatsapp: @restaurant.all_whatsapp_contacts,
-          telegram: @restaurant.all_telegram_contacts,
-          email: @restaurant.all_email_contacts
-        },
+        message: "Restaurant(s) and notification contacts added successfully!",
+        restaurants: restaurants_data,
         redirect_url: dashboard_path
       }
     end
@@ -304,7 +262,107 @@ class RestaurantsController < ApplicationController
   private
 
   def restaurant_params
-    params.require(:restaurant).permit(:name, :grab_url, :gojek_url, :address, :phone, :image_url)
+    params.require(:restaurant).permit(:name, :platform, :platform_url, :address, :phone, :image_url, :coordinates)
+  end
+
+  def create_platform_restaurant(platform, platform_url)
+    # Get data from parser first
+    parser_data = get_parser_data(platform, platform_url)
+    return nil unless parser_data
+
+    # Build restaurant with parsed data
+    restaurant_attrs = {
+      platform: platform,
+      platform_url: platform_url,
+      name: parser_data[:name] || params.dig(:restaurant, :name),
+      address: parser_data[:address] || params.dig(:restaurant, :address),
+      phone: parser_data[:phone] || params.dig(:restaurant, :phone),
+      image_url: parser_data[:image_url] || params.dig(:restaurant, :image_url)
+    }
+
+    restaurant = current_user.restaurants.build(restaurant_attrs)
+
+    # Set coordinates if available
+    if parser_data[:coordinates]
+      restaurant.set_coordinates(parser_data[:coordinates][:latitude], parser_data[:coordinates][:longitude])
+    end
+
+    # Set cuisines from parsed data or params
+    cuisines = parser_data[:cuisines].presence || params[:cuisines]
+    if cuisines.present?
+      restaurant.set_cuisines(cuisines)
+    end
+
+    unless restaurant.save
+      @contact_errors.concat(restaurant.errors.full_messages)
+      return nil
+    end
+
+    # Create working hours if provided
+    working_hours = parser_data[:working_hours].presence || params[:working_hours]
+    if working_hours.present?
+      create_working_hours(restaurant, working_hours)
+    end
+
+    restaurant
+  end
+
+  def get_parser_data(platform, platform_url)
+    begin
+      case platform
+      when "grab"
+        GrabParserService.new.parse(platform_url)
+      when "gojek"
+        GojekParserService.new.parse(platform_url)
+      else
+        nil
+      end
+    rescue => e
+      Rails.logger.error "Failed to parse #{platform} data: #{e.message}"
+      nil
+    end
+  end
+
+  def create_notification_contacts(restaurant)
+    # Create WhatsApp contacts
+    if params[:whatsapp_contacts].present?
+      params[:whatsapp_contacts].each do |contact_value|
+        create_contact(restaurant, "whatsapp", contact_value.strip)
+      end
+    end
+
+    # Create Telegram contacts
+    if params[:telegram_contacts].present?
+      params[:telegram_contacts].each do |contact_value|
+        create_contact(restaurant, "telegram", contact_value.strip)
+      end
+    end
+
+    # Create Email contacts
+    if params[:email_contacts].present?
+      params[:email_contacts].each do |contact_value|
+        create_contact(restaurant, "email", contact_value.strip)
+      end
+    end
+  end
+
+  def create_contact(restaurant, contact_type, contact_value)
+    # Check if contact already exists for this restaurant
+    existing_contact = restaurant.notification_contacts.find_by(
+      contact_type: contact_type,
+      contact_value: contact_value
+    )
+
+    return if existing_contact
+
+    contact = restaurant.notification_contacts.build(
+      contact_type: contact_type,
+      contact_value: contact_value
+    )
+
+    unless contact.save
+      @contact_errors.concat(contact.errors.full_messages)
+    end
   end
 
   def format_working_hours_for_frontend(working_hours)

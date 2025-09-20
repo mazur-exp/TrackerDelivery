@@ -4,7 +4,7 @@ require_relative "retryable_parser"
 require_relative "cuisine_translation_service"
 
 class GojekParserService < RetryableParser
-  TIMEOUT_SECONDS = 20  # Reduced from 30 to prevent hanging
+  TIMEOUT_SECONDS = 60  # Increased for production server performance
 
   def parse(url)
     parse_with_retry(url)
@@ -34,18 +34,22 @@ class GojekParserService < RetryableParser
         Rails.logger.info "GoJek: Waiting for page to load..."
         page_load_start = Time.current
         
-        # Longer wait for production Chromium
+        # Minimal wait for production performance
         chrome_binary = detect_chrome_binary
         if chrome_binary&.include?("chromium")
-          sleep(5) # Longer wait for Chromium in production
-          Rails.logger.info "GoJek: Using extended wait time for Chromium"
+          sleep(2) # Reduced wait for Chromium
+          Rails.logger.info "GoJek: Using minimal wait time for Chromium"
         else
-          sleep(3) # Standard wait for Chrome
+          sleep(1) # Minimal wait for Chrome
         end
 
         # Wait for content to appear or redirects to complete
-        wait = Selenium::WebDriver::Wait.new(timeout: 15) # Increased from 10 to 15
-        wait.until { driver.execute_script("return document.readyState") == "complete" }
+        wait = Selenium::WebDriver::Wait.new(timeout: 30) # Extended for production
+        begin
+          wait.until { driver.execute_script("return document.readyState") == "complete" }
+        rescue Selenium::WebDriver::Error::TimeoutError
+          Rails.logger.warn "GoJek: Page load timeout, continuing with partial load"
+        end
         Rails.logger.info "GoJek: Page load completed in #{Time.current - page_load_start}s"
 
         # Check if we were redirected to a full GoJek page
@@ -156,7 +160,7 @@ class GojekParserService < RetryableParser
         if arrow_parent.displayed? && arrow_parent.enabled?
           arrow_parent.click
           Rails.logger.info "Clicked arrow element, waiting for modal to appear..."
-          sleep(1.5) # Reduced wait time
+          sleep(0.5) # Minimal wait time for production
 
           # Verify modal appeared
           modal_appeared = driver.find_elements(:css, "div.rounded-2xl.pointer-events-auto").any?
@@ -185,7 +189,7 @@ class GojekParserService < RetryableParser
             if element.displayed? && element.enabled?
               Rails.logger.info "Trying to click element #{i} with selector: #{selector}"
               element.click
-              sleep(1) # Reduced wait time
+              sleep(0.2) # Minimal wait time
 
               # Check if modal appeared
               modal_appeared = driver.find_elements(:css, "div.rounded-2xl.pointer-events-auto").any?
@@ -243,9 +247,21 @@ class GojekParserService < RetryableParser
     # Detect Chrome binary with improved logic first
     chrome_binary = detect_chrome_binary
 
-    # Performance and stability improvements
+    # Aggressive performance optimizations for production
     options.add_argument("--disable-extensions")
     options.add_argument("--disable-plugins")
+    options.add_argument("--disable-images")
+    # JavaScript is REQUIRED for GoJek SPA - DO NOT DISABLE
+    options.add_argument("--disable-web-security")
+    options.add_argument("--aggressive-cache-discard")
+    options.add_argument("--disable-logging")
+    options.add_argument("--silent")
+    options.add_argument("--no-first-run")
+    options.add_argument("--disable-default-apps")
+    options.add_argument("--disable-notifications")
+    options.add_argument("--disable-popup-blocking")
+    options.add_argument("--disable-translate")
+    options.add_argument("--disable-ipc-flooding-protection")
     
     # Special settings for Chromium to enable GoFood redirects
     if chrome_binary&.include?("chromium")
@@ -315,9 +331,9 @@ class GojekParserService < RetryableParser
       @current_driver = driver
       Rails.logger.info "GoJek: Successfully created WebDriver instance"
 
-      # Set timeouts
-      driver.manage.timeouts.page_load = 15 # 15 seconds max for page load
-      driver.manage.timeouts.script_timeout = 10 # 10 seconds max for script execution
+      # Set extended timeouts for production servers
+      driver.manage.timeouts.page_load = 45 # Extended for slow production servers
+      driver.manage.timeouts.script_timeout = 30 # Extended for slow script execution
 
       driver
     rescue => e

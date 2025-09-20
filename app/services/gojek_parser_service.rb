@@ -1,6 +1,7 @@
 require "selenium-webdriver"
 require "timeout"
 require_relative "retryable_parser"
+require_relative "cuisine_translation_service"
 
 class GojekParserService < RetryableParser
   TIMEOUT_SECONDS = 20  # Reduced from 30 to prevent hanging

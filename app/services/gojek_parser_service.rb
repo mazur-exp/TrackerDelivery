@@ -10,6 +10,43 @@ class GojekParserService < RetryableParser
     parse_with_retry(url)
   end
 
+  def check_status_only(url)
+    Rails.logger.info "=== GoJek Status Check Only for URL: #{url} ==="
+    return { is_open: nil, status_text: "error", error: "URL is blank" } if url.blank?
+
+    driver = nil
+    begin
+      Timeout.timeout(15) do  # Shorter timeout for status check
+        driver = setup_chrome_driver
+
+        Rails.logger.info "GoJek Status: Navigating to URL..."
+        driver.get(url)
+
+        # Wait briefly for page to load
+        sleep(2)
+        wait = Selenium::WebDriver::Wait.new(timeout: 5)
+        wait.until { driver.execute_script("return document.readyState") == "complete" }
+
+        # Try to extract only status information quickly
+        status = extract_status_from_dom(driver)
+        Rails.logger.info "GoJek Status: Status check completed - #{status[:status_text]}"
+        return status
+      end
+
+    rescue Timeout::Error => e
+      Rails.logger.error "GoJek Status: Timeout during status check: #{e.message}"
+      return { is_open: nil, status_text: "timeout", error: "Request timed out" }
+    rescue => e
+      Rails.logger.error "GoJek Status: Error during status check: #{e.message}"
+      return { is_open: nil, status_text: "error", error: e.message }
+    ensure
+      if driver
+        driver.quit rescue nil
+        Rails.logger.info "GoJek Status: Browser closed"
+      end
+    end
+  end
+
   private
 
   def parse_implementation(url)
@@ -1646,5 +1683,60 @@ class GojekParserService < RetryableParser
     end
 
     nil
+  end
+
+  def extract_status_from_dom(driver)
+    # Quick DOM-based status extraction for monitoring GoJek restaurants
+    begin
+      # Look for GoJek-specific status indicators
+      status_elements = [
+        'div[data-testid="merchant-status"]',
+        'p.text-gf-content-secondary',
+        'span[class*="status"]',
+        'div[class*="closed"]',
+        'div[class*="unavailable"]'
+      ]
+
+      status_elements.each do |selector|
+        begin
+          elements = driver.find_elements(:css, selector)
+          elements.each do |element|
+            text = element.text.strip.downcase
+            next if text.blank? || text.length > 100  # Skip very long texts
+
+            # Check for closed indicators (GoJek specific)
+            if text.include?("tutup") || text.include?("closed") || 
+               text.include?("tidak tersedia") || text.include?("unavailable") ||
+               text.include?("sementara tutup")
+              return { is_open: false, status_text: "closed", opening_info: text }
+            elsif text.include?("buka") || text.include?("open") || 
+                  text.include?("tersedia") || text.include?("available")
+              return { is_open: true, status_text: "open", opening_info: text }
+            end
+          end
+        rescue => e
+          Rails.logger.debug "GoJek Status DOM: Error with selector #{selector}: #{e.message}"
+          next
+        end
+      end
+
+      # Additional check for page title or main content that might indicate closure
+      begin
+        page_text = driver.find_element(:tag_name, "body").text.downcase
+        if page_text.include?("restaurant tidak tersedia") || 
+           page_text.include?("merchant not available") ||
+           page_text.include?("temporarily closed")
+          return { is_open: false, status_text: "closed", opening_info: "page_indicates_closed" }
+        end
+      rescue => e
+        Rails.logger.debug "GoJek Status: Could not check page text: #{e.message}"
+      end
+
+      # Default assumption for GoJek if no clear indicators found
+      { is_open: true, status_text: "open", opening_info: "status_unknown" }
+    rescue => e
+      Rails.logger.error "GoJek Status DOM: Error extracting status: #{e.message}"
+      { is_open: nil, status_text: "error", error: e.message }
+    end
   end
 end

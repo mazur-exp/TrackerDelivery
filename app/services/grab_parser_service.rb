@@ -11,6 +11,50 @@ class GrabParserService < RetryableParser
     parse_with_retry(url)
   end
 
+  def check_status_only(url)
+    Rails.logger.info "=== Grab Status Check Only for URL: #{url} ==="
+    return { is_open: nil, status_text: "error", error: "URL is blank" } if url.blank?
+
+    driver = nil
+    begin
+      Timeout.timeout(15) do  # Shorter timeout for status check
+        driver = setup_chrome_driver
+
+        Rails.logger.info "Grab Status: Navigating to URL..."
+        driver.get(url)
+
+        # Wait briefly for page to load
+        sleep(2)
+        wait = Selenium::WebDriver::Wait.new(timeout: 5)
+        wait.until { driver.execute_script("return document.readyState") == "complete" }
+
+        # Try to extract only status information quickly
+        json_data = extract_json_data_selenium(driver)
+        if json_data && json_data[:status]
+          Rails.logger.info "Grab Status: Found status in JSON data"
+          return json_data[:status]
+        end
+
+        # Fallback: look for DOM indicators
+        status = extract_status_from_dom(driver)
+        Rails.logger.info "Grab Status: Status check completed - #{status[:status_text]}"
+        return status
+      end
+
+    rescue Timeout::Error => e
+      Rails.logger.error "Grab Status: Timeout during status check: #{e.message}"
+      return { is_open: nil, status_text: "timeout", error: "Request timed out" }
+    rescue => e
+      Rails.logger.error "Grab Status: Error during status check: #{e.message}"
+      return { is_open: nil, status_text: "error", error: e.message }
+    ensure
+      if driver
+        driver.quit rescue nil
+        Rails.logger.info "Grab Status: Browser closed"
+      end
+    end
+  end
+
   private
 
   def parse_implementation(url)
@@ -235,6 +279,45 @@ class GrabParserService < RetryableParser
       else
         { is_open: true, status_text: "open", opening_info: displayed_hours }
       end
+    end
+  end
+
+  def extract_status_from_dom(driver)
+    # Quick DOM-based status extraction for monitoring
+    begin
+      # Look for common status indicators in the DOM
+      status_elements = [
+        'span[data-testid="restaurant-status"]',
+        '.restaurant-status',
+        '[class*="status"]',
+        '[class*="opening"]'
+      ]
+
+      status_elements.each do |selector|
+        begin
+          elements = driver.find_elements(:css, selector)
+          elements.each do |element|
+            text = element.text.strip.downcase
+            next if text.blank?
+
+            # Check for closed indicators
+            if text.include?("closed") || text.include?("temporary") || text.include?("unavailable")
+              return { is_open: false, status_text: "closed", opening_info: text }
+            elsif text.include?("open") || text.include?("available")
+              return { is_open: true, status_text: "open", opening_info: text }
+            end
+          end
+        rescue => e
+          Rails.logger.debug "Grab Status DOM: Error with selector #{selector}: #{e.message}"
+          next
+        end
+      end
+
+      # Default assumption if no clear indicators found
+      { is_open: true, status_text: "open", opening_info: "status_unknown" }
+    rescue => e
+      Rails.logger.error "Grab Status DOM: Error extracting status: #{e.message}"
+      { is_open: nil, status_text: "error", error: e.message }
     end
   end
 

@@ -2,6 +2,7 @@ class Restaurant < ApplicationRecord
   belongs_to :user
   has_many :notification_contacts, dependent: :destroy
   has_many :working_hours, dependent: :destroy
+  has_many :restaurant_status_checks, dependent: :destroy
 
   # Enums
   enum :platform, { grab: "grab", gojek: "gojek" }
@@ -52,6 +53,10 @@ class Restaurant < ApplicationRecord
 
   def set_coordinates(lat, lng)
     self.coordinates = { latitude: lat, longitude: lng }.to_json
+  end
+
+  def review_count
+    read_attribute(:review_count) || 0
   end
 
   # Notification contact methods
@@ -113,6 +118,32 @@ class Restaurant < ApplicationRecord
     working_hours.includes(:restaurant).map do |wh|
       "#{wh.day_name}: #{wh.full_schedule_text}"
     end.join("; ")
+  end
+
+  # Status monitoring methods
+  def expected_status_at(time = Time.current)
+    day_name = time.strftime('%A').downcase
+    hours = working_hours_for_day(day_name)
+    
+    return "unknown" unless hours
+    return "closed" if hours.is_closed?
+    
+    current_time = time.strftime('%H:%M')
+    
+    if hours.open_time.present? && hours.close_time.present?
+      return "open" if current_time >= hours.open_time && current_time <= hours.close_time
+      return "closed"
+    end
+    
+    "unknown"
+  end
+
+  def latest_status_check
+    restaurant_status_checks.order(checked_at: :desc).first
+  end
+
+  def has_recent_anomaly?(within = 2.hours)
+    restaurant_status_checks.where("checked_at > ? AND is_anomaly = ?", within.ago, true).exists?
   end
 
   private

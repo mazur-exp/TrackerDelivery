@@ -127,8 +127,8 @@
             <h3 class="text-sm font-medium">Online Stores</h3>
             <i data-lucide="store" class="h-4 w-4 text-purple-600"></i>
           </div>
-          <div class="text-2xl font-bold text-purple-700" id="onlineStores">2/3</div>
-          <p class="text-xs text-purple-600" id="operationalPercentage">67% operational</p>
+          <div class="text-2xl font-bold text-purple-700" id="onlineStores"><%= @total_restaurants %></div>
+          <p class="text-xs text-purple-600" id="operationalPercentage">Total restaurants</p>
         </div>
 
         <div class="bg-white rounded-xl border border-orange-200 bg-orange-50/50 p-6 shadow-sm">
@@ -136,7 +136,7 @@
             <h3 class="text-sm font-medium">Avg Rating</h3>
             <i data-lucide="star" class="h-4 w-4 text-orange-600"></i>
           </div>
-          <div class="text-2xl font-bold text-orange-700" id="avgRating">4.7</div>
+          <div class="text-2xl font-bold text-orange-700" id="avgRating"><%= @average_rating > 0 ? @average_rating : "N/A" %></div>
           <p class="text-xs text-orange-600 flex items-center gap-1">
             <i data-lucide="star" class="w-3 h-3 fill-current"></i>
             Across all platforms
@@ -164,167 +164,101 @@
 
         <!-- Restaurants Tab -->
         <div id="restaurants-tab" class="tab-content space-y-4">
-          <!-- Restaurant 1 -->
-          <div class="bg-white rounded-xl border shadow-sm hover:shadow-md transition-shadow p-6">
-            <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
-              <div class="flex items-center gap-4">
-                <div class="w-8 h-8 bg-green-500 rounded-lg flex items-center justify-center text-white text-xs font-bold">
-                  GO
-                </div>
-                <div>
-                  <h3 class="font-semibold text-lg">Nasi Padang Express</h3>
-                  <p class="text-sm text-gray-500">Gojek</p>
+          <% if @restaurants.present? %>
+            <% @restaurants.each do |restaurant| %>
+              <div class="bg-white rounded-xl border shadow-sm hover:shadow-md transition-shadow p-6">
+                <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+                  <div class="flex items-center gap-4">
+                    <% if restaurant.image_url.present? %>
+                      <img src="<%= restaurant.image_url %>" alt="<%= restaurant.name %>" class="w-16 h-16 rounded-lg object-cover">
+                    <% else %>
+                      <div class="w-16 h-16 bg-<%= restaurant.platform == 'gojek' ? 'green-500' : 'green-600' %> rounded-lg flex items-center justify-center text-white text-xs font-bold">
+                        <%= restaurant.platform == 'gojek' ? 'GO' : 'GR' %>
+                      </div>
+                    <% end %>
+                    <div>
+                      <h3 class="font-semibold text-lg"><%= restaurant.name %></h3>
+                      <p class="text-sm text-gray-500"><%= restaurant.platform_name %></p>
+                      <% if restaurant.all_cuisines.present? %>
+                        <div class="flex flex-wrap gap-1 mt-1">
+                          <% restaurant.all_cuisines.first(3).each do |cuisine| %>
+                            <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-800">
+                              <%= cuisine %>
+                            </span>
+                          <% end %>
+                        </div>
+                      <% end %>
+                      <% if restaurant.address.present? %>
+                        <p class="text-xs text-gray-400 mt-1 max-w-xs truncate"><%= restaurant.address %></p>
+                      <% end %>
+                    </div>
+                  </div>
+
+                  <div class="flex flex-col lg:flex-row items-start lg:items-center gap-4 lg:gap-8">
+                    <div class="flex items-center gap-2">
+                      <% latest_check = restaurant.restaurant_status_checks.recent(1.hour).last %>
+                      <% if latest_check %>
+                        <% case latest_check.actual_status %>
+                        <% when 'open' %>
+                          <div class="w-3 h-3 rounded-full bg-green-500 animate-pulse"></div>
+                          <span class="text-sm font-medium text-green-700">Online</span>
+                        <% when 'closed' %>
+                          <div class="w-3 h-3 rounded-full bg-red-500 animate-pulse"></div>
+                          <span class="text-sm font-medium text-red-700">Offline</span>
+                        <% else %>
+                          <div class="w-3 h-3 rounded-full bg-gray-500 animate-pulse"></div>
+                          <span class="text-sm font-medium text-gray-700">Unknown</span>
+                        <% end %>
+                      <% else %>
+                        <div class="w-3 h-3 rounded-full bg-gray-400"></div>
+                        <span class="text-sm font-medium text-gray-500">Not monitored</span>
+                      <% end %>
+                    </div>
+                    
+                    <div class="grid grid-cols-2 lg:grid-cols-3 gap-4 text-sm">
+                      <div>
+                        <p class="text-gray-500">Rating</p>
+                        <p class="font-semibold flex items-center gap-1">
+                          <i data-lucide="star" class="w-3 h-3 fill-yellow-400 text-yellow-400"></i>
+                          <span><%= restaurant.rating == "NEW" ? "NEW" : restaurant.rating || "N/A" %></span>
+                        </p>
+                      </div>
+                      <div>
+                        <p class="text-gray-500">Reviews</p>
+                        <p class="font-semibold"><%= restaurant.review_count || "N/A" %></p>
+                      </div>
+                      <div>
+                        <p class="text-gray-500">Platform</p>
+                        <p class="font-semibold">
+                          <a href="<%= restaurant.platform_url %>" target="_blank" class="text-blue-600 hover:text-blue-800 text-xs">
+                            View <i data-lucide="external-link" class="w-3 h-3 inline ml-1"></i>
+                          </a>
+                        </p>
+                      </div>
+                    </div>
+
+                    <div class="flex items-center gap-2">
+                      <button class="inline-flex items-center px-3 py-2 text-gray-400 hover:text-gray-600 rounded-md transition-colors">
+                        <i data-lucide="eye" class="w-4 h-4"></i>
+                      </button>
+                    </div>
+                  </div>
                 </div>
               </div>
-
-              <div class="flex flex-col lg:flex-row items-start lg:items-center gap-4 lg:gap-8">
-                <div class="flex items-center gap-2" id="status-1">
-                  <div class="w-3 h-3 rounded-full bg-green-500 animate-pulse"></div>
-                  <span class="text-sm font-medium text-green-700">Online</span>
-                </div>
-                
-                <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 text-sm">
-                  <div>
-                    <p class="text-gray-500">Orders</p>
-                    <p class="font-semibold" id="orders-1">45</p>
-                  </div>
-                  <div>
-                    <p class="text-gray-500">Revenue</p>
-                    <p class="font-semibold" id="revenue-1">Rp 1,250,000</p>
-                  </div>
-                  <div>
-                    <p class="text-gray-500">Rating</p>
-                    <p class="font-semibold flex items-center gap-1">
-                      <i data-lucide="star" class="w-3 h-3 fill-yellow-400 text-yellow-400"></i>
-                      <span id="rating-1">4.8</span>
-                    </p>
-                  </div>
-                  <div>
-                    <p class="text-gray-500">Reviews</p>
-                    <p class="font-semibold" id="reviews-1">234</p>
-                  </div>
-                </div>
-
-                <div class="flex items-center gap-2">
-                  <button class="toggle-status-btn inline-flex items-center px-3 py-2 border border-red-200 text-red-600 hover:bg-red-50 rounded-md text-sm font-medium transition-colors" data-restaurant="1" data-status="online">
-                    <i data-lucide="wifi-off" class="w-4 h-4 mr-2"></i>
-                    Go Offline
-                  </button>
-                  <button class="inline-flex items-center px-3 py-2 text-gray-400 hover:text-gray-600 rounded-md transition-colors">
-                    <i data-lucide="eye" class="w-4 h-4"></i>
-                  </button>
-                </div>
+            <% end %>
+          <% else %>
+            <div class="bg-white rounded-xl border shadow-sm p-8 text-center">
+              <div class="text-gray-400 mb-4">
+                <i data-lucide="store" class="w-12 h-12 mx-auto"></i>
               </div>
+              <h3 class="text-lg font-semibold text-gray-900 mb-2">No Restaurants Added</h3>
+              <p class="text-gray-600 mb-4">Start by adding your first restaurant to monitor delivery platforms.</p>
+              <button onclick="window.location.href='/onboarding'" class="inline-flex items-center px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors">
+                <i data-lucide="plus" class="w-4 h-4 mr-2"></i>
+                Add Your First Restaurant
+              </button>
             </div>
-          </div>
-
-          <!-- Restaurant 2 -->
-          <div class="bg-white rounded-xl border shadow-sm hover:shadow-md transition-shadow p-6">
-            <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
-              <div class="flex items-center gap-4">
-                <div class="w-8 h-8 bg-green-600 rounded-lg flex items-center justify-center text-white text-xs font-bold">
-                  GR
-                </div>
-                <div>
-                  <h3 class="font-semibold text-lg">Burger Corner</h3>
-                  <p class="text-sm text-gray-500">Grab</p>
-                </div>
-              </div>
-
-              <div class="flex flex-col lg:flex-row items-start lg:items-center gap-4 lg:gap-8">
-                <div class="flex items-center gap-2" id="status-2">
-                  <div class="w-3 h-3 rounded-full bg-red-500 animate-pulse"></div>
-                  <span class="text-sm font-medium text-red-700">Offline</span>
-                </div>
-                
-                <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 text-sm">
-                  <div>
-                    <p class="text-gray-500">Orders</p>
-                    <p class="font-semibold" id="orders-2">23</p>
-                  </div>
-                  <div>
-                    <p class="text-gray-500">Revenue</p>
-                    <p class="font-semibold" id="revenue-2">Rp 890,000</p>
-                  </div>
-                  <div>
-                    <p class="text-gray-500">Rating</p>
-                    <p class="font-semibold flex items-center gap-1">
-                      <i data-lucide="star" class="w-3 h-3 fill-yellow-400 text-yellow-400"></i>
-                      <span id="rating-2">4.5</span>
-                    </p>
-                  </div>
-                  <div>
-                    <p class="text-gray-500">Reviews</p>
-                    <p class="font-semibold" id="reviews-2">156</p>
-                  </div>
-                </div>
-
-                <div class="flex items-center gap-2">
-                  <button class="toggle-status-btn inline-flex items-center px-3 py-2 border border-green-200 text-green-600 hover:bg-green-50 rounded-md text-sm font-medium transition-colors" data-restaurant="2" data-status="offline">
-                    <i data-lucide="wifi" class="w-4 h-4 mr-2"></i>
-                    Go Online
-                  </button>
-                  <button class="inline-flex items-center px-3 py-2 text-gray-400 hover:text-gray-600 rounded-md transition-colors">
-                    <i data-lucide="eye" class="w-4 h-4"></i>
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <!-- Restaurant 3 -->
-          <div class="bg-white rounded-xl border shadow-sm hover:shadow-md transition-shadow p-6">
-            <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
-              <div class="flex items-center gap-4">
-                <div class="w-8 h-8 bg-pink-500 rounded-lg flex items-center justify-center text-white text-xs font-bold">
-                  FP
-                </div>
-                <div>
-                  <h3 class="font-semibold text-lg">Sushi Delight</h3>
-                  <p class="text-sm text-gray-500">Foodpanda</p>
-                </div>
-              </div>
-
-              <div class="flex flex-col lg:flex-row items-start lg:items-center gap-4 lg:gap-8">
-                <div class="flex items-center gap-2" id="status-3">
-                  <div class="w-3 h-3 rounded-full bg-yellow-500 animate-pulse"></div>
-                  <span class="text-sm font-medium text-yellow-700">Busy</span>
-                </div>
-                
-                <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 text-sm">
-                  <div>
-                    <p class="text-gray-500">Orders</p>
-                    <p class="font-semibold" id="orders-3">67</p>
-                  </div>
-                  <div>
-                    <p class="text-gray-500">Revenue</p>
-                    <p class="font-semibold" id="revenue-3">Rp 2,100,000</p>
-                  </div>
-                  <div>
-                    <p class="text-gray-500">Rating</p>
-                    <p class="font-semibold flex items-center gap-1">
-                      <i data-lucide="star" class="w-3 h-3 fill-yellow-400 text-yellow-400"></i>
-                      <span id="rating-3">4.9</span>
-                    </p>
-                  </div>
-                  <div>
-                    <p class="text-gray-500">Reviews</p>
-                    <p class="font-semibold" id="reviews-3">445</p>
-                  </div>
-                </div>
-
-                <div class="flex items-center gap-2">
-                  <button class="toggle-status-btn inline-flex items-center px-3 py-2 border border-red-200 text-red-600 hover:bg-red-50 rounded-md text-sm font-medium transition-colors" data-restaurant="3" data-status="busy">
-                    <i data-lucide="wifi-off" class="w-4 h-4 mr-2"></i>
-                    Go Offline
-                  </button>
-                  <button class="inline-flex items-center px-3 py-2 text-gray-400 hover:text-gray-600 rounded-md transition-colors">
-                    <i data-lucide="eye" class="w-4 h-4"></i>
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
+          <% end %>
         </div>
 
         <!-- Alerts Tab -->

@@ -5,6 +5,29 @@ class DevController < ApplicationController
   end
 
   def dashboard
+    if current_user
+      @restaurants = current_user.restaurants.includes(:notification_contacts, :working_hours, :restaurant_status_checks)
+      @total_restaurants = @restaurants.count
+      @average_rating = calculate_average_rating(@restaurants)
+    else
+      @restaurants = []
+      @total_restaurants = 0
+      @average_rating = 0
+    end
+  end
+
+  private
+
+  def calculate_average_rating(restaurants)
+    return 0 if restaurants.empty?
+    
+    ratings = restaurants.map(&:rating).compact.reject { |r| r == "NEW" || r.blank? }
+    return 0 if ratings.empty?
+    
+    numeric_ratings = ratings.map(&:to_f).reject(&:zero?)
+    return 0 if numeric_ratings.empty?
+    
+    (numeric_ratings.sum / numeric_ratings.size).round(1)
   end
 
   def onboarding

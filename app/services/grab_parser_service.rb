@@ -179,7 +179,9 @@ class GrabParserService < RetryableParser
     # Extract restaurant information from JSON data
     cuisines = []
     if restaurant_data["cuisine"].present?
-      cuisines = [ restaurant_data["cuisine"] ]
+      # Split cuisines by comma and clean them up to match GoJek format
+      cuisine_text = restaurant_data["cuisine"]
+      cuisines = cuisine_text.split(/[,•·|&]/).map(&:strip).reject(&:blank?).first(3)
     end
 
     # Extract working hours

@@ -1,0 +1,1337 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="csrf-token" content="<%= form_authenticity_token %>">
+  <title>DeliveryTracker - Restaurant Setup</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            primary: '#16A34A',
+            'primary-dark': '#15803D',
+            'primary-light': '#4ADE80',
+            'green-50': '#F0FDF4',
+            'green-100': '#DCFCE7',
+            'green-600': '#16A34A',
+            'green-700': '#15803D',
+          }
+        }
+      }
+    }
+  </script>
+</head>
+<body class="min-h-screen bg-white">
+  <div class="container mx-auto px-4 py-8">
+    <!-- Header -->
+    <div class="text-center mb-8">
+      <a href="/" class="inline-flex items-center space-x-2 mb-4">
+        <div class="w-8 h-8 bg-green-600 rounded-lg flex items-center justify-center">
+          <i data-lucide="monitor" class="w-5 h-5 text-white"></i>
+        </div>
+        <span class="text-xl font-bold text-gray-900">DeliveryTracker</span>
+      </a>
+      <h1 class="text-2xl font-bold text-gray-900">Restaurant Setup</h1>
+      <p class="text-gray-600 mt-2">Add your restaurant to start monitoring</p>
+    </div>
+
+    <div class="max-w-2xl mx-auto">
+      <!-- Progress indicator -->
+      <div class="mb-8">
+        <div class="flex justify-between mb-2">
+          <div class="flex flex-col items-center">
+            <div id="step1-indicator" class="w-4 h-4 bg-green-600 rounded-full ring-4 ring-green-600/20 cursor-pointer transition-colors duration-300"></div>
+            <span class="text-xs mt-1.5 text-green-600 font-medium">Platform URLs</span>
+          </div>
+          <div class="flex flex-col items-center">
+            <div id="step2-indicator" class="w-4 h-4 bg-gray-300 rounded-full cursor-pointer transition-colors duration-300"></div>
+            <span class="text-xs mt-1.5 text-gray-500">Confirm Info</span>
+          </div>
+          <div class="flex flex-col items-center">
+            <div id="step3-indicator" class="w-4 h-4 bg-gray-300 rounded-full cursor-pointer transition-colors duration-300"></div>
+            <span class="text-xs mt-1.5 text-gray-500">Notifications</span>
+          </div>
+        </div>
+        <div class="w-full bg-gray-300 h-1.5 rounded-full overflow-hidden mt-2">
+          <div id="progress-bar" class="h-full bg-green-600 transition-all duration-300" style="width: 0%"></div>
+        </div>
+      </div>
+
+      <!-- Form card -->
+      <div class="bg-white border shadow-md rounded-3xl overflow-hidden">
+        <!-- Step 1: Platform URLs -->
+        <div id="step1" class="step-content">
+          <div class="bg-gradient-to-r from-green-50 to-emerald-50 border-b p-6">
+            <h2 class="text-xl font-semibold text-green-800">Add Your Delivery Platform URLs</h2>
+            <p class="text-green-600 mt-2">Enter your restaurant URLs from Grab and GoFood to get started</p>
+          </div>
+          <div class="p-6 space-y-6">
+            <div class="space-y-2">
+              <label for="grabUrl" class="flex items-center gap-2 text-sm font-medium">
+                <div class="w-6 h-6 bg-green-600 rounded flex items-center justify-center">
+                  <span class="text-white text-xs font-bold">G</span>
+                </div>
+                Grab Food URL
+              </label>
+              <div class="relative">
+                <input
+                  id="grabUrl"
+                  type="url"
+                  placeholder="https://r.grab.com/g/6-20250918_143818_8015D1829687499383E150126C5CEFCA_MEXMPS-6-C6T3R2LKDGJYCT"
+                  class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-600/20 focus:border-green-600 transition-all duration-300"
+                />
+                <div id="grab-validation" class="absolute right-3 top-1/2 -translate-y-1/2 hidden">
+                  <i data-lucide="check-circle" class="w-4 h-4 text-green-600"></i>
+                </div>
+              </div>
+              <p id="grab-error" class="text-sm text-red-500 hidden">Please enter a valid Grab Food URL</p>
+            </div>
+
+            <div class="space-y-2">
+              <label for="gofoodUrl" class="flex items-center gap-2 text-sm font-medium">
+                <div class="w-6 h-6 bg-green-600 rounded flex items-center justify-center">
+                  <span class="text-white text-xs font-bold">G</span>
+                </div>
+                GoFood URL
+              </label>
+              <div class="relative">
+                <input
+                  id="gofoodUrl"
+                  type="url"
+                  placeholder="https://gofood.link/a/Ms4BQQd"
+                  class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-600/20 focus:border-green-600 transition-all duration-300"
+                />
+                <div id="gofood-validation" class="absolute right-3 top-1/2 -translate-y-1/2 hidden">
+                  <i data-lucide="check-circle" class="w-4 h-4 text-green-600"></i>
+                </div>
+              </div>
+              <p id="gofood-error" class="text-sm text-red-500 hidden">Please enter a valid GoFood URL</p>
+            </div>
+
+            <div class="bg-green-50 p-4 rounded-lg">
+              <p class="text-sm text-green-700">
+                <strong>Tip:</strong> You can add at least one platform URL. We'll extract your restaurant information automatically.
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Step 2: Platform Data Review -->
+        <div id="step2" class="step-content hidden">
+          <div class="bg-gradient-to-r from-green-50 to-emerald-50 border-b p-6">
+            <h2 class="text-xl font-semibold text-green-800">Review <span id="platform-title">Platform</span> Data</h2>
+            <p class="text-green-600 mt-2">Please verify the extracted information</p>
+          </div>
+          <div class="p-6 space-y-6">
+            <!-- Loading State with Platform Progress -->
+            <div id="platform-loading" class="flex flex-col items-center justify-center py-16">
+              <div class="relative">
+                <!-- Animated Spinner -->
+                <div class="w-16 h-16 border-4 border-green-100 border-t-green-600 rounded-full animate-spin"></div>
+                <!-- Restaurant Icon in Center -->
+                <div class="absolute inset-0 flex items-center justify-center">
+                  <i data-lucide="utensils" class="w-6 h-6 text-green-600"></i>
+                </div>
+              </div>
+              <h3 class="text-lg font-semibold text-green-800 mt-6">Extracting Restaurant Data</h3>
+              <p class="text-green-600 mt-2 text-center max-w-md">
+                We're analyzing your restaurant pages in parallel for faster results...
+              </p>
+              
+              <!-- Platform Progress Indicators -->
+              <div id="platform-progress" class="mt-6 space-y-3 w-full max-w-sm">
+                <div id="gojek-progress" class="hidden">
+                  <div class="flex items-center justify-between mb-1">
+                    <div class="flex items-center gap-2">
+                      <div class="w-5 h-5 bg-green-600 rounded flex items-center justify-center">
+                        <span class="text-white text-xs font-bold">G</span>
+                      </div>
+                      <span class="text-sm font-medium text-gray-700">GoJek</span>
+                    </div>
+                    <span id="gojek-status" class="text-xs text-gray-500">Parsing...</span>
+                  </div>
+                  <div class="w-full bg-gray-200 rounded-full h-2">
+                    <div id="gojek-bar" class="bg-green-600 h-2 rounded-full animate-pulse" style="width: 60%"></div>
+                  </div>
+                </div>
+                
+                <div id="grab-progress" class="hidden">
+                  <div class="flex items-center justify-between mb-1">
+                    <div class="flex items-center gap-2">
+                      <div class="w-5 h-5 bg-green-600 rounded flex items-center justify-center">
+                        <span class="text-white text-xs font-bold">G</span>
+                      </div>
+                      <span class="text-sm font-medium text-gray-700">Grab</span>
+                    </div>
+                    <span id="grab-status" class="text-xs text-gray-500">Parsing...</span>
+                  </div>
+                  <div class="w-full bg-gray-200 rounded-full h-2">
+                    <div id="grab-bar" class="bg-green-600 h-2 rounded-full animate-pulse" style="width: 60%"></div>
+                  </div>
+                </div>
+              </div>
+              
+              <div class="flex items-center gap-2 mt-4">
+                <div class="w-2 h-2 bg-green-600 rounded-full animate-bounce" style="animation-delay: 0ms"></div>
+                <div class="w-2 h-2 bg-green-600 rounded-full animate-bounce" style="animation-delay: 150ms"></div>
+                <div class="w-2 h-2 bg-green-600 rounded-full animate-bounce" style="animation-delay: 300ms"></div>
+              </div>
+            </div>
+            
+            <!-- Platform Review Card -->
+            <div id="platform-review" class="bg-white border-2 border-green-200 rounded-2xl p-6 hidden">
+              <!-- Top section with Avatar, Name, Cuisines, Status -->
+              <div class="flex items-start gap-4 mb-6">
+                <!-- Avatar and Rating Column -->
+                <div class="flex-shrink-0">
+                  <div id="platform-logo" class="w-20 h-20 bg-gray-100 rounded-2xl flex items-center justify-center overflow-hidden border-2 border-gray-200 mb-2">
+                    <img id="restaurant-image" src="" alt="Restaurant" class="w-full h-full object-cover rounded-2xl hidden">
+                    <span id="platform-logo-text" class="text-gray-400 text-sm font-medium">Avatar</span>
+                  </div>
+                  
+                  <!-- Rating (under avatar) -->
+                  <div class="flex items-center gap-1 bg-yellow-50 px-2 py-1 rounded-xl border border-yellow-200 justify-center">
+                    <i data-lucide="star" class="w-3 h-3 text-yellow-500 fill-current"></i>
+                    <span id="platform-rating" class="text-xs font-medium text-gray-900">-</span>
+                  </div>
+                </div>
+
+                <!-- Name, Cuisines, Status -->
+                <div class="flex-1 min-w-0">
+                  <!-- Name -->
+                  <div class="mb-3">
+                    <h3 id="platform-restaurant-name" class="text-xl font-semibold text-gray-900 mb-1 truncate">Restaurant Name</h3>
+                  </div>
+
+                  <!-- Cuisines (directly under name) -->
+                  <div class="mb-3">
+                    <div id="platform-cuisines" class="text-sm text-gray-600 bg-gray-50 px-3 py-1 rounded-xl border border-gray-200 w-full">-</div>
+                  </div>
+
+                  <!-- Status Row -->
+                  <div class="flex justify-end">
+                    <!-- Status (Open/Closed) -->
+                    <div id="platform-status" class="text-xs font-bold px-3 py-1 rounded-xl border flex-shrink-0">
+                      LOADING
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Address Section -->
+              <div class="mb-4">
+                <div id="platform-address" class="text-sm text-gray-600 bg-gray-50 px-3 py-2 rounded-xl border border-gray-200">-</div>
+              </div>
+
+              <!-- Schedule Section -->
+              <div class="bg-gray-50 rounded-xl p-4 border border-gray-200">
+                <h4 class="text-sm font-semibold text-gray-700 mb-3 text-center">Schedule</h4>
+                <div class="space-y-2">
+                  <div class="flex items-center justify-between">
+                    <span class="text-sm text-gray-600 w-20">Monday</span>
+                    <div id="schedule-mon" class="flex-1 ml-3 h-8 bg-white border border-gray-200 rounded text-xs text-gray-600 flex items-center px-2">-</div>
+                  </div>
+                  <div class="flex items-center justify-between">
+                    <span class="text-sm text-gray-600 w-20">Tuesday</span>
+                    <div id="schedule-tue" class="flex-1 ml-3 h-8 bg-white border border-gray-200 rounded text-xs text-gray-600 flex items-center px-2">-</div>
+                  </div>
+                  <div class="flex items-center justify-between">
+                    <span class="text-sm text-gray-600 w-20">Wednesday</span>
+                    <div id="schedule-wed" class="flex-1 ml-3 h-8 bg-white border border-gray-200 rounded text-xs text-gray-600 flex items-center px-2">-</div>
+                  </div>
+                  <div class="flex items-center justify-between">
+                    <span class="text-sm text-gray-600 w-20">Thursday</span>
+                    <div id="schedule-thu" class="flex-1 ml-3 h-8 bg-white border border-gray-200 rounded text-xs text-gray-600 flex items-center px-2">-</div>
+                  </div>
+                  <div class="flex items-center justify-between">
+                    <span class="text-sm text-gray-600 w-20">Friday</span>
+                    <div id="schedule-fri" class="flex-1 ml-3 h-8 bg-white border border-gray-200 rounded text-xs text-gray-600 flex items-center px-2">-</div>
+                  </div>
+                  <div class="flex items-center justify-between">
+                    <span class="text-sm text-gray-600 w-20">Saturday</span>
+                    <div id="schedule-sat" class="flex-1 ml-3 h-8 bg-white border border-gray-200 rounded text-xs text-gray-600 flex items-center px-2">-</div>
+                  </div>
+                  <div class="flex items-center justify-between">
+                    <span class="text-sm text-gray-600 w-20">Sunday</span>
+                    <div id="schedule-sun" class="flex-1 ml-3 h-8 bg-white border border-gray-200 rounded text-xs text-gray-600 flex items-center px-2">-</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Step 3: Notification Preferences -->
+        <div id="step3" class="step-content hidden">
+          <div class="bg-gradient-to-r from-green-50 to-emerald-50 border-b p-6">
+            <h2 class="text-xl font-semibold text-green-800">Notification Preferences</h2>
+            <p class="text-green-600 mt-2">Choose how you'd like to receive order notifications and updates</p>
+          </div>
+          <div class="p-6 space-y-6">
+            <div class="space-y-4">
+              <p class="text-base font-medium">Select notification channels:</p>
+              
+              <!-- WhatsApp -->
+              <div class="flex items-start space-x-3 p-4 rounded-lg border hover:bg-green-50 transition-colors">
+                <input type="checkbox" id="whatsapp" class="mt-1 w-4 h-4 text-green-600 border-gray-300 rounded focus:ring-green-500">
+                <div class="flex-1">
+                  <div class="flex items-center gap-2">
+                    <i data-lucide="message-square" class="w-5 h-5 text-green-600"></i>
+                    <label for="whatsapp" class="font-medium cursor-pointer">WhatsApp Notifications</label>
+                    <span class="text-red-500 text-sm ml-1">*</span>
+                  </div>
+                  <p class="text-sm text-gray-500 mt-1">Get instant order notifications via WhatsApp (multiple numbers separated by comma)</p>
+                  <div id="whatsapp-input" class="mt-3 hidden">
+                    <input
+                      id="whatsappNumber"
+                      type="tel"
+                      placeholder="+6281234567890, +6281345678901"
+                      class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-600/20 focus:border-green-600 transition-all duration-300"
+                    />
+                    <div id="whatsapp-preview" class="mt-2 hidden">
+                      <p class="text-xs text-gray-500 mb-1">Contacts to be added:</p>
+                      <div id="whatsapp-contacts" class="flex flex-wrap gap-1"></div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Telegram -->
+              <div class="flex items-start space-x-3 p-4 rounded-lg border hover:bg-green-50 transition-colors">
+                <input type="checkbox" id="telegram" class="mt-1 w-4 h-4 text-green-600 border-gray-300 rounded focus:ring-green-500">
+                <div class="flex-1">
+                  <div class="flex items-center gap-2">
+                    <i data-lucide="phone" class="w-5 h-5 text-green-600"></i>
+                    <label for="telegram" class="font-medium cursor-pointer">Telegram Notifications</label>
+                    <span class="text-red-500 text-sm ml-1">*</span>
+                  </div>
+                  <p class="text-sm text-gray-500 mt-1">Receive order updates through Telegram bot (multiple usernames separated by comma)</p>
+                  <div id="telegram-input" class="mt-3 hidden">
+                    <input
+                      id="telegramUsername"
+                      type="text"
+                      placeholder="@username1, @username2, @username3"
+                      class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-600/20 focus:border-green-600 transition-all duration-300"
+                    />
+                    <div id="telegram-preview" class="mt-2 hidden">
+                      <p class="text-xs text-gray-500 mb-1">Contacts to be added:</p>
+                      <div id="telegram-contacts" class="flex flex-wrap gap-1"></div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Email -->
+              <div class="flex items-start space-x-3 p-4 rounded-lg border hover:bg-green-50 transition-colors">
+                <input type="checkbox" id="email" class="mt-1 w-4 h-4 text-green-600 border-gray-300 rounded focus:ring-green-500">
+                <div class="flex-1">
+                  <div class="flex items-center gap-2">
+                    <i data-lucide="mail" class="w-5 h-5 text-green-600"></i>
+                    <label for="email" class="font-medium cursor-pointer">Email Notifications</label>
+                  </div>
+                  <p class="text-sm text-gray-500 mt-1">Get detailed order reports and summaries via email (multiple emails separated by comma)</p>
+                  <div id="email-input" class="mt-3 hidden">
+                    <input
+                      id="emailAddress"
+                      type="email"
+                      placeholder="primary@example.com, backup@example.com"
+                      class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-600/20 focus:border-green-600 transition-all duration-300"
+                    />
+                    <div id="email-preview" class="mt-2 hidden">
+                      <p class="text-xs text-gray-500 mb-1">Contacts to be added:</p>
+                      <div id="email-contacts" class="flex flex-wrap gap-1"></div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="bg-amber-50 border border-amber-200 p-4 rounded-lg">
+              <div class="flex items-start gap-2">
+                <i data-lucide="alert-circle" class="w-5 h-5 text-amber-600 mt-0.5"></i>
+                <div>
+                  <p class="text-sm text-amber-800 font-medium">Required: At least one WhatsApp OR Telegram contact</p>
+                  <p class="text-xs text-amber-700 mt-1">
+                    Email notifications are optional. You can change these preferences anytime in your dashboard settings.
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <!-- Auto-fill info box (shown when contacts are auto-filled) -->
+            <div id="auto-fill-info" class="bg-blue-50 border border-blue-200 p-4 rounded-lg hidden">
+              <div class="flex items-start gap-2">
+                <i data-lucide="info" class="w-5 h-5 text-blue-600 mt-0.5"></i>
+                <div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Footer buttons -->
+        <div class="flex justify-between pt-6 pb-4 px-6 bg-gray-50">
+          <button
+            id="prevBtn"
+            type="button"
+            class="inline-flex items-center gap-1 px-4 py-2 border border-gray-300 rounded-2xl text-sm font-medium hover:bg-gray-50 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
+            disabled
+          >
+            <i data-lucide="chevron-left" class="h-4 w-4"></i> Back
+          </button>
+          
+          <button
+            id="nextBtn"
+            type="button"
+            class="inline-flex items-center gap-1 px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-2xl text-sm font-medium transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
+            disabled
+          >
+            <span id="nextBtnText">Next</span>
+            <i id="nextBtnIcon" data-lucide="chevron-right" class="h-4 w-4"></i>
+          </button>
+        </div>
+      </div>
+
+      <!-- Step indicator -->
+      <div class="mt-4 text-center text-sm text-gray-500">
+        Step <span id="current-step-text">1</span> of 3: <span id="current-step-title">Platform URLs</span>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    lucide.createIcons();
+
+    let currentStep = 1;
+    let isExtracting = false;
+    let isSubmitting = false;
+    
+    // Platform review state
+    let platformsToShow = [];
+    let currentPlatformIndex = 0;
+    let platformData = {};
+    let mergedData = {};
+    
+    // Parallel parsing tracking
+    let completedPlatforms = 0;
+    let hasShownFirstPlatform = false;
+
+    const steps = [
+      { id: 1, title: "Platform URLs" },
+      { id: 2, title: "Confirm Info" },
+      { id: 3, title: "Notifications" }
+    ];
+
+    // Form data
+    const formData = {
+      grabUrl: "",
+      gofoodUrl: "",
+      restaurantName: "",
+      address: "",
+      phone: "",
+      cuisine: "",
+      cuisines: [],
+      workingHours: [],
+      notifications: {
+        whatsapp: false,
+        telegram: false,
+        email: false
+      },
+      whatsappContacts: [],
+      telegramContacts: [],
+      emailContacts: []
+    };
+
+    // URL extraction and platform detection functions
+    function extractUrlFromText(text) {
+      // Extract HTTPS URLs from text
+      const urlRegex = /https:\/\/[^\s]+/g;
+      const matches = text.match(urlRegex);
+      return matches ? matches[0] : text;
+    }
+
+    function detectPlatformFromUrl(url) {
+      if (/r\.grab\.com|grabfood|grab\.com/i.test(url)) {
+        return 'grab';
+      } else if (/gofood\.link|gofood\.co\.id|gojek/i.test(url)) {
+        return 'gofood';
+      }
+      return null;
+    }
+
+    function validateUrl(url, platform) {
+      if (!url) return true;
+      const patterns = {
+        grab: /r\.grab\.com|grabfood|grab\.com/i,
+        gofood: /gofood\.link|gofood\.co\.id|gojek/i
+      };
+      return patterns[platform]?.test(url) || false;
+    }
+
+    function handleUrlInput(inputElement, targetPlatform) {
+      const rawText = inputElement.value;
+      const extractedUrl = extractUrlFromText(rawText);
+      const detectedPlatform = detectPlatformFromUrl(extractedUrl);
+      
+      // Always update formData with current input value
+      formData[inputElement.id === 'grabUrl' ? 'grabUrl' : 'gofoodUrl'] = inputElement.value;
+      
+      // Update the input with clean URL
+      if (extractedUrl !== rawText) {
+        inputElement.value = extractedUrl;
+        formData[inputElement.id === 'grabUrl' ? 'grabUrl' : 'gofoodUrl'] = extractedUrl;
+      }
+      
+      // Check if URL is in wrong field and auto-correct
+      if (detectedPlatform && detectedPlatform !== targetPlatform) {
+        const correctField = detectedPlatform === 'grab' ? 'grabUrl' : 'gofoodUrl';
+        const correctInput = document.getElementById(correctField);
+        
+        // Move URL to correct field
+        correctInput.value = extractedUrl;
+        inputElement.value = '';
+        
+        // Update form data
+        formData[correctField] = extractedUrl;
+        formData[inputElement.id === 'grabUrl' ? 'grabUrl' : 'gofoodUrl'] = '';
+        
+        // Show notification
+        showPlatformCorrectionNotification(detectedPlatform);
+        
+        // Trigger validation for both fields
+        validateAndUpdateUI(correctInput, detectedPlatform);
+        validateAndUpdateUI(inputElement, targetPlatform);
+        updateButtons(); // Update button state after moving URL
+      } else {
+        validateAndUpdateUI(inputElement, targetPlatform);
+        updateButtons(); // Update button state after validation
+      }
+    }
+
+    function showPlatformCorrectionNotification(platform) {
+      const platformName = platform === 'grab' ? 'Grab' : 'GoFood';
+      const notification = document.createElement('div');
+      notification.className = 'fixed top-4 right-4 bg-green-600 text-white px-4 py-2 rounded-lg shadow-lg z-50 animate-pulse';
+      notification.textContent = `URL automatically moved to ${platformName} field`;
+      
+      document.body.appendChild(notification);
+      
+      setTimeout(() => {
+        notification.remove();
+      }, 3000);
+    }
+
+    function validateAndUpdateUI(inputElement, platform) {
+      const url = inputElement.value;
+      const isValid = validateUrl(url, platform);
+      const fieldId = inputElement.id === 'grabUrl' ? 'grab' : 'gofood';
+      const validation = document.getElementById(`${fieldId}-validation`);
+      const error = document.getElementById(`${fieldId}-error`);
+      
+      if (url && isValid) {
+        validation.classList.remove('hidden');
+        error.classList.add('hidden');
+      } else if (url && !isValid) {
+        validation.classList.add('hidden');
+        error.classList.remove('hidden');
+      } else {
+        validation.classList.add('hidden');
+        error.classList.add('hidden');
+      }
+      
+      updateButtons();
+    }
+
+    function updateProgress() {
+      const progressBar = document.getElementById('progress-bar');
+      const percentage = ((currentStep - 1) / (steps.length - 1)) * 100;
+      progressBar.style.width = percentage + '%';
+
+      // Update step indicators
+      for (let i = 1; i <= steps.length; i++) {
+        const indicator = document.getElementById(`step${i}-indicator`);
+        const stepText = indicator.nextElementSibling;
+        
+        if (i < currentStep) {
+          indicator.className = 'w-4 h-4 bg-green-600 rounded-full cursor-pointer transition-colors duration-300';
+          stepText.className = 'text-xs mt-1.5 text-gray-500';
+        } else if (i === currentStep) {
+          indicator.className = 'w-4 h-4 bg-green-600 rounded-full ring-4 ring-green-600/20 cursor-pointer transition-colors duration-300';
+          stepText.className = 'text-xs mt-1.5 text-green-600 font-medium';
+        } else {
+          indicator.className = 'w-4 h-4 bg-gray-300 rounded-full cursor-pointer transition-colors duration-300';
+          stepText.className = 'text-xs mt-1.5 text-gray-500';
+        }
+      }
+
+      // Update step text
+      document.getElementById('current-step-text').textContent = currentStep;
+      document.getElementById('current-step-title').textContent = steps[currentStep - 1].title;
+    }
+
+    function showStep(step) {
+      // Hide all steps
+      document.querySelectorAll('.step-content').forEach(el => el.classList.add('hidden'));
+      
+      // Show current step
+      document.getElementById(`step${step}`).classList.remove('hidden');
+      
+      currentStep = step;
+      updateProgress();
+      updateButtons();
+      
+      // Start extraction when entering step 2
+      if (step === 2 && (formData.grabUrl || formData.gofoodUrl)) {
+        // Show loading state initially
+        document.getElementById('platform-loading').classList.remove('hidden');
+        document.getElementById('platform-review').classList.add('hidden');
+        extractRestaurantData();
+      }
+    }
+
+    function updateButtons() {
+      const prevBtn = document.getElementById('prevBtn');
+      const nextBtn = document.getElementById('nextBtn');
+      const nextBtnText = document.getElementById('nextBtnText');
+      const nextBtnIcon = document.getElementById('nextBtnIcon');
+
+      // Check if we're in platform review mode
+      const isInPlatformReview = !document.getElementById('step2').classList.contains('hidden');
+
+      // Previous button
+      if (currentStep === 1) {
+        // On first step: if user has restaurants, allow back to dashboard; otherwise disable
+        prevBtn.disabled = !userHasRestaurants;
+      } else {
+        prevBtn.disabled = false;
+      }
+
+      // Next button logic
+      if (isInPlatformReview) {
+        // Platform review: Always show Next for all platforms
+        nextBtnText.textContent = 'Next';
+        nextBtnIcon.setAttribute('data-lucide', 'chevron-right');
+        nextBtn.disabled = false; // Always enabled in platform review
+      } else if (currentStep === steps.length) {
+        nextBtnText.textContent = isSubmitting ? 'Setting up...' : 'Complete Setup';
+        nextBtnIcon.setAttribute('data-lucide', isSubmitting ? 'loader-2' : 'check');
+        if (isSubmitting) {
+          nextBtnIcon.classList.add('animate-spin');
+        } else {
+          nextBtnIcon.classList.remove('animate-spin');
+        }
+        nextBtn.disabled = !isStepValid() || isSubmitting;
+      } else {
+        nextBtnText.textContent = 'Next';
+        nextBtnIcon.setAttribute('data-lucide', 'chevron-right');
+        nextBtnIcon.classList.remove('animate-spin');
+        nextBtn.disabled = !isStepValid() || isSubmitting || isExtracting;
+      }
+      
+      lucide.createIcons();
+    }
+
+    // Contact validation functions
+    function parseContacts(contactString, contactType) {
+      if (!contactString) return [];
+      
+      const contacts = contactString.split(',').map(contact => contact.trim()).filter(contact => contact.length > 0);
+      const validContacts = [];
+      
+      contacts.forEach(contact => {
+        const normalized = normalizeContact(contact, contactType);
+        if (validateContact(normalized, contactType)) {
+          validContacts.push(normalized);
+        }
+      });
+      
+      return validContacts;
+    }
+
+    function normalizeContact(contact, contactType) {
+      switch (contactType) {
+        case 'whatsapp':
+          // Remove spaces and ensure + prefix
+          const phone = contact.replace(/\s+/g, '');
+          return phone.startsWith('+') ? phone : `+${phone}`;
+        case 'telegram':
+          // Ensure @ prefix
+          return contact.startsWith('@') ? contact : `@${contact}`;
+        case 'email':
+          return contact.toLowerCase();
+        default:
+          return contact;
+      }
+    }
+
+    function validateContact(contact, contactType) {
+      switch (contactType) {
+        case 'whatsapp':
+          return /^\+\d{10,15}$/.test(contact);
+        case 'telegram':
+          return /^@[a-zA-Z0-9_]{5,32}$/.test(contact);
+        case 'email':
+          return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(contact);
+        default:
+          return false;
+      }
+    }
+
+    function updateContactPreview(contactType, contacts) {
+      const previewContainer = document.getElementById(`${contactType}-preview`);
+      const contactsContainer = document.getElementById(`${contactType}-contacts`);
+      
+      if (contacts.length > 0) {
+        contactsContainer.innerHTML = '';
+        contacts.forEach((contact, index) => {
+          const tag = document.createElement('span');
+          tag.className = `inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
+            index === 0 ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'
+          }`;
+          tag.innerHTML = `
+            ${contact}
+            ${index === 0 ? '<span class="ml-1 text-green-600 font-bold">●</span>' : ''}
+          `;
+          contactsContainer.appendChild(tag);
+        });
+        previewContainer.classList.remove('hidden');
+      } else {
+        previewContainer.classList.add('hidden');
+      }
+    }
+
+    function isStepValid() {
+      switch (currentStep) {
+        case 1:
+          // At least one URL must be provided and valid
+          const hasValidGrab = formData.grabUrl && validateUrl(formData.grabUrl, 'grab');
+          const hasValidGofood = formData.gofoodUrl && validateUrl(formData.gofoodUrl, 'gofood');
+          return hasValidGrab || hasValidGofood;
+        case 2:
+          // Platform review step - always valid once we reach it
+          return true;
+        case 3:
+          // Check if at least WhatsApp OR Telegram is provided
+          const hasWhatsApp = formData.notifications.whatsapp && formData.whatsappContacts.length > 0;
+          const hasTelegram = formData.notifications.telegram && formData.telegramContacts.length > 0;
+          return hasWhatsApp || hasTelegram;
+        default:
+          return true;
+      }
+    }
+
+    function extractRestaurantData() {
+      isExtracting = true;
+      updateButtons();
+      
+      // Initialize parallel extraction
+      platformsToShow = [];
+      platformData = {};
+      completedPlatforms = 0;
+      hasShownFirstPlatform = false;
+      const promises = [];
+      
+      // Function to handle individual platform results
+      function handlePlatformResult(result, platformName) {
+        if (result.success) {
+          platformData[result.platform] = result.data;
+          
+          // Show first completed platform, then queue others in completion order
+          if (!hasShownFirstPlatform) {
+            // First platform to complete - show it immediately
+            hasShownFirstPlatform = true;
+            currentPlatformIndex = 0;
+            platformsToShow = [result.platform];
+            
+            // Update merged data with first completing platform data
+            updateMergedData(result.data);
+            
+            // Show first completed platform review
+            showPlatformReview(result.platform);
+          } else {
+            // Subsequent platform - add to queue in completion order
+            if (!platformsToShow.includes(result.platform)) {
+              platformsToShow.push(result.platform);
+            }
+            
+            // If user is waiting for next platform, show it
+            if (window.waitingForNextPlatform) {
+              window.waitingForNextPlatform = false;
+              showPlatformReview(result.platform);
+            }
+          }
+        } else {
+          console.error(`${platformName} extraction failed:`, result.errors);
+        }
+        
+        completedPlatforms++;
+        
+        // If all platforms completed
+        if (completedPlatforms === getTotalExpectedPlatforms()) {
+          if (Object.keys(platformData).length === 0) {
+            showErrorMessage('Failed to extract restaurant data from any platform. Please enter details manually.');
+            showStep(3);
+          } else if (window.waitingForNextPlatform) {
+            // User was waiting but no more platforms - go to step 3
+            window.waitingForNextPlatform = false;
+            showStep(3);
+          }
+          
+          isExtracting = false;
+          updateButtons();
+        }
+      }
+      
+      // Launch parallel requests
+      console.log(`🚀 Starting parallel extraction at ${new Date().toISOString()}`);
+      
+      if (formData.gofoodUrl) {
+        console.log(`🔵 Launching GoJek request at ${new Date().toISOString()}`);
+        // Show GoJek progress indicator
+        document.getElementById('gojek-progress').classList.remove('hidden');
+        
+        const gojekPromise = fetch('/restaurants/extract_gojek_data', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-Token': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content')
+          },
+          body: JSON.stringify({ gojek_url: formData.gofoodUrl })
+        })
+        .then(response => response.json())
+        .then(data => {
+          console.log(`🔵 GoJek completed at ${new Date().toISOString()}:`, data.success);
+          // Update progress indicator
+          updatePlatformProgress('gojek', data.success ? 'completed' : 'failed');
+          handlePlatformResult(data, 'GoJek');
+        })
+        .catch(error => {
+          console.error('GoJek extraction error:', error);
+          updatePlatformProgress('gojek', 'failed');
+          completedPlatforms++;
+        });
+        
+        promises.push(gojekPromise);
+      }
+      
+      if (formData.grabUrl) {
+        console.log(`🟢 Launching Grab request at ${new Date().toISOString()}`);
+        // Show Grab progress indicator
+        document.getElementById('grab-progress').classList.remove('hidden');
+        
+        const grabPromise = fetch('/restaurants/extract_grab_data', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-Token': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content')
+          },
+          body: JSON.stringify({ grab_url: formData.grabUrl })
+        })
+        .then(response => response.json())
+        .then(data => {
+          console.log(`🟢 Grab completed at ${new Date().toISOString()}:`, data.success);
+          // Update progress indicator
+          updatePlatformProgress('grab', data.success ? 'completed' : 'failed');
+          handlePlatformResult(data, 'Grab');
+        })
+        .catch(error => {
+          console.error('Grab extraction error:', error);
+          updatePlatformProgress('grab', 'failed');
+          completedPlatforms++;
+        });
+        
+        promises.push(grabPromise);
+      }
+      
+      // If no URLs provided, go directly to step 3
+      if (promises.length === 0) {
+        showErrorMessage('Please provide at least one platform URL.');
+        showStep(3);
+        isExtracting = false;
+        updateButtons();
+      }
+    }
+    
+    // Helper function to update merged data from platform result
+    function updateMergedData(platformData) {
+      // Update both formData and mergedData
+      formData.restaurantName = platformData.name || '';
+      formData.address = platformData.address || '';
+      formData.cuisines = platformData.cuisines || [];
+      formData.cuisine = formData.cuisines.join(', ');
+      formData.workingHours = platformData.working_hours || [];
+      
+      // Update mergedData for submission
+      mergedData.name = platformData.name || '';
+      mergedData.address = platformData.address || '';
+      mergedData.cuisines = platformData.cuisines || [];
+      mergedData.working_hours = platformData.working_hours || [];
+      mergedData.image_url = platformData.image_url || '';
+      mergedData.coordinates = platformData.coordinates || null;
+    }
+
+    // Platform review functions
+    function showPlatformReview(platformName) {
+      const data = platformData[platformName];
+      
+      // Update platform display
+      const platformTitle = platformName === 'grab' ? 'Grab' : 'GoJek';
+      
+      document.getElementById('platform-title').textContent = platformTitle;
+      
+      // Update restaurant image
+      const restaurantImage = document.getElementById('restaurant-image');
+      const logoText = document.getElementById('platform-logo-text');
+      
+      if (data.image_url) {
+        restaurantImage.src = data.image_url;
+        restaurantImage.classList.remove('hidden');
+        logoText.classList.add('hidden');
+      } else {
+        restaurantImage.classList.add('hidden');
+        logoText.classList.remove('hidden');
+        logoText.textContent = 'No Image';
+      }
+      
+      // Fill platform data
+      document.getElementById('platform-restaurant-name').textContent = data.name || 'Restaurant Name';
+      document.getElementById('platform-cuisines').textContent = data.cuisines ? data.cuisines.join(', ') : '-';
+      document.getElementById('platform-address').textContent = data.address || '-';
+      document.getElementById('platform-rating').textContent = data.rating || 'NEW';
+      
+      // Update status based on restaurant open/closed state
+      const statusElement = document.getElementById('platform-status');
+      if (data.status && data.status.is_open !== undefined) {
+        if (data.status.is_open) {
+          // Restaurant is open
+          statusElement.textContent = 'OPEN';
+          statusElement.className = 'text-xs font-bold px-3 py-1 rounded-xl border bg-green-50 text-green-700 border-green-200';
+        } else {
+          // Restaurant is closed
+          statusElement.textContent = 'CLOSED';
+          statusElement.className = 'text-xs font-bold px-3 py-1 rounded-xl border bg-red-50 text-red-700 border-red-200';
+        }
+      } else {
+        // Status unknown
+        statusElement.textContent = 'UNKNOWN';
+        statusElement.className = 'text-xs font-bold px-3 py-1 rounded-xl border bg-gray-50 text-gray-500 border-gray-200';
+      }
+      
+      // Fill schedule for each day
+      const days = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'];
+      const dayNames = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+      
+      // Initialize all days as closed first
+      days.forEach((day, index) => {
+        const scheduleElement = document.getElementById(`schedule-${day}`);
+        if (scheduleElement) {
+          scheduleElement.textContent = 'Closed';
+          scheduleElement.className = 'text-xs text-gray-500';
+        }
+      });
+      
+      // Fill actual working hours if available
+      if (data.working_hours && data.working_hours.length > 0) {
+        data.working_hours.forEach(wh => {
+          const dayIndex = wh.day_of_week;
+          if (dayIndex >= 0 && dayIndex < days.length) {
+            const day = days[dayIndex];
+            const scheduleElement = document.getElementById(`schedule-${day}`);
+            if (scheduleElement) {
+              if (wh.is_closed) {
+                scheduleElement.textContent = 'Closed';
+                scheduleElement.className = 'text-xs text-gray-500';
+              } else {
+                scheduleElement.textContent = `${wh.opens_at || '09:00'} - ${wh.closes_at || '22:00'}`;
+                scheduleElement.className = 'text-xs text-gray-900 font-medium';
+              }
+            }
+          }
+        });
+      }
+      
+      // Hide loading and show platform review
+      document.getElementById('platform-loading').classList.add('hidden');
+      document.getElementById('platform-review').classList.remove('hidden');
+      
+      updateButtons();
+    }
+    
+    // showFinalForm removed - platform review now goes directly to step 3
+    
+    function confirmPlatformData() {
+      currentPlatformIndex++;
+      
+      if (currentPlatformIndex < platformsToShow.length) {
+        // Next platform already available - show it immediately
+        showPlatformReview(platformsToShow[currentPlatformIndex]);
+      } else if (isExtracting && completedPlatforms < getTotalExpectedPlatforms()) {
+        // Still waiting for more platforms - show waiting state
+        document.getElementById('platform-review').classList.add('hidden');
+        document.getElementById('platform-loading').classList.remove('hidden');
+        
+        // Set flag to show next platform when it arrives
+        window.waitingForNextPlatform = true;
+      } else {
+        // All platforms reviewed, go to step 3
+        showStep(3);
+      }
+    }
+    
+    // Helper function to get total expected platforms
+    function getTotalExpectedPlatforms() {
+      let total = 0;
+      if (formData.gofoodUrl) total++;
+      if (formData.grabUrl) total++;
+      return total;
+    }
+    
+    // Update platform progress indicator
+    function updatePlatformProgress(platform, status) {
+      const statusElement = document.getElementById(`${platform}-status`);
+      const barElement = document.getElementById(`${platform}-bar`);
+      
+      if (status === 'completed') {
+        statusElement.textContent = 'Completed ✓';
+        statusElement.className = 'text-xs text-green-600 font-medium';
+        barElement.style.width = '100%';
+        barElement.className = 'bg-green-600 h-2 rounded-full';
+      } else if (status === 'failed') {
+        statusElement.textContent = 'Failed ✗';
+        statusElement.className = 'text-xs text-red-600 font-medium';
+        barElement.style.width = '100%';
+        barElement.className = 'bg-red-600 h-2 rounded-full';
+      }
+    }
+
+    // Helper function to manage field validation states
+    // validateField and validateStep2 removed since form fields no longer exist on step 2
+
+    function nextStep() {
+      const isInPlatformReview = !document.getElementById('step2').classList.contains('hidden');
+      
+      // Handle platform review navigation
+      if (isInPlatformReview) {
+        confirmPlatformData();
+        return;
+      }
+      
+      // Step 2 validation removed since it's now platform review
+      
+      // Remove extraction call from step 1 as it now happens in showStep(2)
+      
+      if (currentStep === steps.length) {
+        // Submit form to create restaurant
+        submitRestaurant();
+        return;
+      }
+      
+      if (currentStep < steps.length) {
+        showStep(currentStep + 1);
+      }
+    }
+
+    function submitRestaurant() {
+      isSubmitting = true;
+      updateButtons();
+      
+      // Prepare platform-specific data for each restaurant
+      const restaurantData = {
+        // Include platform-specific data for each platform
+        platforms: {},
+        whatsapp_contacts: formData.whatsappContacts,
+        telegram_contacts: formData.telegramContacts,
+        email_contacts: formData.emailContacts
+      };
+
+      // Add Grab platform data if available
+      if (formData.grabUrl && platformData.grab) {
+        restaurantData.platforms.grab = {
+          platform_url: formData.grabUrl,
+          name: platformData.grab.name,
+          address: platformData.grab.address,
+          phone: platformData.grab.phone || '',
+          image_url: platformData.grab.image_url,
+          coordinates: platformData.grab.coordinates,
+          cuisines: platformData.grab.cuisines || [],
+          working_hours: platformData.grab.working_hours || []
+        };
+      }
+
+      // Add GoJek platform data if available  
+      if (formData.gofoodUrl && platformData.gojek) {
+        restaurantData.platforms.gojek = {
+          platform_url: formData.gofoodUrl,
+          name: platformData.gojek.name,
+          address: platformData.gojek.address,
+          phone: platformData.gojek.phone || '',
+          image_url: platformData.gojek.image_url,
+          coordinates: platformData.gojek.coordinates,
+          cuisines: platformData.gojek.cuisines || [],
+          working_hours: platformData.gojek.working_hours || []
+        };
+      }
+      
+      fetch('/restaurants', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRF-Token': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content')
+        },
+        body: JSON.stringify(restaurantData)
+      })
+      .then(response => response.json())
+      .then(data => {
+        if (data.success) {
+          showSuccessMessage("Restaurant setup completed successfully!");
+          setTimeout(() => {
+            window.location.href = data.redirect_url || '/dashboard';
+          }, 1500);
+        } else {
+          showErrorMessage(data.errors ? data.errors.join(', ') : 'Failed to create restaurant');
+          isSubmitting = false;
+          updateButtons();
+        }
+      })
+      .catch(error => {
+        console.error('Error:', error);
+        showErrorMessage('Network error. Please try again.');
+        isSubmitting = false;
+        updateButtons();
+      });
+    }
+
+    function showSuccessMessage(message) {
+      const notification = document.createElement('div');
+      notification.className = 'fixed top-4 right-4 bg-green-500 text-white px-6 py-3 rounded-lg shadow-lg z-50';
+      notification.innerHTML = `
+        <div class="flex items-center gap-2">
+          <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path>
+          </svg>
+          <span>${message}</span>
+        </div>
+      `;
+      
+      document.body.appendChild(notification);
+      
+      setTimeout(() => {
+        notification.remove();
+      }, 5000);
+    }
+
+    function showErrorMessage(message) {
+      const notification = document.createElement('div');
+      notification.className = 'fixed top-4 right-4 bg-red-500 text-white px-6 py-3 rounded-lg shadow-lg z-50';
+      notification.innerHTML = `
+        <div class="flex items-center gap-2">
+          <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"></path>
+          </svg>
+          <span>${message}</span>
+        </div>
+      `;
+      
+      document.body.appendChild(notification);
+      
+      setTimeout(() => {
+        notification.remove();
+      }, 5000);
+    }
+
+
+    function clearAutoFillData() {
+      console.log('🔄 Clearing auto-fill data');
+      
+      // Clear form data
+      formData.whatsappContacts = [];
+      formData.telegramContacts = [];
+      formData.emailContacts = [];
+      formData.notifications = { whatsapp: false, telegram: false, email: false };
+      
+      // Reset UI elements
+      ['whatsapp', 'telegram', 'email'].forEach(type => {
+        const checkbox = document.getElementById(type);
+        const inputSection = document.getElementById(`${type}-input`);
+        const preview = document.getElementById(`${type}-preview`);
+        
+        if (checkbox) checkbox.checked = false;
+        if (inputSection) inputSection.classList.add('hidden');
+        if (preview) preview.classList.add('hidden');
+        
+        // Clear input field values
+        const fieldName = type === 'whatsapp' ? 'whatsappNumber' : 
+                         type === 'telegram' ? 'telegramUsername' : 'emailAddress';
+        const field = document.getElementById(fieldName);
+        if (field) field.value = '';
+      });
+      
+      // Hide auto-fill info box
+      const autoFillInfo = document.getElementById('auto-fill-info');
+      if (autoFillInfo) {
+        autoFillInfo.classList.add('hidden');
+      }
+      
+      // Update buttons
+      updateButtons();
+      
+      console.log('✅ Auto-fill data cleared successfully');
+    }
+
+    function prevStep() {
+      if (currentStep === 1 && userHasRestaurants) {
+        // On first step with existing restaurants, go back to dashboard
+        window.location.href = '/dashboard';
+      } else if (currentStep === 2) {
+        // In platform review mode - handle platform navigation
+        if (currentPlatformIndex > 0) {
+          // Go back to previous platform review
+          currentPlatformIndex--;
+          showPlatformReview(platformsToShow[currentPlatformIndex]);
+        } else {
+          // On first platform review - go back to URL input (step 1)
+          showStep(currentStep - 1);
+        }
+      } else if (currentStep > 1) {
+        showStep(currentStep - 1);
+      }
+    }
+
+    // Event listeners
+    document.getElementById('prevBtn').addEventListener('click', prevStep);
+    document.getElementById('nextBtn').addEventListener('click', nextStep);
+
+    // URL validation with automatic extraction and platform detection
+    document.getElementById('grabUrl').addEventListener('input', function(e) {
+      handleUrlInput(e.target, 'grab');
+    });
+
+    document.getElementById('gofoodUrl').addEventListener('input', function(e) {
+      handleUrlInput(e.target, 'gofood');
+    });
+
+    // Handle paste events for better URL extraction
+    document.getElementById('grabUrl').addEventListener('paste', function(e) {
+      setTimeout(() => handleUrlInput(e.target, 'grab'), 10);
+    });
+
+    document.getElementById('gofoodUrl').addEventListener('paste', function(e) {
+      setTimeout(() => handleUrlInput(e.target, 'gofood'), 10);
+    });
+
+    // Form input handlers removed since form fields no longer exist on step 2
+
+    // Notification checkboxes
+    ['whatsapp', 'telegram', 'email'].forEach(channel => {
+      document.getElementById(channel).addEventListener('change', function(e) {
+        formData.notifications[channel] = e.target.checked;
+        const input = document.getElementById(`${channel}-input`);
+        
+        if (e.target.checked) {
+          input.classList.remove('hidden');
+        } else {
+          input.classList.add('hidden');
+        }
+        
+        updateButtons();
+      });
+    });
+
+    // Notification inputs with contact parsing
+    document.getElementById('whatsappNumber').addEventListener('input', function(e) {
+      const contacts = parseContacts(e.target.value, 'whatsapp');
+      formData.whatsappContacts = contacts;
+      updateContactPreview('whatsapp', contacts);
+      updateButtons();
+    });
+
+    document.getElementById('telegramUsername').addEventListener('input', function(e) {
+      const contacts = parseContacts(e.target.value, 'telegram');
+      formData.telegramContacts = contacts;
+      updateContactPreview('telegram', contacts);
+      updateButtons();
+    });
+
+    document.getElementById('emailAddress').addEventListener('input', function(e) {
+      const contacts = parseContacts(e.target.value, 'email');
+      formData.emailContacts = contacts;
+      updateContactPreview('email', contacts);
+      updateButtons();
+    });
+
+    // Pre-populate existing contacts for logged-in users  
+    <% if current_user %>
+      // Load existing contacts from controller variables (safer than calling methods)
+      const existingWhatsapp = <%= raw @existing_whatsapp_contacts.to_json %>;
+      const existingTelegram = <%= raw @existing_telegram_contacts.to_json %>;
+      const existingEmail = <%= raw @existing_email_contacts.to_json %>;
+      
+      // Check if user has existing restaurants (affects back button behavior)
+      const userHasRestaurants = <%= @user_has_restaurants %>;
+      
+      console.log('=== AUTO-FILL DEBUG ===');
+      console.log('WhatsApp contacts:', existingWhatsapp);
+      console.log('Telegram contacts:', existingTelegram);
+      console.log('Email contacts:', existingEmail);
+      console.log('User has restaurants:', userHasRestaurants);
+      
+      // Track if any contacts were auto-filled
+      let autoFilledCount = 0;
+      
+      // Pre-populate form data if user has existing contacts
+      if (existingWhatsapp && existingWhatsapp.length > 0) {
+        formData.whatsappContacts = existingWhatsapp;
+        formData.notifications.whatsapp = true;
+        document.getElementById('whatsapp').checked = true;
+        document.getElementById('whatsapp-input').classList.remove('hidden');
+        document.getElementById('whatsappNumber').value = existingWhatsapp.join(', ');
+        updateContactPreview('whatsapp', existingWhatsapp);
+        autoFilledCount++;
+      }
+      
+      if (existingTelegram && existingTelegram.length > 0) {
+        formData.telegramContacts = existingTelegram;
+        formData.notifications.telegram = true;
+        document.getElementById('telegram').checked = true;
+        document.getElementById('telegram-input').classList.remove('hidden');
+        document.getElementById('telegramUsername').value = existingTelegram.join(', ');
+        updateContactPreview('telegram', existingTelegram);
+        autoFilledCount++;
+      }
+      
+      if (existingEmail && existingEmail.length > 0) {
+        formData.emailContacts = existingEmail;
+        formData.notifications.email = true;
+        document.getElementById('email').checked = true;
+        document.getElementById('email-input').classList.remove('hidden');
+        document.getElementById('emailAddress').value = existingEmail.join(', ');
+        updateContactPreview('email', existingEmail);
+        autoFilledCount++;
+      }
+      
+      // Show auto-fill notification and info box if any contacts were filled
+      if (autoFilledCount > 0) {
+        
+        // Show auto-fill info box
+        const autoFillInfo = document.getElementById('auto-fill-info');
+        if (autoFillInfo) {
+          autoFillInfo.classList.remove('hidden');
+        }
+      }
+    <% else %>
+      // For non-logged in users, they don't have restaurants
+      const userHasRestaurants = false;
+      const existingWhatsapp = [];
+      const existingTelegram = [];
+      const existingEmail = [];
+    <% end %>
+
+    // Initialize
+    showStep(1);
+  </script>
+</body>
+</html>

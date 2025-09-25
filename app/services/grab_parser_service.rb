@@ -5,7 +5,7 @@ require "cgi"
 require_relative "retryable_parser"
 
 class GrabParserService < RetryableParser
-  TIMEOUT_SECONDS = 20
+  TIMEOUT_SECONDS = 30  # Increased timeout for better reliability
 
   def parse(url)
     parse_with_retry(url)
@@ -17,25 +17,28 @@ class GrabParserService < RetryableParser
 
     driver = nil
     begin
-      Timeout.timeout(15) do  # Shorter timeout for status check
+      Timeout.timeout(20) do  # Increased timeout for status check
         driver = setup_chrome_driver
 
         Rails.logger.info "Grab Status: Navigating to URL..."
         driver.get(url)
 
-        # Wait briefly for page to load
-        sleep(2)
-        wait = Selenium::WebDriver::Wait.new(timeout: 5)
+        # Wait for page to load with better timing
+        sleep(3)  # Slightly longer initial wait
+        wait = Selenium::WebDriver::Wait.new(timeout: 8)
         wait.until { driver.execute_script("return document.readyState") == "complete" }
+
+        Rails.logger.info "Grab Status: Page loaded, extracting status..."
 
         # Try to extract only status information quickly
         json_data = extract_json_data_selenium(driver)
         if json_data && json_data[:status]
-          Rails.logger.info "Grab Status: Found status in JSON data"
+          Rails.logger.info "Grab Status: Found status in JSON data: #{json_data[:status]}"
           return json_data[:status]
         end
 
         # Fallback: look for DOM indicators
+        Rails.logger.info "Grab Status: JSON status not found, trying DOM extraction"
         status = extract_status_from_dom(driver)
         Rails.logger.info "Grab Status: Status check completed - #{status[:status_text]}"
         return status
@@ -43,14 +46,19 @@ class GrabParserService < RetryableParser
 
     rescue Timeout::Error => e
       Rails.logger.error "Grab Status: Timeout during status check: #{e.message}"
-      return { is_open: nil, status_text: "timeout", error: "Request timed out" }
+      return { is_open: nil, status_text: "timeout", error: "Request timed out after 20s" }
     rescue => e
-      Rails.logger.error "Grab Status: Error during status check: #{e.message}"
-      return { is_open: nil, status_text: "error", error: e.message }
+      Rails.logger.error "Grab Status: Error during status check: #{e.class} - #{e.message}"
+      Rails.logger.error "Grab Status: Backtrace: #{e.backtrace.first(2).join("\n")}"
+      return { is_open: nil, status_text: "error", error: "#{e.class}: #{e.message}" }
     ensure
       if driver
-        driver.quit rescue nil
-        Rails.logger.info "Grab Status: Browser closed"
+        begin
+          driver.quit
+          Rails.logger.info "Grab Status: Browser closed successfully"
+        rescue => cleanup_error
+          Rails.logger.warn "Grab Status: Error closing browser: #{cleanup_error.message}"
+        end
       end
     end
   end
@@ -126,51 +134,107 @@ class GrabParserService < RetryableParser
 
   def extract_json_data_selenium(driver)
     begin
+      Rails.logger.info "Grab: Starting JSON data extraction"
+      
       # Find script tags that contain restaurant data
       scripts = driver.find_elements(:css, "script")
+      Rails.logger.info "Grab: Found #{scripts.count} script tags to analyze"
 
-      scripts.each do |script|
-        content = script.attribute("innerHTML")
-        next unless content && content.include?('"props"') && content.include?("ssrRestaurantData")
+      scripts.each_with_index do |script, index|
+        begin
+          content = script.attribute("innerHTML")
+          next unless content.present?
 
-        # Extract JSON data
-        json_start = content.index('{"props"')
-        next unless json_start
+          # Look for different patterns that might contain restaurant data
+          json_patterns = [
+            # Primary pattern
+            { pattern: '"props".*"ssrRestaurantData"', start: '{"props"' },
+            # Alternative patterns for different Grab versions
+            { pattern: '"restaurant".*"name"', start: '{"restaurant"' },
+            { pattern: '"pageProps".*"restaurant"', start: '{"pageProps"' }
+          ]
 
-        json_content = content[json_start..-1]
+          json_patterns.each do |pattern_info|
+            if content.match(/#{pattern_info[:pattern]}/i)
+              Rails.logger.info "Grab: Found potential JSON data in script #{index + 1} with pattern: #{pattern_info[:pattern]}"
+              
+              # Extract JSON data
+              json_start = content.index(pattern_info[:start])
+              next unless json_start
 
-        # Find the end of JSON object
-        brace_count = 0
-        json_end = nil
-        json_content.each_char.with_index do |char, i|
-          if char == "{"
-            brace_count += 1
-          elsif char == "}"
-            brace_count -= 1
-            if brace_count == 0
-              json_end = i
-              break
+              json_content = content[json_start..-1]
+
+              # Find the end of JSON object with proper brace counting
+              brace_count = 0
+              json_end = nil
+              in_string = false
+              escape_next = false
+
+              json_content.each_char.with_index do |char, i|
+                if escape_next
+                  escape_next = false
+                  next
+                end
+
+                if char == '\\'
+                  escape_next = true
+                  next
+                end
+
+                if char == '"' && !escape_next
+                  in_string = !in_string
+                  next
+                end
+
+                next if in_string
+
+                if char == "{"
+                  brace_count += 1
+                elsif char == "}"
+                  brace_count -= 1
+                  if brace_count == 0
+                    json_end = i
+                    break
+                  end
+                end
+              end
+
+              next unless json_end
+
+              json_data = json_content[0..json_end]
+              
+              begin
+                parsed = JSON.parse(json_data)
+                Rails.logger.info "Grab: Successfully parsed JSON data"
+
+                # Extract restaurant data from different possible locations
+                restaurant_data = parsed.dig("props", "pageProps", "ssrRestaurantData") ||
+                                parsed.dig("restaurant") ||
+                                parsed.dig("pageProps", "restaurant")
+
+                if restaurant_data
+                  Rails.logger.info "Grab: Found restaurant data in JSON with keys: #{restaurant_data.keys.join(', ')}"
+                  return extract_restaurant_info_from_json(restaurant_data)
+                else
+                  Rails.logger.warn "Grab: JSON parsed but no restaurant data found in expected locations"
+                end
+              rescue JSON::ParserError => je
+                Rails.logger.warn "Grab: JSON parsing failed for script #{index + 1}: #{je.message}"
+                next
+              end
             end
           end
+        rescue => e
+          Rails.logger.warn "Grab: Error processing script #{index + 1}: #{e.message}"
+          next
         end
-
-        next unless json_end
-
-        json_data = json_content[0..json_end]
-        parsed = JSON.parse(json_data)
-
-        # Extract restaurant data from parsed JSON
-        restaurant_data = parsed.dig("props", "pageProps", "ssrRestaurantData")
-        next unless restaurant_data
-
-        Rails.logger.info "Grab: Found restaurant data in JSON: #{restaurant_data.keys}"
-
-        return extract_restaurant_info_from_json(restaurant_data)
       end
 
+      Rails.logger.warn "Grab: No valid JSON restaurant data found in any script tags"
       nil
     rescue => e
-      Rails.logger.error "Grab: Error extracting JSON data: #{e.message}"
+      Rails.logger.error "Grab: Error extracting JSON data: #{e.class} - #{e.message}"
+      Rails.logger.error "Grab: Backtrace: #{e.backtrace.first(3).join("\n")}"
       nil
     end
   end
@@ -260,26 +324,45 @@ class GrabParserService < RetryableParser
   end
 
   def extract_status_from_json(opening_hours_data)
-    return { is_open: true, status_text: "open" } unless opening_hours_data.is_a?(Hash)
+    # If no opening hours data, status is unknown
+    unless opening_hours_data.is_a?(Hash)
+      Rails.logger.warn "Grab: No opening hours data available for status determination"
+      return { is_open: nil, status_text: "unknown", opening_info: "no_data" }
+    end
 
     # Check if restaurant is currently open
     is_currently_open = opening_hours_data["open"]
     displayed_hours = opening_hours_data["displayedHours"]
     temp_closed = opening_hours_data["tempClosed"]
 
-    # Determine status
+    Rails.logger.info "Grab Status: open=#{is_currently_open}, temp_closed=#{temp_closed}, displayed=#{displayed_hours}"
+
+    # Determine status with explicit checks
     if temp_closed == true
+      Rails.logger.info "Grab Status: Restaurant is temporarily closed"
       { is_open: false, status_text: "temporarily_closed", opening_info: displayed_hours }
     elsif is_currently_open == false
+      Rails.logger.info "Grab Status: Restaurant is closed according to schedule"
       { is_open: false, status_text: "closed", opening_info: displayed_hours }
     elsif is_currently_open == true
+      Rails.logger.info "Grab Status: Restaurant is open according to schedule"
       { is_open: true, status_text: "open", opening_info: displayed_hours }
     else
-      # Fallback - check displayed hours text
-      if displayed_hours && displayed_hours.downcase.include?("closed")
-        { is_open: false, status_text: "closed", opening_info: displayed_hours }
+      # Fallback - check displayed hours text if available
+      if displayed_hours.present?
+        if displayed_hours.downcase.include?("closed") || displayed_hours.downcase.include?("временно закрыт")
+          Rails.logger.info "Grab Status: Detected closed status from displayed hours: #{displayed_hours}"
+          { is_open: false, status_text: "closed", opening_info: displayed_hours }
+        elsif displayed_hours.downcase.include?("open") || displayed_hours.downcase.include?("открыт")
+          Rails.logger.info "Grab Status: Detected open status from displayed hours: #{displayed_hours}"
+          { is_open: true, status_text: "open", opening_info: displayed_hours }
+        else
+          Rails.logger.warn "Grab Status: Ambiguous displayed hours, defaulting to unknown: #{displayed_hours}"
+          { is_open: nil, status_text: "unknown", opening_info: displayed_hours }
+        end
       else
-        { is_open: true, status_text: "open", opening_info: displayed_hours }
+        Rails.logger.warn "Grab Status: No clear status indicators, defaulting to unknown"
+        { is_open: nil, status_text: "unknown", opening_info: "no_clear_status" }
       end
     end
   end
@@ -410,20 +493,24 @@ class GrabParserService < RetryableParser
     options.add_argument("--disable-software-rasterizer")
     options.add_argument("--disable-extensions")
     options.add_argument("--disable-plugins")
-    options.add_argument("--disable-images")
     options.add_argument("--disable-web-security")
-    options.add_argument("--disable-features=TranslateUI")
-    options.add_argument("--disable-ipc-flooding-protection")
     options.add_argument("--window-size=1920,1080")
-    options.add_argument("--remote-debugging-port=9222")
-
-    # Additional flags for Chromium compatibility
+    
+    # Simplified Chrome flags - remove potentially problematic ones
     options.add_argument("--disable-blink-features=AutomationControlled")
-    options.add_argument("--disable-features=VizDisplayCompositor")
-
-    # Memory optimization for containers
+    options.add_argument("--no-first-run")
+    options.add_argument("--disable-default-apps")
+    options.add_argument("--disable-popup-blocking")
+    
+    # Memory and performance optimization
     options.add_argument("--memory-pressure-off")
-    options.add_argument("--max_old_space_size=4096")
+    options.add_argument("--disable-background-timer-throttling")
+    options.add_argument("--disable-renderer-backgrounding")
+    options.add_argument("--disable-backgrounding-occluded-windows")
+    
+    # Network optimization
+    options.add_argument("--aggressive-cache-discard")
+    options.add_argument("--disable-background-networking")
 
     # Detect Chrome binary with improved logic
     chrome_binary = detect_chrome_binary

@@ -184,28 +184,42 @@ class RestaurantsController < ApplicationController
     @created_restaurants = []
 
     ActiveRecord::Base.transaction do
-      # Check if we have multiple URLs - create separate restaurants for each platform
-      grab_url = params.dig(:restaurant, :grab_url) || params[:grab_url]
-      gojek_url = params.dig(:restaurant, :gojek_url) || params[:gojek_url]
+      # Handle new platform-specific data format
+      platforms_data = params[:platforms]
+      
+      # Backward compatibility - check for old format
+      if platforms_data.blank?
+        grab_url = params.dig(:restaurant, :grab_url) || params[:grab_url]
+        gojek_url = params.dig(:restaurant, :gojek_url) || params[:gojek_url]
 
-      if grab_url.blank? && gojek_url.blank?
-        render json: {
-          success: false,
-          errors: [ "At least one platform URL (Grab or GoJek) is required" ]
-        }, status: :unprocessable_entity
-        return
-      end
+        if grab_url.blank? && gojek_url.blank?
+          render json: {
+            success: false,
+            errors: [ "At least one platform URL (Grab or GoJek) is required" ]
+          }, status: :unprocessable_entity
+          return
+        end
 
-      # Create Grab restaurant if URL provided
-      if grab_url.present?
-        grab_restaurant = create_platform_restaurant("grab", grab_url)
-        @created_restaurants << grab_restaurant if grab_restaurant
-      end
+        # Create restaurants using old method (fallback)
+        if grab_url.present?
+          grab_restaurant = create_platform_restaurant("grab", grab_url)
+          @created_restaurants << grab_restaurant if grab_restaurant
+        end
 
-      # Create GoJek restaurant if URL provided
-      if gojek_url.present?
-        gojek_restaurant = create_platform_restaurant("gojek", gojek_url)
-        @created_restaurants << gojek_restaurant if gojek_restaurant
+        if gojek_url.present?
+          gojek_restaurant = create_platform_restaurant("gojek", gojek_url)
+          @created_restaurants << gojek_restaurant if gojek_restaurant
+        end
+      else
+        # New platform-specific data format
+        Rails.logger.info "Creating restaurants with platform-specific data: #{platforms_data.keys.join(', ')}"
+        
+        platforms_data.each do |platform, platform_data|
+          Rails.logger.info "Creating #{platform} restaurant with data: #{platform_data[:name]}"
+          
+          restaurant = create_platform_restaurant_with_data(platform, platform_data)
+          @created_restaurants << restaurant if restaurant
+        end
       end
 
       if @created_restaurants.empty?
@@ -266,42 +280,127 @@ class RestaurantsController < ApplicationController
   end
 
   def create_platform_restaurant(platform, platform_url)
-    # Get data from parser first
-    parser_data = get_parser_data(platform, platform_url)
-    return nil unless parser_data
-
-    # Build restaurant with parsed data
+    Rails.logger.info "Creating #{platform} restaurant with URL: #{platform_url}"
+    
+    # Use data from params (frontend has already parsed the data)
+    # Only fallback to parser if no data provided (backward compatibility)
     restaurant_attrs = {
       platform: platform,
       platform_url: platform_url,
-      name: parser_data[:name] || params.dig(:restaurant, :name),
-      address: parser_data[:address] || params.dig(:restaurant, :address),
-      phone: parser_data[:phone] || params.dig(:restaurant, :phone),
-      image_url: parser_data[:image_url] || params.dig(:restaurant, :image_url)
+      name: params.dig(:restaurant, :name),
+      address: params.dig(:restaurant, :address),
+      phone: params.dig(:restaurant, :phone),
+      image_url: params.dig(:restaurant, :image_url)
+    }
+
+    # If no data in params, fallback to parser (for API calls without frontend parsing)
+    if restaurant_attrs[:name].blank?
+      Rails.logger.info "No restaurant data in params, falling back to parser for #{platform}"
+      parser_data = get_parser_data(platform, platform_url)
+      return nil unless parser_data
+
+      restaurant_attrs.merge!({
+        name: parser_data[:name],
+        address: parser_data[:address],
+        phone: parser_data[:phone],
+        image_url: parser_data[:image_url]
+      })
+
+      # Use parser data for subsequent operations
+      cuisines_data = parser_data[:cuisines]
+      working_hours_data = parser_data[:working_hours]
+      coordinates_data = parser_data[:coordinates]
+    else
+      Rails.logger.info "Using restaurant data from frontend for #{platform}: #{restaurant_attrs[:name]}"
+      # Use data from params (frontend parsing)
+      cuisines_data = params[:cuisines]
+      working_hours_data = params[:working_hours]
+      coordinates_data = params.dig(:restaurant, :coordinates)
+    end
+
+    restaurant = current_user.restaurants.build(restaurant_attrs)
+
+    # Set coordinates if available
+    if coordinates_data.present?
+      if coordinates_data.is_a?(Hash) && coordinates_data[:latitude] && coordinates_data[:longitude]
+        restaurant.set_coordinates(coordinates_data[:latitude], coordinates_data[:longitude])
+      elsif coordinates_data.is_a?(String)
+        # Handle coordinate string format (latitude, longitude)
+        coords = coordinates_data.split(',').map(&:strip)
+        if coords.length == 2
+          restaurant.set_coordinates(coords[0].to_f, coords[1].to_f)
+        end
+      end
+    end
+
+    # Set cuisines
+    if cuisines_data.present?
+      restaurant.set_cuisines(cuisines_data)
+    end
+
+    unless restaurant.save
+      Rails.logger.error "Failed to save restaurant: #{restaurant.errors.full_messages}"
+      @contact_errors.concat(restaurant.errors.full_messages)
+      return nil
+    end
+
+    Rails.logger.info "Successfully saved restaurant: #{restaurant.name} (ID: #{restaurant.id})"
+
+    # Create working hours if provided
+    if working_hours_data.present?
+      create_working_hours(restaurant, working_hours_data)
+    end
+
+    restaurant
+  end
+
+  def create_platform_restaurant_with_data(platform, platform_data)
+    Rails.logger.info "Creating #{platform} restaurant with provided data: #{platform_data[:name]}"
+    
+    # Build restaurant attributes from provided platform data
+    restaurant_attrs = {
+      platform: platform,
+      platform_url: platform_data[:platform_url],
+      name: platform_data[:name],
+      address: platform_data[:address],
+      phone: platform_data[:phone],
+      image_url: platform_data[:image_url]
     }
 
     restaurant = current_user.restaurants.build(restaurant_attrs)
 
     # Set coordinates if available
-    if parser_data[:coordinates]
-      restaurant.set_coordinates(parser_data[:coordinates][:latitude], parser_data[:coordinates][:longitude])
+    coordinates_data = platform_data[:coordinates]
+    if coordinates_data.present?
+      if coordinates_data.is_a?(Hash) && coordinates_data[:latitude] && coordinates_data[:longitude]
+        restaurant.set_coordinates(coordinates_data[:latitude], coordinates_data[:longitude])
+      elsif coordinates_data.is_a?(String)
+        # Handle coordinate string format (latitude, longitude)
+        coords = coordinates_data.split(',').map(&:strip)
+        if coords.length == 2
+          restaurant.set_coordinates(coords[0].to_f, coords[1].to_f)
+        end
+      end
     end
 
-    # Set cuisines from parsed data or params
-    cuisines = parser_data[:cuisines].presence || params[:cuisines]
-    if cuisines.present?
-      restaurant.set_cuisines(cuisines)
+    # Set cuisines
+    cuisines_data = platform_data[:cuisines]
+    if cuisines_data.present?
+      restaurant.set_cuisines(cuisines_data)
     end
 
     unless restaurant.save
+      Rails.logger.error "Failed to save #{platform} restaurant: #{restaurant.errors.full_messages}"
       @contact_errors.concat(restaurant.errors.full_messages)
       return nil
     end
 
+    Rails.logger.info "Successfully saved #{platform} restaurant: #{restaurant.name} (ID: #{restaurant.id})"
+
     # Create working hours if provided
-    working_hours = parser_data[:working_hours].presence || params[:working_hours]
-    if working_hours.present?
-      create_working_hours(restaurant, working_hours)
+    working_hours_data = platform_data[:working_hours]
+    if working_hours_data.present?
+      create_working_hours(restaurant, working_hours_data)
     end
 
     restaurant

@@ -27,8 +27,8 @@ Rails.application.routes.draw do
   patch "reset_password" => "passwords#update"
 
   # Protected routes
-  get "dashboard" => "dev#dashboard"
-  get "onboarding" => "dev#onboarding"
+  get "dashboard" => "dashboards#show"
+  get "onboarding" => "dashboards#onboarding"
 
   # Restaurant management
   resources :restaurants, only: [ :create ] do
@@ -43,11 +43,6 @@ Rails.application.routes.draw do
   get "landing/test"
   get "landing/test_cuisines"
   get "index" => "landing#index"  # Для aidelivery.tech/index
-
-  # Dev routes для новой версии с v0.dev
-  get "dev/test" => "dev#test"       # aidelivery.tech/dev/test
-  get "dev/dashboard" => "dev#dashboard"
-  get "dev/onboarding" => "dev#onboarding"
 
   # Define your application routes per the DSL in https://guides.rubyonrails.org/routing.html
 

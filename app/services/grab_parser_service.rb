@@ -101,6 +101,7 @@ class GrabParserService < RetryableParser
             dom_address = extract_address_selenium(driver)
             data[:address] = dom_address if dom_address.present?
           end
+          
         else
           Rails.logger.info "Grab: Falling back to DOM extraction"
           # Extract data from the page DOM (fallback)
@@ -782,6 +783,7 @@ class GrabParserService < RetryableParser
 
     nil
   end
+
 
   def extract_working_hours_selenium(driver)
     working_hours = []

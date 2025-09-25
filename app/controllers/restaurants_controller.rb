@@ -1,4 +1,6 @@
 class RestaurantsController < ApplicationController
+  Rails.logger.info "=== RestaurantsController loaded at #{Time.current} ==="
+  
   before_action :require_authentication, except: [ :extract_data, :extract_gojek_data, :extract_grab_data ]
   skip_before_action :verify_authenticity_token, only: [ :extract_data, :extract_gojek_data, :extract_grab_data ]
 
@@ -28,6 +30,7 @@ class RestaurantsController < ApplicationController
         platforms << "grab"
         grab_data = data[:platform_data][:grab]
         platform_data["grab"] = {
+          platform_url: grab_url,
           name: grab_data[:name],
           address: grab_data[:address],
           cuisines: grab_data[:cuisines],
@@ -42,6 +45,7 @@ class RestaurantsController < ApplicationController
         platforms << "gojek"
         gojek_data = data[:platform_data][:gojek]
         platform_data["gojek"] = {
+          platform_url: gojek_url,
           name: gojek_data[:name],
           address: gojek_data[:address],
           cuisines: gojek_data[:cuisines],
@@ -180,19 +184,28 @@ class RestaurantsController < ApplicationController
   end
 
   def create
+    Rails.logger.info "=== Restaurant Creation Started ==="
+    Rails.logger.info "Received params: #{params.inspect}"
+    
     @contact_errors = []
     @created_restaurants = []
 
     ActiveRecord::Base.transaction do
+      Rails.logger.info "Starting database transaction"
+      
       # Handle new platform-specific data format
       platforms_data = params[:platforms]
+      Rails.logger.info "Platforms data: #{platforms_data.inspect}"
       
       # Backward compatibility - check for old format
       if platforms_data.blank?
+        Rails.logger.info "Using backward compatibility mode"
         grab_url = params.dig(:restaurant, :grab_url) || params[:grab_url]
         gojek_url = params.dig(:restaurant, :gojek_url) || params[:gojek_url]
+        Rails.logger.info "Grab URL: #{grab_url}, GoJek URL: #{gojek_url}"
 
         if grab_url.blank? && gojek_url.blank?
+          Rails.logger.error "No platform URLs provided in backward compatibility mode"
           render json: {
             success: false,
             errors: [ "At least one platform URL (Grab or GoJek) is required" ]
@@ -202,13 +215,17 @@ class RestaurantsController < ApplicationController
 
         # Create restaurants using old method (fallback)
         if grab_url.present?
+          Rails.logger.info "Creating Grab restaurant via old method"
           grab_restaurant = create_platform_restaurant("grab", grab_url)
           @created_restaurants << grab_restaurant if grab_restaurant
+          Rails.logger.info "Grab restaurant creation result: #{grab_restaurant ? 'SUCCESS' : 'FAILED'}"
         end
 
         if gojek_url.present?
+          Rails.logger.info "Creating GoJek restaurant via old method"
           gojek_restaurant = create_platform_restaurant("gojek", gojek_url)
           @created_restaurants << gojek_restaurant if gojek_restaurant
+          Rails.logger.info "GoJek restaurant creation result: #{gojek_restaurant ? 'SUCCESS' : 'FAILED'}"
         end
       else
         # New platform-specific data format
@@ -216,31 +233,47 @@ class RestaurantsController < ApplicationController
         
         platforms_data.each do |platform, platform_data|
           Rails.logger.info "Creating #{platform} restaurant with data: #{platform_data[:name]}"
+          Rails.logger.info "Platform data details: #{platform_data.inspect}"
           
           restaurant = create_platform_restaurant_with_data(platform, platform_data)
           @created_restaurants << restaurant if restaurant
+          Rails.logger.info "#{platform.capitalize} restaurant creation result: #{restaurant ? 'SUCCESS' : 'FAILED'}"
         end
       end
 
+      Rails.logger.info "Created restaurants count: #{@created_restaurants.count}"
+      Rails.logger.info "Created restaurants: #{@created_restaurants.map { |r| "#{r.name} (#{r.platform})" }.join(', ')}"
+      
       if @created_restaurants.empty?
+        Rails.logger.error "No restaurants created - triggering rollback"
         @contact_errors << "Failed to create any restaurants"
         raise ActiveRecord::Rollback
       end
 
       # Create notification contacts for all created restaurants
+      Rails.logger.info "Creating notification contacts for #{@created_restaurants.count} restaurants"
       @created_restaurants.each do |restaurant|
+        Rails.logger.info "Creating contacts for restaurant: #{restaurant.name} (#{restaurant.platform})"
         create_notification_contacts(restaurant)
 
         # Validate that restaurant has required contacts
         unless restaurant.has_required_contacts?
-          @contact_errors << "At least one WhatsApp or Telegram contact is required for #{restaurant.platform_name} restaurant"
+          error_msg = "At least one WhatsApp or Telegram contact is required for #{restaurant.platform_name} restaurant"
+          Rails.logger.error error_msg
+          @contact_errors << error_msg
         end
       end
 
+      Rails.logger.info "Contact errors count: #{@contact_errors.count}"
+      Rails.logger.info "Contact errors: #{@contact_errors}" if @contact_errors.any?
+      
       if @contact_errors.any?
+        Rails.logger.error "Contact errors detected - triggering rollback"
         raise ActiveRecord::Rollback
       end
 
+      Rails.logger.info "All validation passed - preparing success response"
+      
       # Prepare response data
       restaurants_data = @created_restaurants.map do |restaurant|
         {
@@ -258,6 +291,7 @@ class RestaurantsController < ApplicationController
         }
       end
 
+      Rails.logger.info "Transaction completed successfully - rendering success response"
       render json: {
         success: true,
         message: "Restaurant(s) and notification contacts added successfully!",
@@ -266,7 +300,12 @@ class RestaurantsController < ApplicationController
       }
     end
   rescue => e
-    Rails.logger.error "Error creating restaurant: #{e.message}"
+    Rails.logger.error "=== EXCEPTION CAUGHT IN RESTAURANT CREATION ==="
+    Rails.logger.error "Exception class: #{e.class}"
+    Rails.logger.error "Exception message: #{e.message}"
+    Rails.logger.error "Backtrace: #{e.backtrace.first(10).join("\n")}"
+    Rails.logger.error "Contact errors at exception: #{@contact_errors.inspect}"
+    
     render json: {
       success: false,
       errors: @contact_errors.presence || [ "An error occurred while creating the restaurant" ]
@@ -355,7 +394,9 @@ class RestaurantsController < ApplicationController
   end
 
   def create_platform_restaurant_with_data(platform, platform_data)
-    Rails.logger.info "Creating #{platform} restaurant with provided data: #{platform_data[:name]}"
+    Rails.logger.info "=== Creating #{platform} restaurant with provided data ==="
+    Rails.logger.info "Platform data keys: #{platform_data.keys}"
+    Rails.logger.info "Restaurant name: #{platform_data[:name]}"
     
     # Build restaurant attributes from provided platform data
     restaurant_attrs = {
@@ -364,20 +405,26 @@ class RestaurantsController < ApplicationController
       name: platform_data[:name],
       address: platform_data[:address],
       phone: platform_data[:phone],
-      image_url: platform_data[:image_url]
+      image_url: platform_data[:image_url],
+      rating: platform_data[:rating],
     }
+    Rails.logger.info "Restaurant attributes: #{restaurant_attrs}"
 
     restaurant = current_user.restaurants.build(restaurant_attrs)
+    Rails.logger.info "Built restaurant object: #{restaurant.inspect}"
 
     # Set coordinates if available
     coordinates_data = platform_data[:coordinates]
+    Rails.logger.info "Coordinates data: #{coordinates_data}"
     if coordinates_data.present?
       if coordinates_data.is_a?(Hash) && coordinates_data[:latitude] && coordinates_data[:longitude]
+        Rails.logger.info "Setting coordinates: #{coordinates_data[:latitude]}, #{coordinates_data[:longitude]}"
         restaurant.set_coordinates(coordinates_data[:latitude], coordinates_data[:longitude])
       elsif coordinates_data.is_a?(String)
         # Handle coordinate string format (latitude, longitude)
         coords = coordinates_data.split(',').map(&:strip)
         if coords.length == 2
+          Rails.logger.info "Setting coordinates from string: #{coords[0]}, #{coords[1]}"
           restaurant.set_coordinates(coords[0].to_f, coords[1].to_f)
         end
       end
@@ -385,12 +432,16 @@ class RestaurantsController < ApplicationController
 
     # Set cuisines
     cuisines_data = platform_data[:cuisines]
+    Rails.logger.info "Cuisines data: #{cuisines_data}"
     if cuisines_data.present?
+      Rails.logger.info "Setting cuisines: #{cuisines_data}"
       restaurant.set_cuisines(cuisines_data)
     end
 
+    Rails.logger.info "Attempting to save restaurant..."
     unless restaurant.save
       Rails.logger.error "Failed to save #{platform} restaurant: #{restaurant.errors.full_messages}"
+      Rails.logger.error "Restaurant validation errors: #{restaurant.errors.messages}"
       @contact_errors.concat(restaurant.errors.full_messages)
       return nil
     end
@@ -399,11 +450,56 @@ class RestaurantsController < ApplicationController
 
     # Create working hours if provided
     working_hours_data = platform_data[:working_hours]
+    Rails.logger.info "Working hours data: #{working_hours_data}"
     if working_hours_data.present?
+      Rails.logger.info "Creating working hours for restaurant"
       create_working_hours(restaurant, working_hours_data)
     end
 
+    # Create initial status check record from parsing data
+    status_data = platform_data[:status]
+    Rails.logger.info "Status data: #{status_data}"
+    if status_data.present?
+      Rails.logger.info "Creating initial status check for restaurant"
+      create_initial_status_check(restaurant, status_data)
+    end
+
+    Rails.logger.info "=== Completed creating #{platform} restaurant ==="
     restaurant
+  end
+
+  def create_initial_status_check(restaurant, status_data)
+    return unless status_data.is_a?(Hash) && status_data[:status_text].present?
+    
+    # Map parser status to database status
+    actual_status = case status_data[:status_text]
+    when 'open'
+      'open'
+    when 'closed', 'temporarily_closed'
+      'closed'
+    else
+      'unknown'
+    end
+    
+    # Get expected status from restaurant's working hours
+    expected_status = restaurant.expected_status_at(Time.current) rescue 'unknown'
+    
+    # Determine if this is an anomaly
+    is_anomaly = (expected_status == 'open' && actual_status == 'closed') ||
+                 (expected_status == 'closed' && actual_status == 'open')
+    
+    # Create the status check record
+    restaurant.restaurant_status_checks.create!(
+      checked_at: Time.current,
+      actual_status: actual_status,
+      expected_status: expected_status,
+      is_anomaly: is_anomaly,
+      parser_response: status_data.to_json
+    )
+    
+    Rails.logger.info "Created initial status check for #{restaurant.name}: #{actual_status} (expected: #{expected_status})"
+  rescue => e
+    Rails.logger.error "Failed to create initial status check: #{e.message}"
   end
 
   def get_parser_data(platform, platform_url)
@@ -423,36 +519,54 @@ class RestaurantsController < ApplicationController
   end
 
   def create_notification_contacts(restaurant)
+    Rails.logger.info "=== Creating notification contacts for #{restaurant.name} ==="
+    Rails.logger.info "WhatsApp contacts param: #{params[:whatsapp_contacts].inspect}"
+    Rails.logger.info "Telegram contacts param: #{params[:telegram_contacts].inspect}"
+    Rails.logger.info "Email contacts param: #{params[:email_contacts].inspect}"
+    
     # Create WhatsApp contacts
     if params[:whatsapp_contacts].present?
+      Rails.logger.info "Creating #{params[:whatsapp_contacts].count} WhatsApp contacts"
       params[:whatsapp_contacts].each do |contact_value|
+        Rails.logger.info "Creating WhatsApp contact: #{contact_value.strip}"
         create_contact(restaurant, "whatsapp", contact_value.strip)
       end
     end
 
     # Create Telegram contacts
     if params[:telegram_contacts].present?
+      Rails.logger.info "Creating #{params[:telegram_contacts].count} Telegram contacts"
       params[:telegram_contacts].each do |contact_value|
+        Rails.logger.info "Creating Telegram contact: #{contact_value.strip}"
         create_contact(restaurant, "telegram", contact_value.strip)
       end
     end
 
     # Create Email contacts
     if params[:email_contacts].present?
+      Rails.logger.info "Creating #{params[:email_contacts].count} Email contacts"
       params[:email_contacts].each do |contact_value|
+        Rails.logger.info "Creating Email contact: #{contact_value.strip}"
         create_contact(restaurant, "email", contact_value.strip)
       end
     end
+    
+    Rails.logger.info "=== Completed creating contacts for #{restaurant.name} ==="
   end
 
   def create_contact(restaurant, contact_type, contact_value)
+    Rails.logger.info "Creating #{contact_type} contact: #{contact_value} for restaurant #{restaurant.name}"
+    
     # Check if contact already exists for this restaurant
     existing_contact = restaurant.notification_contacts.find_by(
       contact_type: contact_type,
       contact_value: contact_value
     )
 
-    return if existing_contact
+    if existing_contact
+      Rails.logger.info "Contact already exists, skipping: #{contact_type} - #{contact_value}"
+      return
+    end
 
     contact = restaurant.notification_contacts.build(
       contact_type: contact_type,
@@ -460,7 +574,10 @@ class RestaurantsController < ApplicationController
     )
 
     unless contact.save
+      Rails.logger.error "Failed to save #{contact_type} contact #{contact_value}: #{contact.errors.full_messages}"
       @contact_errors.concat(contact.errors.full_messages)
+    else
+      Rails.logger.info "Successfully created #{contact_type} contact: #{contact_value}"
     end
   end
 

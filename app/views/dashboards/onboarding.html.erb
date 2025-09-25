@@ -362,14 +362,6 @@
               </div>
             </div>
 
-            <!-- Auto-fill info box (shown when contacts are auto-filled) -->
-            <div id="auto-fill-info" class="bg-blue-50 border border-blue-200 p-4 rounded-lg hidden">
-              <div class="flex items-start gap-2">
-                <i data-lucide="info" class="w-5 h-5 text-blue-600 mt-0.5"></i>
-                <div>
-                </div>
-              </div>
-            </div>
           </div>
         </div>
 
@@ -1170,11 +1162,6 @@
         if (field) field.value = '';
       });
       
-      // Hide auto-fill info box
-      const autoFillInfo = document.getElementById('auto-fill-info');
-      if (autoFillInfo) {
-        autoFillInfo.classList.add('hidden');
-      }
       
       // Update buttons
       updateButtons();
@@ -1316,11 +1303,6 @@
       // Show auto-fill notification and info box if any contacts were filled
       if (autoFilledCount > 0) {
         
-        // Show auto-fill info box
-        const autoFillInfo = document.getElementById('auto-fill-info');
-        if (autoFillInfo) {
-          autoFillInfo.classList.remove('hidden');
-        }
       }
     <% else %>
       // For non-logged in users, they don't have restaurants

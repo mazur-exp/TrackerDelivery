@@ -55,9 +55,6 @@ class Restaurant < ApplicationRecord
     self.coordinates = { latitude: lat, longitude: lng }.to_json
   end
 
-  def review_count
-    read_attribute(:review_count) || 0
-  end
 
   # Notification contact methods
   def all_whatsapp_contacts

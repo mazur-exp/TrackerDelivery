@@ -2,12 +2,18 @@
 
 one:
   user: one
-  name: MyString
-  gojek_url: MyString
-  grab_url: MyString
+  name: Test Restaurant One
+  platform: grab
+  platform_url: https://food.grab.com/id/en/restaurant/test-restaurant-one
+  address: Test Address 1
+  rating: "4.5"
+  review_count: 125
 
 two:
   user: two
-  name: MyString
-  gojek_url: MyString
-  grab_url: MyString
+  name: Test Restaurant Two
+  platform: gojek
+  platform_url: https://gofood.link/test-restaurant-two
+  address: Test Address 2
+  rating: "4.2"
+  review_count: 89

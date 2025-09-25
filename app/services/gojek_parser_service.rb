@@ -923,6 +923,7 @@ class GojekParserService < RetryableParser
     nil
   end
 
+
   def extract_working_hours_selenium(driver, skip_modal: false)
     Rails.logger.info "=== Extracting Working Hours (skip_modal: #{skip_modal}) ==="
     working_hours = []

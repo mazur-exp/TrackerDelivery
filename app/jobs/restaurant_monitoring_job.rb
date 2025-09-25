@@ -59,9 +59,15 @@ class RestaurantMonitoringJob < ApplicationJob
     # Get current expected status
     expected_status = restaurant.expected_status_at(Time.current)
 
-    # Get actual status from parser
-    actual_status_data = get_actual_status(restaurant)
+    # Get full restaurant data from parser (including rating)
+    full_data = get_full_restaurant_data(restaurant)
+    
+    # Extract status data
+    actual_status_data = extract_status_from_full_data(full_data)
     actual_status = determine_actual_status(actual_status_data)
+
+    # Update restaurant with new rating and review count if available
+    update_restaurant_data(restaurant, full_data)
 
     # Check for anomaly
     is_anomaly = is_status_anomaly?(expected_status, actual_status)
@@ -82,6 +88,55 @@ class RestaurantMonitoringJob < ApplicationJob
     end
 
     status_check
+  end
+
+  def get_full_restaurant_data(restaurant)
+    Rails.logger.info "Getting full restaurant data for monitoring"
+    
+    case restaurant.platform
+    when "grab"
+      GrabParserService.new.parse(restaurant.platform_url)
+    when "gojek"
+      GojekParserService.new.parse(restaurant.platform_url)
+    else
+      Rails.logger.error "Unknown platform: #{restaurant.platform}"
+      nil
+    end
+  rescue => e
+    Rails.logger.error "Error getting full restaurant data: #{e.message}"
+    nil
+  end
+
+  def extract_status_from_full_data(full_data)
+    return { is_open: nil, status_text: "error", error: "No data received" } unless full_data
+    
+    if full_data[:status]
+      full_data[:status]
+    else
+      # Fallback to assuming open if no status data but got other data
+      { is_open: true, status_text: "open", error: nil }
+    end
+  end
+
+  def update_restaurant_data(restaurant, full_data)
+    return unless full_data
+    
+    updates = {}
+    
+    # Update rating if present and different
+    if full_data[:rating].present? && full_data[:rating] != restaurant.rating
+      updates[:rating] = full_data[:rating]
+      Rails.logger.info "Updating rating from #{restaurant.rating} to #{full_data[:rating]}"
+    end
+    
+    
+    # Save updates if any
+    if updates.any?
+      restaurant.update!(updates)
+      Rails.logger.info "Restaurant #{restaurant.name} updated with new data"
+    end
+  rescue => e
+    Rails.logger.error "Error updating restaurant data: #{e.message}"
   end
 
   def get_actual_status(restaurant)

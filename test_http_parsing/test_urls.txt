@@ -1,0 +1,25 @@
+# Test URLs for HTTP Parsing
+# Add real restaurant URLs here for testing
+
+# Grab URLs (real test URLs)
+grab,https://r.grab.com/g/6-20250920_121514_8015D1829687499383E150126C5CEFCA_MEXMPS-6-C65ZV62KVNEDPE
+grab,https://r.grab.com/g/6-20250920_121529_8015D1829687499383E150126C5CEFCA_MEXMPS-6-C7EYJXBKG3AUGE
+grab,https://r.grab.com/g/6-20250920_121543_8015D1829687499383E150126C5CEFCA_MEXMPS-6-C6VDCKJTLZKCCA
+
+# GoJek URLs (real test URLs)
+gojek,https://gofood.link/a/Nt5i77d
+gojek,https://gofood.link/a/QK8wyTj
+gojek,https://gofood.link/a/MrswDDW
+
+# Format: platform,url
+# platform = grab or gojek
+# url = full restaurant URL
+
+# Instructions:
+# 1. Add real restaurant URLs from Grab and GoJek
+# 2. Use format: platform,url (one per line)
+# 3. Comment out lines with # if needed
+# 4. Test with: ruby load_test_urls.rb
+
+# Example test URLs (replace with real ones):
+# grab,https://food.grab.com/id/en/restaurant/warung-nasi-ayam-jakarta/IDGFTI0000123456

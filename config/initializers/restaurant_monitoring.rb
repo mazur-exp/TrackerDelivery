@@ -6,8 +6,8 @@
 
 Rails.application.config.after_initialize do
   # Only start monitoring in production and development environments
-  # Skip during tests, migrations, or console operations
-  unless Rails.env.test? || defined?(Rails::Console) || File.basename($0) == 'rake'
+  # Skip during tests, migrations, console operations, or asset precompilation
+  unless Rails.env.test? || defined?(Rails::Console) || File.basename($0) == 'rake' || ENV['ASSETS_PRECOMPILE'] || ENV['SECRET_KEY_BASE_DUMMY']
     Rails.logger.info "🚀 Starting Restaurant Monitoring System..."
     
     # Check if monitoring jobs are already running to prevent duplication

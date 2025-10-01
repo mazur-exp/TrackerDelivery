@@ -4,7 +4,9 @@ class DashboardsController < ApplicationController
 
   def show
     if current_user
-      @restaurants = current_user.restaurants.includes(:notification_contacts, :working_hours, :restaurant_status_checks)
+      @restaurants = current_user.restaurants
+        .includes(:notification_contacts, :working_hours, :restaurant_status_checks)
+        .ordered_by_status
       @total_restaurants = @restaurants.count
       @average_rating = calculate_average_rating(@restaurants)
     else

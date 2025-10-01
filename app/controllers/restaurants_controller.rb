@@ -409,6 +409,9 @@ class RestaurantsController < ApplicationController
       rating: platform_data[:rating],
     }
     Rails.logger.info "Restaurant attributes: #{restaurant_attrs}"
+    Rails.logger.info "=== Rating Debug ==="
+    Rails.logger.info "Rating from platform_data: #{platform_data[:rating].inspect}"
+    Rails.logger.info "Rating class: #{platform_data[:rating].class}"
 
     restaurant = current_user.restaurants.build(restaurant_attrs)
     Rails.logger.info "Built restaurant object: #{restaurant.inspect}"
@@ -458,10 +461,16 @@ class RestaurantsController < ApplicationController
 
     # Create initial status check record from parsing data
     status_data = platform_data[:status]
-    Rails.logger.info "Status data: #{status_data}"
+    Rails.logger.info "=== Initial Status Check Debug ==="
+    Rails.logger.info "Status data present: #{status_data.present?}"
+    Rails.logger.info "Status data value: #{status_data.inspect}"
+    Rails.logger.info "Status data class: #{status_data.class}"
+
     if status_data.present?
-      Rails.logger.info "Creating initial status check for restaurant"
+      Rails.logger.info "Creating initial status check for restaurant #{restaurant.id}"
       create_initial_status_check(restaurant, status_data)
+    else
+      Rails.logger.warn "No status data provided for restaurant #{restaurant.id}, skipping initial status check"
     end
 
     Rails.logger.info "=== Completed creating #{platform} restaurant ==="
@@ -469,8 +478,17 @@ class RestaurantsController < ApplicationController
   end
 
   def create_initial_status_check(restaurant, status_data)
-    return unless status_data.is_a?(Hash) && status_data[:status_text].present?
-    
+    Rails.logger.info "=== create_initial_status_check called ==="
+    Rails.logger.info "Restaurant: #{restaurant.id} - #{restaurant.name}"
+    Rails.logger.info "Status data: #{status_data.inspect}"
+    Rails.logger.info "Is Hash: #{status_data.is_a?(Hash)}"
+    Rails.logger.info "Has status_text: #{status_data[:status_text].present? if status_data.is_a?(Hash)}"
+
+    unless status_data.is_a?(Hash) && status_data[:status_text].present?
+      Rails.logger.warn "Skipping status check - invalid data format or missing status_text"
+      return
+    end
+
     # Map parser status to database status
     actual_status = case status_data[:status_text]
     when 'open'
@@ -480,26 +498,31 @@ class RestaurantsController < ApplicationController
     else
       'unknown'
     end
-    
+
+    Rails.logger.info "Mapped actual_status: #{actual_status}"
+
     # Get expected status from restaurant's working hours
     expected_status = restaurant.expected_status_at(Time.current) rescue 'unknown'
-    
+    Rails.logger.info "Expected status: #{expected_status}"
+
     # Determine if this is an anomaly
     is_anomaly = (expected_status == 'open' && actual_status == 'closed') ||
                  (expected_status == 'closed' && actual_status == 'open')
-    
+    Rails.logger.info "Is anomaly: #{is_anomaly}"
+
     # Create the status check record
-    restaurant.restaurant_status_checks.create!(
+    status_check = restaurant.restaurant_status_checks.create!(
       checked_at: Time.current,
       actual_status: actual_status,
       expected_status: expected_status,
       is_anomaly: is_anomaly,
       parser_response: status_data.to_json
     )
-    
-    Rails.logger.info "Created initial status check for #{restaurant.name}: #{actual_status} (expected: #{expected_status})"
+
+    Rails.logger.info "✅ Created initial status check ID: #{status_check.id} for #{restaurant.name}: #{actual_status} (expected: #{expected_status})"
   rescue => e
-    Rails.logger.error "Failed to create initial status check: #{e.message}"
+    Rails.logger.error "❌ Failed to create initial status check: #{e.class} - #{e.message}"
+    Rails.logger.error e.backtrace.first(5).join("\n")
   end
 
   def get_parser_data(platform, platform_url)
@@ -609,5 +632,149 @@ class RestaurantsController < ApplicationController
   rescue => e
     Rails.logger.error "Error creating working hours: #{e.message}"
     @contact_errors << "Failed to save working hours"
+  end
+
+  public
+
+  # Restaurant management actions
+  def show
+    Rails.logger.info "=== RestaurantsController#show called ==="
+    Rails.logger.info "Params: #{params.inspect}"
+    Rails.logger.info "Current user: #{current_user&.id}"
+    Rails.logger.info "Restaurant ID: #{params[:id]}"
+
+    @restaurant = current_user.restaurants.find(params[:id])
+    Rails.logger.info "Restaurant found: #{@restaurant.name}"
+
+    render json: {
+      success: true,
+      restaurant: {
+        id: @restaurant.id,
+        name: @restaurant.name,
+        platform: @restaurant.platform,
+        is_active: @restaurant.is_active,
+        contacts: {
+          whatsapp: @restaurant.all_whatsapp_contacts,
+          telegram: @restaurant.all_telegram_contacts,
+          email: @restaurant.all_email_contacts
+        }
+      }
+    }
+  rescue ActiveRecord::RecordNotFound => e
+    Rails.logger.error "Restaurant not found: #{e.message}"
+    render json: {
+      success: false,
+      errors: ["Restaurant not found"]
+    }, status: :not_found
+  rescue => e
+    Rails.logger.error "Error fetching restaurant: #{e.message}"
+    Rails.logger.error e.backtrace.join("\n")
+    render json: {
+      success: false,
+      errors: [e.message]
+    }, status: :unprocessable_entity
+  end
+
+  def update
+    @restaurant = current_user.restaurants.find(params[:id])
+
+    if params[:contacts].present?
+      update_restaurant_contacts(@restaurant, params[:contacts])
+    end
+
+    if params[:is_active].present?
+      @restaurant.update!(is_active: params[:is_active])
+    end
+
+    render json: {
+      success: true,
+      message: "Restaurant updated successfully",
+      restaurant: {
+        id: @restaurant.id,
+        name: @restaurant.name,
+        is_active: @restaurant.is_active,
+        contacts: {
+          whatsapp: @restaurant.all_whatsapp_contacts,
+          telegram: @restaurant.all_telegram_contacts,
+          email: @restaurant.all_email_contacts
+        }
+      }
+    }
+  rescue => e
+    Rails.logger.error "Error updating restaurant: #{e.message}"
+    render json: {
+      success: false,
+      errors: [e.message]
+    }, status: :unprocessable_entity
+  end
+
+  def destroy
+    @restaurant = current_user.restaurants.find(params[:id])
+    @restaurant.destroy!
+
+    render json: {
+      success: true,
+      message: "Restaurant deleted successfully"
+    }
+  rescue => e
+    Rails.logger.error "Error deleting restaurant: #{e.message}"
+    render json: {
+      success: false,
+      errors: [e.message]
+    }, status: :unprocessable_entity
+  end
+
+  def toggle_active
+    @restaurant = current_user.restaurants.find(params[:id])
+    @restaurant.toggle_active!
+
+    render json: {
+      success: true,
+      is_active: @restaurant.is_active,
+      message: @restaurant.is_active ? "Restaurant activated" : "Restaurant deactivated"
+    }
+  rescue => e
+    Rails.logger.error "Error toggling restaurant status: #{e.message}"
+    render json: {
+      success: false,
+      errors: [e.message]
+    }, status: :unprocessable_entity
+  end
+
+  private
+
+  def update_restaurant_contacts(restaurant, contacts_data)
+    # Remove old contacts
+    restaurant.notification_contacts.destroy_all if contacts_data[:replace]
+
+    # Add new WhatsApp contacts
+    if contacts_data[:whatsapp].present?
+      contacts_data[:whatsapp].each do |contact_value|
+        restaurant.notification_contacts.find_or_create_by!(
+          contact_type: "whatsapp",
+          contact_value: contact_value.strip
+        )
+      end
+    end
+
+    # Add new Telegram contacts
+    if contacts_data[:telegram].present?
+      contacts_data[:telegram].each do |contact_value|
+        restaurant.notification_contacts.find_or_create_by!(
+          contact_type: "telegram",
+          contact_value: contact_value.strip
+        )
+      end
+    end
+
+    # Add new Email contacts
+    if contacts_data[:email].present?
+      contacts_data[:email].each do |contact_value|
+        restaurant.notification_contacts.find_or_create_by!(
+          contact_type: "email",
+          contact_value: contact_value.strip
+        )
+      end
+    end
   end
 end

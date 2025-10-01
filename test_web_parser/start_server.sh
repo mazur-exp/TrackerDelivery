@@ -17,4 +17,4 @@ echo ""
 
 # Start the server
 cd "$(dirname "$0")"
-ruby parser.rb 3000
+ruby parser.rb 3001

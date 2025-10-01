@@ -1050,11 +1050,13 @@
           image_url: platformData.grab.image_url,
           coordinates: platformData.grab.coordinates,
           cuisines: platformData.grab.cuisines || [],
-          working_hours: platformData.grab.working_hours || []
+          working_hours: platformData.grab.working_hours || [],
+          rating: platformData.grab.rating,
+          status: platformData.grab.status
         };
       }
 
-      // Add GoJek platform data if available  
+      // Add GoJek platform data if available
       if (formData.gofoodUrl && platformData.gojek) {
         restaurantData.platforms.gojek = {
           platform_url: formData.gofoodUrl,
@@ -1064,7 +1066,9 @@
           image_url: platformData.gojek.image_url,
           coordinates: platformData.gojek.coordinates,
           cuisines: platformData.gojek.cuisines || [],
-          working_hours: platformData.gojek.working_hours || []
+          working_hours: platformData.gojek.working_hours || [],
+          rating: platformData.gojek.rating,
+          status: platformData.gojek.status
         };
       }
       

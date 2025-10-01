@@ -13,4 +13,10 @@ export PORT="${PORT:-3000}"
 export RUBY_DEBUG_OPEN="true"
 export RUBY_DEBUG_LAZY="true"
 
-exec foreman start -f Procfile.dev "$@"
+# If Rails already running on PORT, avoid restarting it and only run CSS watcher
+if command -v lsof >/dev/null 2>&1 && lsof -iTCP:"$PORT" -sTCP:LISTEN -n -P >/dev/null 2>&1; then
+  echo "Detected a server already listening on port $PORT. Starting only Tailwind watcher..."
+  exec bin/rails tailwindcss:watch "$@"
+else
+  exec foreman start -f Procfile.dev "$@"
+fi

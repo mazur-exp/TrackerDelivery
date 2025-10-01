@@ -49,8 +49,12 @@ module Authentication
   end
 
   def request_authentication
-    session[:return_to_after_authenticating] = request.url
-    redirect_to root_path, alert: "Please sign in to continue."
+    if request.format.json? || request.xhr?
+      render json: { success: false, errors: ["Authentication required"] }, status: :unauthorized
+    else
+      session[:return_to_after_authenticating] = request.url
+      redirect_to root_path, alert: "Please sign in to continue."
+    end
   end
 
   def start_new_session_for(user)

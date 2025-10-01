@@ -75,6 +75,11 @@ class NotificationContact < ApplicationRecord
     when "whatsapp"
       # Format phone number with spaces for display: +62 812 3456 7890
       contact_value.gsub(/(\+\d{2})(\d{3})(\d{4})(\d{4})/, '\1 \2 \3 \4')
+    when "telegram"
+      # Show both username and Chat ID if available
+      parts = [contact_value]
+      parts << "(ID: #{telegram_chat_id})" if telegram_chat_id.present?
+      parts.join(" ")
     else
       contact_value
     end
@@ -118,6 +123,13 @@ class NotificationContact < ApplicationRecord
     telegram_regex = /\A@?[a-zA-Z0-9_]{5,32}\z/
     unless contact_value&.match?(telegram_regex)
       errors.add(:contact_value, "is not a valid Telegram username")
+    end
+    
+    # Validate telegram_chat_id format if present (should be numeric)
+    if telegram_chat_id.present?
+      unless telegram_chat_id.match?(/\A-?\d+\z/)
+        errors.add(:telegram_chat_id, "must be a numeric Chat ID")
+      end
     end
   end
 

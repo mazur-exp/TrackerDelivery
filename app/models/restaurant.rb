@@ -17,6 +17,9 @@ class Restaurant < ApplicationRecord
   # Scopes
   scope :grab_restaurants, -> { where(platform: "grab") }
   scope :gojek_restaurants, -> { where(platform: "gojek") }
+  scope :active, -> { where(is_active: true) }
+  scope :inactive, -> { where(is_active: false) }
+  scope :ordered_by_status, -> { order(is_active: :desc, created_at: :desc) }
 
   # Instance methods
   def display_name
@@ -33,6 +36,22 @@ class Restaurant < ApplicationRecord
 
   def is_gojek?
     platform == "gojek"
+  end
+
+  def active?
+    is_active
+  end
+
+  def deactivate!
+    update!(is_active: false)
+  end
+
+  def activate!
+    update!(is_active: true)
+  end
+
+  def toggle_active!
+    update!(is_active: !is_active)
   end
 
   # Coordinates methods
@@ -119,16 +138,18 @@ class Restaurant < ApplicationRecord
 
   # Status monitoring methods
   def expected_status_at(time = Time.current)
-    day_name = time.strftime('%A').downcase
-    hours = working_hours_for_day(day_name)
+    # Convert to Indonesia time (most restaurants are in WIB/WITA)
+    local_time = time.in_time_zone('Asia/Jakarta')
+    day_of_week = (local_time.wday + 6) % 7  # Convert Ruby's wday (0=Sunday) to our format (0=Monday)
+    hours = working_hours.for_day(day_of_week).first
     
     return "unknown" unless hours
     return "closed" if hours.is_closed?
     
-    current_time = time.strftime('%H:%M')
+    current_time = local_time.strftime('%H:%M')
     
-    if hours.open_time.present? && hours.close_time.present?
-      return "open" if current_time >= hours.open_time && current_time <= hours.close_time
+    if hours.opens_at.present? && hours.closes_at.present?
+      return "open" if current_time >= hours.opens_at.strftime('%H:%M') && current_time <= hours.closes_at.strftime('%H:%M')
       return "closed"
     end
     

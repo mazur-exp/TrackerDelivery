@@ -11,7 +11,9 @@ class NotificationService
     restaurant.notification_contacts.each do |contact|
       case contact.contact_type
       when "telegram"
-        send_telegram_message(contact.contact_value, message)
+        # Use telegram_chat_id if available, fallback to contact_value
+        chat_identifier = contact.telegram_chat_id.presence || contact.contact_value
+        send_telegram_message(chat_identifier, message)
       when "whatsapp"
         send_whatsapp_message(contact.contact_value, message)
       when "email"
@@ -41,9 +43,9 @@ class NotificationService
   private
 
   def format_anomaly_message(restaurant, status_check)
-    severity_emoji = case status_check.severity
-    when :critical then "🚨"
-    when :warning then "⚠️"
+    severity_emoji = case status_check.anomaly_severity
+    when :high then "🚨"
+    when :medium then "⚠️"
     else "ℹ️"
     end
 
@@ -56,7 +58,7 @@ class NotificationService
       *Platform:* #{restaurant.platform.upcase}
       *Time:* #{current_time} WITA
 
-      *Issue:* #{status_check.anomaly_description}
+      *Issue:* Expected #{status_check.expected_status} but got #{status_check.actual_status}
 
       *Expected:* #{status_check.expected_status.upcase}
       *Actual:* #{status_check.actual_status.upcase}

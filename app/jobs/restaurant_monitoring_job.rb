@@ -5,8 +5,8 @@ class RestaurantMonitoringJob < ApplicationJob
     Rails.logger.info "=== Restaurant Monitoring Job Started ==="
     start_time = Time.current
 
-    restaurants = Restaurant.includes(:working_hours, :notification_contacts).all
-    Rails.logger.info "Monitoring #{restaurants.count} restaurants"
+    restaurants = Restaurant.active.includes(:working_hours, :notification_contacts)
+    Rails.logger.info "Monitoring #{restaurants.count} active restaurants"
 
     results = {
       total: restaurants.count,
@@ -54,10 +54,32 @@ class RestaurantMonitoringJob < ApplicationJob
   private
 
   def check_restaurant_status(restaurant)
-    Rails.logger.info "Checking restaurant: #{restaurant.name} (#{restaurant.platform})"
+    # Use database-level advisory lock to prevent duplicate processing
+    lock_key = "restaurant_monitoring_#{restaurant.id}"
+    
+    # Try to acquire lock for 10 seconds max
+    result = Restaurant.connection.execute(
+      "SELECT pg_try_advisory_lock(hashtext('#{lock_key}')) as acquired"
+    ).first rescue nil
+    
+    # For SQLite, use simpler approach with timestamp check
+    if Restaurant.connection.adapter_name.include?('SQLite')
+      # Check if restaurant was processed in last 4 minutes (buffer before 5min schedule)
+      last_check = restaurant.restaurant_status_checks.order(checked_at: :desc).first
+      if last_check && last_check.checked_at > 4.minutes.ago
+        Rails.logger.info "Skipping #{restaurant.name} - recently processed at #{last_check.checked_at}"
+        return nil
+      end
+    elsif !result || result['acquired'] != true
+      Rails.logger.info "Skipping #{restaurant.name} - being processed by another worker"
+      return nil
+    end
 
-    # Get current expected status
-    expected_status = restaurant.expected_status_at(Time.current)
+    begin
+      Rails.logger.info "Checking restaurant: #{restaurant.name} (#{restaurant.platform})"
+
+      # Get current expected status
+      expected_status = restaurant.expected_status_at(Time.current)
 
     # Get full restaurant data from parser (including rating)
     full_data = get_full_restaurant_data(restaurant)
@@ -84,10 +106,20 @@ class RestaurantMonitoringJob < ApplicationJob
     # Send notification if anomaly detected
     if is_anomaly
       Rails.logger.warn "ANOMALY DETECTED for #{restaurant.name}: expected #{expected_status}, got #{actual_status}"
+      Rails.logger.info "Sending anomaly notification for #{restaurant.name}"
       NotificationService.new.send_restaurant_anomaly_alert(restaurant, status_check)
     end
 
     status_check
+    
+    ensure
+      # Release advisory lock for PostgreSQL
+      unless Restaurant.connection.adapter_name.include?('SQLite')
+        Restaurant.connection.execute(
+          "SELECT pg_advisory_unlock(hashtext('#{lock_key}'))"
+        ) rescue nil
+      end
+    end
   end
 
   def get_full_restaurant_data(restaurant)

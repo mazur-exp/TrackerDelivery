@@ -66,33 +66,44 @@ class GrabParserService < RetryableParser
   private
 
   def parse_implementation(url)
+    start_time = Time.now
     Rails.logger.info "=== Grab Selenium Parser Starting for URL: #{url} ==="
+    Rails.logger.info "Grab: Process PID: #{Process.pid}, Debug port: #{9223 + (Process.pid % 1000)}"
     return nil if url.blank?
 
     driver = nil
     begin
       Timeout.timeout(TIMEOUT_SECONDS) do
         # Setup Chrome with headless options
+        setup_start = Time.now
         driver = setup_chrome_driver
+        Rails.logger.info "Grab: Chrome setup completed in #{(Time.now - setup_start).round(2)}s"
 
+        nav_start = Time.now
         Rails.logger.info "Grab: Navigating to URL with Selenium..."
         driver.get(url)
+        Rails.logger.info "Grab: Navigation completed in #{(Time.now - nav_start).round(2)}s"
 
         # Wait for page to load
         Rails.logger.info "Grab: Waiting for page to load..."
         sleep(2)
 
         # Wait for content to appear
+        wait_start = Time.now
         wait = Selenium::WebDriver::Wait.new(timeout: 8)
         wait.until { driver.execute_script("return document.readyState") == "complete" }
+        Rails.logger.info "Grab: Page ready state reached in #{(Time.now - wait_start).round(2)}s"
 
         current_url = driver.current_url
         Rails.logger.info "Grab: Final URL: #{current_url}"
 
         # First try to extract from JSON data (more reliable)
+        json_start = Time.now
         json_data = extract_json_data_selenium(driver)
+        Rails.logger.info "Grab: JSON extraction took #{(Time.now - json_start).round(2)}s"
+
         if json_data && json_data.any?
-          Rails.logger.info "Grab: Using JSON data extraction"
+          Rails.logger.info "Grab: Using JSON data extraction (found #{json_data.keys.size} keys)"
           data = json_data
 
           # If address is missing, try to get it from DOM
@@ -101,7 +112,7 @@ class GrabParserService < RetryableParser
             dom_address = extract_address_selenium(driver)
             data[:address] = dom_address if dom_address.present?
           end
-          
+
         else
           Rails.logger.info "Grab: Falling back to DOM extraction"
           # Extract data from the page DOM (fallback)
@@ -115,18 +126,29 @@ class GrabParserService < RetryableParser
           }
         end
 
+        total_time = Time.now - start_time
         Rails.logger.info "Grab: Extracted data: #{data.inspect}"
+        Rails.logger.info "Grab: Total parsing time: #{total_time.round(2)}s"
         data
       end
-    rescue Timeout::Error
+    rescue Timeout::Error => e
+      total_time = Time.now - start_time
       Rails.logger.error "Timeout while parsing Grab URL: #{url}"
+      Rails.logger.error "Grab: Failed after #{total_time.round(2)}s (timeout: #{TIMEOUT_SECONDS}s)"
+      nil
+    rescue Selenium::WebDriver::Error::WebDriverError => e
+      Rails.logger.error "Grab: WebDriver error for URL #{url}: #{e.class} - #{e.message}"
+      Rails.logger.error "Grab: This might indicate ChromeDriver port conflict or browser setup issue"
+      Rails.logger.error e.backtrace.first(5).join("\n")
       nil
     rescue => e
-      Rails.logger.error "Error parsing Grab URL #{url}: #{e.message}"
-      Rails.logger.error e.backtrace.join("\n")
+      total_time = Time.now - start_time rescue 0
+      Rails.logger.error "Error parsing Grab URL #{url}: #{e.class} - #{e.message}"
+      Rails.logger.error "Grab: Failed after #{total_time.round(2)}s"
+      Rails.logger.error e.backtrace.first(5).join("\n")
       nil
     ensure
-      driver&.quit
+      driver&.quit rescue nil
       Rails.logger.info "Grab: Browser closed"
     end
   end
@@ -496,7 +518,11 @@ class GrabParserService < RetryableParser
     options.add_argument("--disable-plugins")
     options.add_argument("--disable-web-security")
     options.add_argument("--window-size=1920,1080")
-    
+
+    # Use dynamic port to avoid conflicts between multiple processes
+    debug_port = 9223 + (Process.pid % 1000)
+    options.add_argument("--remote-debugging-port=#{debug_port}")
+
     # Simplified Chrome flags - remove potentially problematic ones
     options.add_argument("--disable-blink-features=AutomationControlled")
     options.add_argument("--no-first-run")
@@ -512,6 +538,10 @@ class GrabParserService < RetryableParser
     # Network optimization
     options.add_argument("--aggressive-cache-discard")
     options.add_argument("--disable-background-networking")
+
+    # Add unique user data directory to avoid locking port conflicts
+    user_data_dir = "/tmp/chrome_grab_#{Process.pid}"
+    options.add_argument("--user-data-dir=#{user_data_dir}")
 
     # Detect Chrome binary with improved logic
     chrome_binary = detect_chrome_binary

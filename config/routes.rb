@@ -31,11 +31,14 @@ Rails.application.routes.draw do
   get "onboarding" => "dashboards#onboarding"
 
   # Restaurant management
-  resources :restaurants, only: [ :create ] do
+  resources :restaurants, only: [ :create, :show, :update, :destroy ] do
     collection do
       post :extract_data
       post :extract_gojek_data
       post :extract_grab_data
+    end
+    member do
+      patch :toggle_active
     end
   end
 

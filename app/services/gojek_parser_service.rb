@@ -4,7 +4,7 @@ require_relative "retryable_parser"
 require_relative "cuisine_translation_service"
 
 class GojekParserService < RetryableParser
-  TIMEOUT_SECONDS = 60  # Increased for production server performance
+  TIMEOUT_SECONDS = 30  # Sufficient timeout for reliable parsing
 
   def parse(url)
     parse_with_retry(url)
@@ -279,7 +279,13 @@ class GojekParserService < RetryableParser
     options.add_argument("--disable-gpu")
     options.add_argument("--disable-software-rasterizer")
     options.add_argument("--window-size=1920,1080")
-    options.add_argument("--remote-debugging-port=9223")
+    # Use dynamic port to avoid conflicts between multiple processes
+    debug_port = 9223 + (Process.pid % 1000)
+    options.add_argument("--remote-debugging-port=#{debug_port}")
+    
+    # Add unique user data directory to avoid locking port conflicts
+    user_data_dir = "/tmp/chrome_gojek_#{Process.pid}"
+    options.add_argument("--user-data-dir=#{user_data_dir}")
 
     # Detect Chrome binary with improved logic first
     chrome_binary = detect_chrome_binary

@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2025_09_25_084919) do
+ActiveRecord::Schema[8.0].define(version: 2025_10_01_152925) do
   create_table "cuisine_translations", force: :cascade do |t|
     t.string "indonesian", null: false
     t.string "english", null: false
@@ -36,10 +36,12 @@ ActiveRecord::Schema[8.0].define(version: 2025_09_25_084919) do
     t.boolean "is_active", default: true
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.string "telegram_chat_id"
     t.index ["restaurant_id", "contact_type", "is_primary"], name: "index_notification_contacts_on_restaurant_type_primary"
     t.index ["restaurant_id", "contact_type"], name: "index_notification_contacts_on_restaurant_id_and_contact_type"
     t.index ["restaurant_id", "is_primary"], name: "index_notification_contacts_on_restaurant_id_and_is_primary"
     t.index ["restaurant_id"], name: "index_notification_contacts_on_restaurant_id"
+    t.index ["telegram_chat_id"], name: "index_notification_contacts_on_telegram_chat_id"
   end
 
   create_table "restaurant_status_checks", force: :cascade do |t|
@@ -72,6 +74,8 @@ ActiveRecord::Schema[8.0].define(version: 2025_09_25_084919) do
     t.string "platform_url", null: false
     t.text "coordinates"
     t.string "rating"
+    t.boolean "is_active", default: true, null: false
+    t.index ["is_active"], name: "index_restaurants_on_is_active"
     t.index ["platform"], name: "index_restaurants_on_platform"
     t.index ["user_id"], name: "index_restaurants_on_user_id"
   end

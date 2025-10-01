@@ -151,11 +151,11 @@
           <button class="tab-btn px-4 py-2 text-sm font-medium rounded-md transition-colors bg-white text-gray-900 shadow-sm" data-tab="restaurants">
             Restaurants
           </button>
-          <button class="tab-btn px-4 py-2 text-sm font-medium rounded-md transition-colors text-gray-500 hover:text-gray-700" data-tab="alerts">
-            Alerts
+          <button class="tab-btn px-4 py-2 text-sm font-medium rounded-md transition-colors text-gray-500 hover:text-gray-700" data-tab="outofstock">
+            Out of Stock
           </button>
-          <button class="tab-btn px-4 py-2 text-sm font-medium rounded-md transition-colors text-gray-500 hover:text-gray-700" data-tab="stock">
-            Stock
+          <button class="tab-btn px-4 py-2 text-sm font-medium rounded-md transition-colors text-gray-500 hover:text-gray-700" data-tab="reviews">
+            Reviews
           </button>
           <button class="tab-btn px-4 py-2 text-sm font-medium rounded-md transition-colors text-gray-500 hover:text-gray-700" data-tab="settings">
             Settings
@@ -166,7 +166,7 @@
         <div id="restaurants-tab" class="tab-content space-y-4">
           <% if @restaurants.present? %>
             <% @restaurants.each do |restaurant| %>
-              <div class="bg-white rounded-xl border shadow-sm hover:shadow-md transition-shadow p-6">
+              <div class="<%= restaurant.is_active ? 'bg-white' : 'bg-gray-100' %> rounded-xl border shadow-sm hover:shadow-md transition-shadow p-6 <%= restaurant.is_active ? '' : 'opacity-60' %>">
                 <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
                   <div class="flex items-center gap-4">
                     <% if restaurant.image_url.present? %>
@@ -196,7 +196,7 @@
 
                   <div class="flex flex-col lg:flex-row items-start lg:items-center gap-4 lg:gap-8">
                     <div class="flex items-center gap-2">
-                      <% latest_check = restaurant.restaurant_status_checks.recent(1.hour).last %>
+                      <% latest_check = restaurant.restaurant_status_checks.recent(24.hours).last %>
                       <% if latest_check %>
                         <% case latest_check.actual_status %>
                         <% when 'open' %>
@@ -261,78 +261,132 @@
           <% end %>
         </div>
 
-        <!-- Alerts Tab -->
-        <div id="alerts-tab" class="tab-content hidden space-y-4">
+        <!-- Out of Stock Tab -->
+        <div id="outofstock-tab" class="tab-content hidden space-y-4">
           <div class="bg-white rounded-xl border shadow-sm">
             <div class="p-6 border-b">
               <h3 class="text-lg font-semibold flex items-center gap-2">
-                <i data-lucide="bell" class="w-5 h-5"></i>
-                Recent Alerts
+                <i data-lucide="package-x" class="w-5 h-5"></i>
+                Out of Stock Items
               </h3>
-              <p class="text-gray-600 text-sm mt-1">Monitor important notifications across all platforms</p>
+              <p class="text-gray-600 text-sm mt-1">Monitor inventory shortages across all restaurant locations</p>
             </div>
             <div class="p-6">
-              <div class="space-y-4" id="alerts-container">
-                <!-- Alert 1 -->
-                <div class="flex items-center justify-between p-4 border rounded-lg alert-item">
-                  <div class="flex items-center gap-3">
-                    <div class="inline-flex items-center px-2 py-1 rounded-md border-transparent bg-red-500 text-white text-xs font-medium gap-1">
-                      <i data-lucide="alert-triangle" class="w-3 h-3"></i>
-                      HIGH
+              <div class="space-y-4">
+                <!-- Out of Stock Item 1 -->
+                <div class="border rounded-lg p-4 bg-red-50 border-red-200">
+                  <div class="flex items-start justify-between">
+                    <div class="flex items-start gap-3">
+                      <div class="w-8 h-8 bg-red-100 rounded-full flex items-center justify-center">
+                        <i data-lucide="x-circle" class="w-4 h-4 text-red-600"></i>
+                      </div>
+                      <div class="flex-1">
+                        <h4 class="font-semibold text-gray-900">Caesar Salad with Chicken</h4>
+                        <p class="text-sm text-gray-600">Nasi Padang Express • GoJek</p>
+                        <div class="flex items-center gap-2 mt-2">
+                          <span class="inline-flex items-center px-2 py-1 rounded text-xs font-medium bg-red-600 text-white">
+                            Out of Stock
+                          </span>
+                          <div class="flex items-center gap-1 text-xs text-gray-500">
+                            <i data-lucide="clock" class="w-3 h-3"></i>
+                            16d 7h 13m
+                          </div>
+                        </div>
+                        <div class="flex items-center gap-4 mt-2">
+                          <span class="inline-flex items-center px-2 py-1 rounded text-xs font-medium bg-red-100 text-red-700">
+                            High Priority
+                          </span>
+                          <span class="text-xs text-gray-600">Popular item - affects revenue</span>
+                        </div>
+                      </div>
                     </div>
-                    <div>
-                      <p class="font-medium">Chicken stock running low (5 portions left)</p>
-                      <p class="text-sm text-gray-500">5 mins ago</p>
+                    <div class="flex items-center gap-2">
+                      <button class="inline-flex items-center px-3 py-2 text-sm font-medium text-green-700 bg-green-100 hover:bg-green-200 rounded-md transition-colors">
+                        <i data-lucide="check" class="w-4 h-4 mr-1"></i>
+                        Mark Available
+                      </button>
+                      <button class="inline-flex items-center px-2 py-2 text-gray-400 hover:text-gray-600 rounded-md transition-colors">
+                        <i data-lucide="more-horizontal" class="w-4 h-4"></i>
+                      </button>
                     </div>
-                  </div>
-                  <div class="flex items-center gap-2">
-                    <button class="inline-flex items-center px-3 py-2 border border-gray-300 rounded-md text-sm font-medium hover:bg-gray-50">
-                      Restock
-                    </button>
-                    <button class="dismiss-alert inline-flex items-center px-3 py-2 text-gray-400 hover:text-gray-600 rounded-md transition-colors">
-                      Dismiss
-                    </button>
                   </div>
                 </div>
 
-                <!-- Alert 2 -->
-                <div class="flex items-center justify-between p-4 border rounded-lg alert-item">
-                  <div class="flex items-center gap-3">
-                    <div class="inline-flex items-center px-2 py-1 rounded-md border-transparent bg-gray-200 text-gray-700 text-xs font-medium gap-1">
-                      <i data-lucide="clock" class="w-3 h-3"></i>
-                      MEDIUM
+                <!-- Out of Stock Item 2 -->
+                <div class="border rounded-lg p-4 bg-orange-50 border-orange-200">
+                  <div class="flex items-start justify-between">
+                    <div class="flex items-start gap-3">
+                      <div class="w-8 h-8 bg-orange-100 rounded-full flex items-center justify-center">
+                        <i data-lucide="x-circle" class="w-4 h-4 text-orange-600"></i>
+                      </div>
+                      <div class="flex-1">
+                        <h4 class="font-semibold text-gray-900">Burger with Bacon</h4>
+                        <p class="text-sm text-gray-600">Burger Corner • Grab</p>
+                        <div class="flex items-center gap-2 mt-2">
+                          <span class="inline-flex items-center px-2 py-1 rounded text-xs font-medium bg-orange-600 text-white">
+                            Out of Stock
+                          </span>
+                          <div class="flex items-center gap-1 text-xs text-gray-500">
+                            <i data-lucide="clock" class="w-3 h-3"></i>
+                            13d 0h 58m
+                          </div>
+                        </div>
+                        <div class="flex items-center gap-4 mt-2">
+                          <span class="inline-flex items-center px-2 py-1 rounded text-xs font-medium bg-orange-100 text-orange-700">
+                            Medium Priority
+                          </span>
+                          <span class="text-xs text-gray-600">Regular item</span>
+                        </div>
+                      </div>
                     </div>
-                    <div>
-                      <p class="font-medium">New 2-star review received</p>
-                      <p class="text-sm text-gray-500">10 mins ago</p>
+                    <div class="flex items-center gap-2">
+                      <button class="inline-flex items-center px-3 py-2 text-sm font-medium text-green-700 bg-green-100 hover:bg-green-200 rounded-md transition-colors">
+                        <i data-lucide="check" class="w-4 h-4 mr-1"></i>
+                        Mark Available
+                      </button>
+                      <button class="inline-flex items-center px-2 py-2 text-gray-400 hover:text-gray-600 rounded-md transition-colors">
+                        <i data-lucide="more-horizontal" class="w-4 h-4"></i>
+                      </button>
                     </div>
-                  </div>
-                  <div class="flex items-center gap-2">
-                    <button class="inline-flex items-center px-3 py-2 border border-gray-300 rounded-md text-sm font-medium hover:bg-gray-50">
-                      Respond
-                    </button>
-                    <button class="dismiss-alert inline-flex items-center px-3 py-2 text-gray-400 hover:text-gray-600 rounded-md transition-colors">
-                      Dismiss
-                    </button>
                   </div>
                 </div>
 
-                <!-- Alert 3 -->
-                <div class="flex items-center justify-between p-4 border rounded-lg alert-item">
-                  <div class="flex items-center gap-3">
-                    <div class="inline-flex items-center px-2 py-1 rounded-md border border-gray-300 text-gray-700 text-xs font-medium gap-1">
-                      <i data-lucide="check-circle" class="w-3 h-3"></i>
-                      LOW
+                <!-- Out of Stock Item 3 -->
+                <div class="border rounded-lg p-4 bg-red-50 border-red-200">
+                  <div class="flex items-start justify-between">
+                    <div class="flex items-start gap-3">
+                      <div class="w-8 h-8 bg-red-100 rounded-full flex items-center justify-center">
+                        <i data-lucide="x-circle" class="w-4 h-4 text-red-600"></i>
+                      </div>
+                      <div class="flex-1">
+                        <h4 class="font-semibold text-gray-900">Sushi Set "Philadelphia"</h4>
+                        <p class="text-sm text-gray-600">Only Eggs • GoJek</p>
+                        <div class="flex items-center gap-2 mt-2">
+                          <span class="inline-flex items-center px-2 py-1 rounded text-xs font-medium bg-red-600 text-white">
+                            Out of Stock
+                          </span>
+                          <div class="flex items-center gap-1 text-xs text-gray-500">
+                            <i data-lucide="clock" class="w-3 h-3"></i>
+                            19d 5h 28m
+                          </div>
+                        </div>
+                        <div class="flex items-center gap-4 mt-2">
+                          <span class="inline-flex items-center px-2 py-1 rounded text-xs font-medium bg-red-100 text-red-700">
+                            Critical
+                          </span>
+                          <span class="text-xs text-gray-600">Best seller - urgent restocking needed</span>
+                        </div>
+                      </div>
                     </div>
-                    <div>
-                      <p class="font-medium">Order #1234 ready for pickup</p>
-                      <p class="text-sm text-gray-500">2 mins ago</p>
+                    <div class="flex items-center gap-2">
+                      <button class="inline-flex items-center px-3 py-2 text-sm font-medium text-green-700 bg-green-100 hover:bg-green-200 rounded-md transition-colors">
+                        <i data-lucide="check" class="w-4 h-4 mr-1"></i>
+                        Mark Available
+                      </button>
+                      <button class="inline-flex items-center px-2 py-2 text-gray-400 hover:text-gray-600 rounded-md transition-colors">
+                        <i data-lucide="more-horizontal" class="w-4 h-4"></i>
+                      </button>
                     </div>
-                  </div>
-                  <div class="flex items-center gap-2">
-                    <button class="dismiss-alert inline-flex items-center px-3 py-2 text-gray-400 hover:text-gray-600 rounded-md transition-colors">
-                      Dismiss
-                    </button>
                   </div>
                 </div>
               </div>
@@ -340,64 +394,65 @@
           </div>
         </div>
 
-        <!-- Stock Tab -->
-        <div id="stock-tab" class="tab-content hidden space-y-4">
+        <!-- Reviews Tab -->
+        <div id="reviews-tab" class="tab-content hidden space-y-4">
           <div class="bg-white rounded-xl border shadow-sm">
             <div class="p-6 border-b">
               <h3 class="text-lg font-semibold flex items-center gap-2">
-                <i data-lucide="package" class="w-5 h-5"></i>
-                Stock Levels
+                <i data-lucide="star" class="w-5 h-5"></i>
+                Recent Reviews
               </h3>
-              <p class="text-gray-600 text-sm mt-1">Monitor inventory across all restaurant locations</p>
+              <p class="text-gray-600 text-sm mt-1">Monitor and respond to customer feedback</p>
             </div>
-            <div class="p-6">
-              <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <!-- Stock Item 1 -->
-                <div class="space-y-3">
-                  <div class="flex justify-between items-center">
-                    <span class="text-sm font-medium">Chicken Breast</span>
-                    <span class="text-sm text-gray-500">5 kg</span>
+            <div class="divide-y">
+              <!-- Review 1 -->
+              <div class="p-6">
+                <div class="flex items-start justify-between">
+                  <div class="flex-1">
+                    <div class="flex items-center gap-2 mb-2">
+                      <div class="flex items-center">
+                        <i data-lucide="star" class="w-4 h-4 fill-yellow-400 text-yellow-400"></i>
+                        <i data-lucide="star" class="w-4 h-4 fill-yellow-400 text-yellow-400"></i>
+                        <i data-lucide="star" class="w-4 h-4 fill-yellow-400 text-yellow-400"></i>
+                        <i data-lucide="star" class="w-4 h-4 fill-yellow-400 text-yellow-400"></i>
+                        <i data-lucide="star" class="w-4 h-4 text-gray-300"></i>
+                      </div>
+                      <span class="font-semibold">4.0</span>
+                      <span class="text-gray-500">•</span>
+                      <span class="text-sm text-gray-500">2 hours ago</span>
+                    </div>
+                    <p class="text-gray-900 mb-2">"Food was great but delivery took longer than expected. Will order again!"</p>
+                    <p class="text-sm text-gray-500">Platform: GoJek</p>
                   </div>
-                  <div class="w-full bg-gray-200 rounded-full h-2">
-                    <div class="h-2 rounded-full bg-red-500 transition-all duration-300" style="width: 50%"></div>
-                  </div>
-                  <div class="flex items-center gap-2 text-red-600 text-sm">
-                    <i data-lucide="alert-triangle" class="w-4 h-4"></i>
-                    Critical - Restock immediately
-                  </div>
+                  <button class="ml-4 inline-flex items-center px-3 py-2 text-sm font-medium text-green-700 bg-green-100 hover:bg-green-200 rounded-md transition-colors">
+                    Reply
+                  </button>
                 </div>
+              </div>
 
-                <!-- Stock Item 2 -->
-                <div class="space-y-3">
-                  <div class="flex justify-between items-center">
-                    <span class="text-sm font-medium">Rice</span>
-                    <span class="text-sm text-gray-500">25 kg</span>
+              <!-- Review 2 -->
+              <div class="p-6">
+                <div class="flex items-start justify-between">
+                  <div class="flex-1">
+                    <div class="flex items-center gap-2 mb-2">
+                      <div class="flex items-center">
+                        <i data-lucide="star" class="w-4 h-4 fill-yellow-400 text-yellow-400"></i>
+                        <i data-lucide="star" class="w-4 h-4 fill-yellow-400 text-yellow-400"></i>
+                        <i data-lucide="star" class="w-4 h-4 text-gray-300"></i>
+                        <i data-lucide="star" class="w-4 h-4 text-gray-300"></i>
+                        <i data-lucide="star" class="w-4 h-4 text-gray-300"></i>
+                      </div>
+                      <span class="font-semibold">2.0</span>
+                      <span class="text-gray-500">•</span>
+                      <span class="text-sm text-gray-500">4 hours ago</span>
+                    </div>
+                    <p class="text-gray-900 mb-2">"Food was cold when it arrived. Not satisfied with the service."</p>
+                    <p class="text-sm text-gray-500">Platform: Grab</p>
                   </div>
-                  <div class="w-full bg-gray-200 rounded-full h-2">
-                    <div class="h-2 rounded-full bg-green-500 transition-all duration-300" style="width: 100%"></div>
-                  </div>
-                </div>
-
-                <!-- Stock Item 3 -->
-                <div class="space-y-3">
-                  <div class="flex justify-between items-center">
-                    <span class="text-sm font-medium">Cooking Oil</span>
-                    <span class="text-sm text-gray-500">8 L</span>
-                  </div>
-                  <div class="w-full bg-gray-200 rounded-full h-2">
-                    <div class="h-2 rounded-full bg-yellow-500 transition-all duration-300" style="width: 53%"></div>
-                  </div>
-                </div>
-
-                <!-- Stock Item 4 -->
-                <div class="space-y-3">
-                  <div class="flex justify-between items-center">
-                    <span class="text-sm font-medium">Onions</span>
-                    <span class="text-sm text-gray-500">12 kg</span>
-                  </div>
-                  <div class="w-full bg-gray-200 rounded-full h-2">
-                    <div class="h-2 rounded-full bg-green-500 transition-all duration-300" style="width: 100%"></div>
-                  </div>
+                  <button class="ml-4 inline-flex items-center px-3 py-2 text-sm font-medium text-red-700 bg-red-100 hover:bg-red-200 rounded-md transition-colors">
+                    <i data-lucide="alert-triangle" class="w-4 h-4 mr-1"></i>
+                    Urgent Reply
+                  </button>
                 </div>
               </div>
             </div>
@@ -470,12 +525,193 @@
               </div>
             </div>
           </div>
+
+          <!-- Restaurant Management Section -->
+          <div class="bg-white rounded-xl border shadow-sm">
+            <div class="p-6 border-b">
+              <h3 class="text-lg font-semibold flex items-center gap-2">
+                <i data-lucide="store" class="w-5 h-5"></i>
+                Restaurant Management
+              </h3>
+              <p class="text-gray-600 text-sm mt-1">Manage your restaurants and notification contacts</p>
+            </div>
+            <div class="p-6">
+              <div class="space-y-4">
+                <% @restaurants.each do |restaurant| %>
+                  <div class="border rounded-lg p-4 <%= restaurant.is_active ? 'bg-white' : 'bg-gray-50 opacity-60' %>" data-restaurant-id="<%= restaurant.id %>">
+                    <div class="flex items-start justify-between">
+                      <div class="flex items-center gap-3 flex-1">
+                        <% if restaurant.image_url.present? %>
+                          <img src="<%= restaurant.image_url %>" alt="<%= restaurant.name %>" class="w-12 h-12 rounded-lg object-cover flex-shrink-0" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                          <div class="w-12 h-12 rounded-lg bg-gradient-to-br from-gray-200 to-gray-300 flex items-center justify-center flex-shrink-0" style="display: none;">
+                            <i data-lucide="store" class="w-6 h-6 text-gray-500"></i>
+                          </div>
+                        <% else %>
+                          <div class="w-12 h-12 rounded-lg bg-gradient-to-br from-gray-200 to-gray-300 flex items-center justify-center flex-shrink-0">
+                            <i data-lucide="store" class="w-6 h-6 text-gray-500"></i>
+                          </div>
+                        <% end %>
+                        <div class="flex-1">
+                          <div class="flex items-center gap-2">
+                            <h4 class="font-medium <%= restaurant.is_active ? 'text-gray-900' : 'text-gray-500' %>">
+                              <%= restaurant.name %>
+                            </h4>
+                          <span class="px-2 py-0.5 text-xs font-medium rounded <%= restaurant.platform == 'grab' ? 'bg-green-100 text-green-700' : 'bg-blue-100 text-blue-700' %>">
+                            <%= restaurant.platform_name %>
+                          </span>
+                          <% unless restaurant.is_active %>
+                            <span class="px-2 py-0.5 text-xs font-medium rounded bg-gray-200 text-gray-600">
+                              Inactive
+                            </span>
+                          <% end %>
+                        </div>
+                        <p class="text-sm text-gray-600 mt-1"><%= restaurant.address %></p>
+                        <div class="mt-2 flex flex-wrap gap-2">
+                          <% if restaurant.all_whatsapp_contacts.any? %>
+                            <span class="text-xs text-gray-600">
+                              <i data-lucide="phone" class="w-3 h-3 inline"></i>
+                              <%= restaurant.all_whatsapp_contacts.count %> WhatsApp
+                            </span>
+                          <% end %>
+                          <% if restaurant.all_telegram_contacts.any? %>
+                            <span class="text-xs text-gray-600">
+                              <i data-lucide="message-circle" class="w-3 h-3 inline"></i>
+                              <%= restaurant.all_telegram_contacts.count %> Telegram
+                            </span>
+                          <% end %>
+                          <% if restaurant.all_email_contacts.any? %>
+                            <span class="text-xs text-gray-600">
+                              <i data-lucide="mail" class="w-3 h-3 inline"></i>
+                              <%= restaurant.all_email_contacts.count %> Email
+                            </span>
+                          <% end %>
+                        </div>
+                        </div>
+                      </div>
+                      <div class="flex items-center gap-2 ml-4">
+                        <button onclick="editRestaurant(<%= restaurant.id %>)" class="px-3 py-2 bg-gradient-to-r from-green-600 to-emerald-700 hover:from-green-700 hover:to-emerald-800 text-white rounded-lg transition-all shadow-sm hover:shadow flex items-center gap-1.5" title="Edit contacts">
+                          <i data-lucide="edit-2" class="w-4 h-4"></i>
+                        </button>
+                        <button onclick="toggleRestaurantActive(<%= restaurant.id %>, <%= restaurant.is_active %>)" class="px-3 py-2 bg-gradient-to-r <%= restaurant.is_active ? 'from-orange-500 to-amber-600 hover:from-orange-600 hover:to-amber-700' : 'from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700' %> text-white rounded-lg transition-all shadow-sm hover:shadow flex items-center gap-1.5" title="<%= restaurant.is_active ? 'Pause monitoring' : 'Activate monitoring' %>">
+                          <i data-lucide="<%= restaurant.is_active ? 'pause-circle' : 'play-circle' %>" class="w-4 h-4"></i>
+                        </button>
+                        <button onclick="deleteRestaurant(<%= restaurant.id %>)" class="px-3 py-2 bg-gradient-to-r from-red-600 to-rose-700 hover:from-red-700 hover:to-rose-800 text-white rounded-lg transition-all shadow-sm hover:shadow flex items-center gap-1.5" title="Delete">
+                          <i data-lucide="trash-2" class="w-4 h-4"></i>
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                <% end %>
+
+                <% if @restaurants.empty? %>
+                  <div class="text-center py-8 text-gray-500">
+                    <i data-lucide="store" class="w-12 h-12 mx-auto mb-2 text-gray-300"></i>
+                    <p>No restaurants yet</p>
+                    <a href="/onboarding" class="text-green-600 hover:underline text-sm mt-2 inline-block">Add your first restaurant</a>
+                  </div>
+                <% end %>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
 
       <!-- Footer -->
       <div class="text-center text-sm text-gray-500">
         Last updated: <span id="lastUpdate">-</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Custom Confirm Dialog Modal -->
+  <div id="confirmDialog" class="fixed inset-0 bg-gray-900 bg-opacity-50 hidden items-center justify-center z-50" style="display: none;">
+    <div class="bg-white rounded-2xl shadow-2xl max-w-md w-full mx-4 overflow-hidden">
+      <div class="p-6">
+        <div class="flex items-start gap-4">
+          <div id="confirmIcon" class="flex-shrink-0 w-12 h-12 rounded-full bg-red-100 flex items-center justify-center">
+            <i data-lucide="log-out" class="w-6 h-6 text-red-600"></i>
+          </div>
+          <div class="flex-1">
+            <h3 id="confirmTitle" class="text-lg font-semibold text-gray-900 mb-1">Confirm Action</h3>
+            <p id="confirmMessage" class="text-sm text-gray-600">Are you sure you want to proceed?</p>
+          </div>
+        </div>
+      </div>
+      <div class="flex gap-3 px-6 pb-6">
+        <button id="confirmCancel" class="flex-1 px-4 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-700 font-medium rounded-lg transition-colors">
+          Cancel
+        </button>
+        <button id="confirmOk" class="flex-1 px-4 py-2.5 bg-red-600 hover:bg-red-700 text-white font-medium rounded-lg transition-colors">
+          Confirm
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Edit Contacts Modal -->
+  <div id="editContactsModal" class="fixed inset-0 bg-gray-900 bg-opacity-50 hidden items-center justify-center z-50" style="display: none;">
+    <div class="bg-white rounded-2xl shadow-2xl max-w-2xl w-full mx-4 overflow-hidden">
+      <div class="bg-gradient-to-r from-green-600 to-emerald-700 p-6">
+        <div class="flex items-center justify-between">
+          <h3 class="text-xl font-semibold text-white">Edit Notification Contacts</h3>
+          <button onclick="closeEditContactsModal()" class="text-white hover:bg-white hover:bg-opacity-20 rounded-lg p-2 transition-colors">
+            <i data-lucide="x" class="w-5 h-5"></i>
+          </button>
+        </div>
+        <p class="text-green-100 text-sm mt-1" id="editModalRestaurantName">Restaurant Name</p>
+      </div>
+
+      <div class="p-6 max-h-96 overflow-y-auto">
+        <!-- WhatsApp Contacts -->
+        <div class="mb-6">
+          <label class="block text-sm font-medium text-gray-700 mb-2">
+            <i data-lucide="phone" class="w-4 h-4 inline mr-1"></i>
+            WhatsApp Numbers
+          </label>
+          <div id="whatsappContactsList" class="space-y-2 mb-2">
+            <!-- Dynamic list of WhatsApp contacts -->
+          </div>
+          <button onclick="addContactField('whatsapp')" class="text-sm text-green-600 hover:text-green-700 font-medium">
+            + Add WhatsApp Number
+          </button>
+        </div>
+
+        <!-- Telegram Contacts -->
+        <div class="mb-6">
+          <label class="block text-sm font-medium text-gray-700 mb-2">
+            <i data-lucide="message-circle" class="w-4 h-4 inline mr-1"></i>
+            Telegram Usernames
+          </label>
+          <div id="telegramContactsList" class="space-y-2 mb-2">
+            <!-- Dynamic list of Telegram contacts -->
+          </div>
+          <button onclick="addContactField('telegram')" class="text-sm text-green-600 hover:text-green-700 font-medium">
+            + Add Telegram Username
+          </button>
+        </div>
+
+        <!-- Email Contacts -->
+        <div class="mb-6">
+          <label class="block text-sm font-medium text-gray-700 mb-2">
+            <i data-lucide="mail" class="w-4 h-4 inline mr-1"></i>
+            Email Addresses
+          </label>
+          <div id="emailContactsList" class="space-y-2 mb-2">
+            <!-- Dynamic list of Email contacts -->
+          </div>
+          <button onclick="addContactField('email')" class="text-sm text-green-600 hover:text-green-700 font-medium">
+            + Add Email Address
+          </button>
+        </div>
+      </div>
+
+      <div class="flex gap-3 px-6 pb-6 border-t pt-4">
+        <button onclick="closeEditContactsModal()" class="flex-1 px-4 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-700 font-medium rounded-lg transition-colors">
+          Cancel
+        </button>
+        <button onclick="saveContactsChanges()" class="flex-1 px-4 py-2.5 bg-gradient-to-r from-green-600 to-emerald-700 hover:from-green-700 hover:to-emerald-800 text-white font-medium rounded-lg transition-colors">
+          Save Changes
+        </button>
       </div>
     </div>
   </div>
@@ -858,6 +1094,589 @@
           hideLogoutModal();
         }
       });
+    }
+
+    // Custom Confirm Dialog System
+    function showConfirmDialog(title, message, iconName, iconBg, buttonText, buttonColor, callback) {
+      console.log('showConfirmDialog called with:', { title, message, iconName, iconBg, buttonText, buttonColor });
+      const dialog = document.getElementById('confirmDialog');
+      const icon = document.getElementById('confirmIcon');
+      const titleElement = document.getElementById('confirmTitle');
+      const messageElement = document.getElementById('confirmMessage');
+      const okButton = document.getElementById('confirmOk');
+      const cancelButton = document.getElementById('confirmCancel');
+
+      if (!dialog || !icon || !titleElement || !messageElement || !okButton || !cancelButton) {
+        console.error('Missing dialog elements:', { dialog, icon, titleElement, messageElement, okButton, cancelButton });
+        return;
+      }
+
+      titleElement.textContent = title;
+      messageElement.textContent = message;
+      icon.className = `flex-shrink-0 w-12 h-12 rounded-full flex items-center justify-center ${iconBg}`;
+
+      // Replace icon completely
+      icon.innerHTML = `<i data-lucide="${iconName}" class="w-6 h-6"></i>`;
+
+      okButton.textContent = buttonText;
+      okButton.className = `flex-1 px-4 py-2.5 ${buttonColor} text-white font-medium rounded-lg transition-colors`;
+
+      // Reinitialize lucide icons for the new icon
+      if (window.lucide) {
+        lucide.createIcons();
+      }
+
+      dialog.style.display = 'flex';
+      dialog.classList.remove('hidden');
+
+      function closeDialog() {
+        dialog.style.display = 'none';
+        dialog.classList.add('hidden');
+        okButton.onclick = null;
+        cancelButton.onclick = null;
+      }
+
+      okButton.onclick = function() {
+        closeDialog();
+        callback();
+      };
+
+      cancelButton.onclick = closeDialog;
+
+      dialog.onclick = function(e) {
+        if (e.target === this) {
+          closeDialog();
+        }
+      };
+    }
+
+    // Restaurant Management Functions
+    let currentEditingRestaurantId = null;
+
+    function toggleRestaurantActive(restaurantId, currentlyActive) {
+      console.log('toggleRestaurantActive called:', restaurantId, currentlyActive);
+      const title = currentlyActive ? 'Pause Monitoring' : 'Activate Monitoring';
+      const message = currentlyActive
+        ? 'Are you sure you want to pause monitoring for this restaurant? It will stop receiving status checks.'
+        : 'Are you sure you want to activate monitoring for this restaurant?';
+      const iconName = currentlyActive ? 'pause-circle' : 'play-circle';
+      const iconBg = currentlyActive ? 'bg-orange-100' : 'bg-green-100';
+      const buttonText = currentlyActive ? 'Pause' : 'Activate';
+      const buttonColor = currentlyActive ? 'bg-orange-600 hover:bg-orange-700' : 'bg-green-600 hover:bg-green-700';
+
+      showConfirmDialog(title, message, iconName, iconBg, buttonText, buttonColor, function() {
+        console.log('Confirm dialog callback executed');
+        const url = `/restaurants/${restaurantId}/toggle_active`;
+        const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+
+        console.log('Fetching:', url);
+        console.log('CSRF Token:', csrfToken);
+        console.log('Headers:', {
+          'Content-Type': 'application/json',
+          'X-CSRF-Token': csrfToken,
+          'Accept': 'application/json'
+        });
+
+        fetch(url, {
+          method: 'PATCH',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-Token': csrfToken,
+            'Accept': 'application/json'
+          },
+          credentials: 'same-origin'
+        })
+        .then(response => {
+          console.log('Response status:', response.status);
+          console.log('Response headers:', response.headers);
+          console.log('Response content-type:', response.headers.get('content-type'));
+
+          if (!response.ok) {
+            return response.text().then(text => {
+              console.error('Response error text:', text);
+              throw new Error(`HTTP ${response.status}: ${text.substring(0, 200)}`);
+            });
+          }
+
+          return response.json();
+        })
+        .then(data => {
+          console.log('Response data:', data);
+          if (data.success) {
+            showToast(data.message || 'Restaurant status updated', 'success');
+
+            // Update the restaurant card UI without reload
+            updateRestaurantCardStatus(restaurantId, data.is_active);
+
+            // Stay on Settings tab and scroll to restaurant list
+            const settingsButton = document.querySelector('button[data-tab="settings"]');
+            if (settingsButton) {
+              settingsButton.click();
+              setTimeout(() => {
+                const restaurantCard = document.querySelector(`[data-restaurant-id="${restaurantId}"]`);
+                if (restaurantCard) {
+                  restaurantCard.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                }
+              }, 200);
+            }
+          } else {
+            showToast('Error: ' + (data.errors || ['Unknown error']).join(', '), 'error');
+          }
+        })
+        .catch(error => {
+          console.error('Fetch error:', error);
+          showToast('Failed to update restaurant status: ' + error.message, 'error');
+        });
+      });
+    }
+
+    function deleteRestaurant(restaurantId) {
+      console.log('deleteRestaurant called:', restaurantId);
+      const title = 'Delete Restaurant';
+      const message = 'Are you sure you want to delete this restaurant? This action cannot be undone. All data including contacts and status history will be permanently removed.';
+      const iconName = 'trash-2';
+      const iconBg = 'bg-red-100';
+      const buttonText = 'Delete';
+      const buttonColor = 'bg-red-600 hover:bg-red-700';
+
+      showConfirmDialog(title, message, iconName, iconBg, buttonText, buttonColor, function() {
+        console.log('Delete confirm dialog callback executed');
+        const url = `/restaurants/${restaurantId}`;
+        const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+
+        console.log('DELETE Fetching:', url);
+        console.log('CSRF Token:', csrfToken);
+
+        fetch(url, {
+          method: 'DELETE',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-Token': csrfToken,
+            'Accept': 'application/json'
+          },
+          credentials: 'same-origin'
+        })
+        .then(response => {
+          console.log('DELETE Response status:', response.status);
+          console.log('DELETE Response content-type:', response.headers.get('content-type'));
+
+          if (!response.ok) {
+            return response.text().then(text => {
+              console.error('DELETE Response error text:', text);
+              throw new Error(`HTTP ${response.status}: ${text.substring(0, 200)}`);
+            });
+          }
+
+          return response.json();
+        })
+        .then(data => {
+          console.log('DELETE Response data:', data);
+          if (data.success) {
+            // Remove card from UI
+            const restaurantCard = document.querySelector(`[data-restaurant-id="${restaurantId}"]`);
+            if (restaurantCard) {
+              restaurantCard.style.opacity = '0';
+              restaurantCard.style.transform = 'scale(0.95)';
+              restaurantCard.style.transition = 'all 0.3s ease';
+              setTimeout(() => {
+                restaurantCard.remove();
+                showToast(data.message || 'Restaurant deleted successfully', 'success');
+              }, 300);
+            }
+          } else {
+            showToast('Error: ' + (data.errors || ['Unknown error']).join(', '), 'error');
+          }
+        })
+        .catch(error => {
+          console.error('DELETE Fetch error:', error);
+          showToast('Failed to delete restaurant: ' + error.message, 'error');
+        });
+      });
+    }
+
+    function editRestaurant(restaurantId) {
+      console.log('editRestaurant called:', restaurantId);
+      currentEditingRestaurantId = restaurantId;
+
+      // Fetch restaurant data
+      const restaurantCard = document.querySelector(`[data-restaurant-id="${restaurantId}"]`);
+      const restaurantName = restaurantCard.querySelector('h4').textContent.trim();
+      console.log('Restaurant name:', restaurantName);
+
+      // Fetch current contacts from server
+      const url = `/restaurants/${restaurantId}`;
+      const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+
+      console.log('GET Fetching restaurant data from:', url);
+      console.log('CSRF Token:', csrfToken);
+
+      fetch(url, {
+        method: 'GET',
+        headers: {
+          'Accept': 'application/json',
+          'Content-Type': 'application/json',
+          'X-CSRF-Token': csrfToken
+        },
+        credentials: 'same-origin'
+      })
+        .then(response => {
+          console.log('GET Response status:', response.status);
+          console.log('GET Response content-type:', response.headers.get('content-type'));
+
+          if (!response.ok) {
+            return response.text().then(text => {
+              console.error('GET Response error text:', text);
+              throw new Error(`HTTP ${response.status}: ${text.substring(0, 200)}`);
+            });
+          }
+
+          return response.json();
+        })
+        .then(data => {
+          console.log('GET Restaurant data:', data);
+          if (data.success) {
+            openEditContactsModal(restaurantName, data.restaurant.contacts);
+          } else {
+            console.error('Failed to fetch restaurant:', data);
+            showToast('Failed to load contacts: ' + (data.errors || ['Unknown error']).join(', '), 'error');
+            // Still open modal with empty contacts so user can add
+            openEditContactsModal(restaurantName, { whatsapp: [], telegram: [], email: [] });
+          }
+        })
+        .catch(error => {
+          console.error('GET Error fetching restaurant data:', error);
+          showToast('Failed to load contacts: ' + error.message, 'error');
+          // Fallback: open modal with empty contacts
+          openEditContactsModal(restaurantName, { whatsapp: [], telegram: [], email: [] });
+        });
+    }
+
+    function openEditContactsModal(restaurantName, contacts) {
+      console.log('openEditContactsModal called with:', { restaurantName, contacts });
+      const modal = document.getElementById('editContactsModal');
+      const nameElement = document.getElementById('editModalRestaurantName');
+
+      nameElement.textContent = restaurantName;
+
+      // Populate WhatsApp contacts
+      const whatsappList = document.getElementById('whatsappContactsList');
+      whatsappList.innerHTML = '';
+      const whatsappContacts = contacts.whatsapp || [];
+      console.log('WhatsApp contacts:', whatsappContacts);
+      if (whatsappContacts.length === 0) {
+        // Add one empty field if no contacts
+        addContactToList('whatsapp', '', whatsappList);
+      } else {
+        whatsappContacts.forEach(contact => {
+          addContactToList('whatsapp', contact, whatsappList);
+        });
+      }
+
+      // Populate Telegram contacts
+      const telegramList = document.getElementById('telegramContactsList');
+      telegramList.innerHTML = '';
+      const telegramContacts = contacts.telegram || [];
+      console.log('Telegram contacts:', telegramContacts);
+      if (telegramContacts.length === 0) {
+        // Add one empty field if no contacts
+        addContactToList('telegram', '', telegramList);
+      } else {
+        telegramContacts.forEach(contact => {
+          addContactToList('telegram', contact, telegramList);
+        });
+      }
+
+      // Populate Email contacts
+      const emailList = document.getElementById('emailContactsList');
+      emailList.innerHTML = '';
+      const emailContacts = contacts.email || [];
+      console.log('Email contacts:', emailContacts);
+      if (emailContacts.length === 0) {
+        // Add one empty field if no contacts
+        addContactToList('email', '', emailList);
+      } else {
+        emailContacts.forEach(contact => {
+          addContactToList('email', contact, emailList);
+        });
+      }
+
+      modal.style.display = 'flex';
+      modal.classList.remove('hidden');
+
+      // Reinitialize lucide icons
+      if (window.lucide) {
+        lucide.createIcons();
+      }
+    }
+
+    function closeEditContactsModal() {
+      const modal = document.getElementById('editContactsModal');
+      modal.style.display = 'none';
+      modal.classList.add('hidden');
+      currentEditingRestaurantId = null;
+    }
+
+    function addContactToList(type, value, listElement) {
+      const contactDiv = document.createElement('div');
+      contactDiv.className = 'flex items-center gap-2';
+
+      const input = document.createElement('input');
+      input.type = 'text';
+      input.value = value;
+      input.className = 'flex-1 px-3 py-2 border rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500';
+      input.placeholder = type === 'whatsapp' ? '+62812345678' : type === 'telegram' ? '@username' : 'email@example.com';
+      input.dataset.contactType = type;
+
+      const removeBtn = document.createElement('button');
+      removeBtn.type = 'button';
+      removeBtn.className = 'p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors';
+      removeBtn.innerHTML = '<i data-lucide="x" class="w-4 h-4"></i>';
+      removeBtn.onclick = function() {
+        contactDiv.remove();
+      };
+
+      contactDiv.appendChild(input);
+      contactDiv.appendChild(removeBtn);
+      listElement.appendChild(contactDiv);
+
+      // Reinitialize lucide icons
+      if (window.lucide) {
+        lucide.createIcons();
+      }
+    }
+
+    function addContactField(type) {
+      const listId = type + 'ContactsList';
+      const listElement = document.getElementById(listId);
+      addContactToList(type, '', listElement);
+    }
+
+    function saveContactsChanges() {
+      if (!currentEditingRestaurantId) return;
+
+      // Collect all contacts
+      const whatsappInputs = document.querySelectorAll('#whatsappContactsList input');
+      const telegramInputs = document.querySelectorAll('#telegramContactsList input');
+      const emailInputs = document.querySelectorAll('#emailContactsList input');
+
+      const contacts = {
+        whatsapp: Array.from(whatsappInputs).map(input => input.value.trim()).filter(v => v),
+        telegram: Array.from(telegramInputs).map(input => input.value.trim()).filter(v => v),
+        email: Array.from(emailInputs).map(input => input.value.trim()).filter(v => v),
+        replace: true // Replace all contacts
+      };
+
+      // Send to server
+      fetch(`/restaurants/${currentEditingRestaurantId}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRF-Token': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content')
+        },
+        body: JSON.stringify({ contacts })
+      })
+      .then(response => response.json())
+      .then(data => {
+        if (data.success) {
+          closeEditContactsModal();
+          showToast('Contacts updated successfully', 'success');
+
+          // Update contact counts in the card without reload
+          updateRestaurantContactCounts(currentEditingRestaurantId, data.restaurant.contacts);
+
+          // Stay on Settings tab and scroll to the restaurant
+          const settingsButton = document.querySelector('button[data-tab="settings"]');
+          if (settingsButton) {
+            settingsButton.click();
+            setTimeout(() => {
+              const restaurantCard = document.querySelector(`[data-restaurant-id="${currentEditingRestaurantId}"]`);
+              if (restaurantCard) {
+                restaurantCard.scrollIntoView({ behavior: 'smooth', block: 'center' });
+
+                // Highlight briefly
+                restaurantCard.style.transition = 'all 0.3s ease';
+                restaurantCard.style.boxShadow = '0 0 0 3px rgba(34, 197, 94, 0.5)';
+                setTimeout(() => {
+                  restaurantCard.style.boxShadow = '';
+                }, 2000);
+              }
+            }, 200);
+          }
+        } else {
+          showToast('Error: ' + (data.errors || ['Unknown error']).join(', '), 'error');
+        }
+      })
+      .catch(error => {
+        console.error('Error:', error);
+        showToast('Failed to update contacts', 'error');
+      });
+    }
+
+    // Update restaurant contact counts without page reload
+    function updateRestaurantContactCounts(restaurantId, contacts) {
+      console.log('Updating restaurant contacts:', restaurantId, contacts);
+      const restaurantCard = document.querySelector(`[data-restaurant-id="${restaurantId}"]`);
+
+      if (!restaurantCard) {
+        console.error('Restaurant card not found:', restaurantId);
+        return;
+      }
+
+      // Find the contacts display container
+      const contactsContainer = restaurantCard.querySelector('.mt-2.flex.flex-wrap.gap-2');
+
+      if (!contactsContainer) {
+        console.error('Contacts container not found');
+        return;
+      }
+
+      // Clear existing contacts display
+      contactsContainer.innerHTML = '';
+
+      // Add WhatsApp contacts
+      if (contacts.whatsapp && contacts.whatsapp.length > 0) {
+        const whatsappSpan = document.createElement('span');
+        whatsappSpan.className = 'text-xs text-gray-600';
+        whatsappSpan.innerHTML = `<i data-lucide="phone" class="w-3 h-3 inline"></i> ${contacts.whatsapp.length} WhatsApp`;
+        contactsContainer.appendChild(whatsappSpan);
+      }
+
+      // Add Telegram contacts
+      if (contacts.telegram && contacts.telegram.length > 0) {
+        const telegramSpan = document.createElement('span');
+        telegramSpan.className = 'text-xs text-gray-600';
+        telegramSpan.innerHTML = `<i data-lucide="message-circle" class="w-3 h-3 inline"></i> ${contacts.telegram.length} Telegram`;
+        contactsContainer.appendChild(telegramSpan);
+      }
+
+      // Add Email contacts
+      if (contacts.email && contacts.email.length > 0) {
+        const emailSpan = document.createElement('span');
+        emailSpan.className = 'text-xs text-gray-600';
+        emailSpan.innerHTML = `<i data-lucide="mail" class="w-3 h-3 inline"></i> ${contacts.email.length} Email`;
+        contactsContainer.appendChild(emailSpan);
+      }
+
+      // Reinitialize lucide icons
+      if (window.lucide) {
+        lucide.createIcons();
+      }
+    }
+
+    // Update restaurant card status without page reload
+    function updateRestaurantCardStatus(restaurantId, isActive) {
+      console.log('Updating restaurant card:', restaurantId, 'isActive:', isActive);
+      const restaurantCard = document.querySelector(`[data-restaurant-id="${restaurantId}"]`);
+
+      if (!restaurantCard) {
+        console.error('Restaurant card not found:', restaurantId);
+        return;
+      }
+
+      // Update background color
+      if (isActive) {
+        restaurantCard.classList.remove('bg-gray-50', 'opacity-60');
+        restaurantCard.classList.add('bg-white');
+      } else {
+        restaurantCard.classList.remove('bg-white');
+        restaurantCard.classList.add('bg-gray-50', 'opacity-60');
+      }
+
+      // Update inactive badge
+      const nameContainer = restaurantCard.querySelector('h4').parentElement;
+      let inactiveBadge = nameContainer.querySelector('.inactive-badge');
+
+      if (!isActive && !inactiveBadge) {
+        // Add inactive badge
+        inactiveBadge = document.createElement('span');
+        inactiveBadge.className = 'inactive-badge px-2 py-0.5 text-xs font-medium rounded bg-gray-200 text-gray-600';
+        inactiveBadge.textContent = 'Inactive';
+        nameContainer.appendChild(inactiveBadge);
+      } else if (isActive && inactiveBadge) {
+        // Remove inactive badge
+        inactiveBadge.remove();
+      }
+
+      // Update toggle button
+      const toggleButton = restaurantCard.querySelector(`button[onclick*="toggleRestaurantActive"]`);
+      if (toggleButton) {
+        const iconElement = toggleButton.querySelector('i');
+
+        if (isActive) {
+          // Change to Pause button
+          toggleButton.className = 'px-3 py-2 bg-gradient-to-r from-orange-500 to-amber-600 hover:from-orange-600 hover:to-amber-700 text-white rounded-lg transition-all shadow-sm hover:shadow flex items-center gap-1.5';
+          toggleButton.title = 'Pause monitoring';
+          if (iconElement) {
+            iconElement.setAttribute('data-lucide', 'pause-circle');
+          }
+        } else {
+          // Change to Activate button
+          toggleButton.className = 'px-3 py-2 bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white rounded-lg transition-all shadow-sm hover:shadow flex items-center gap-1.5';
+          toggleButton.title = 'Activate monitoring';
+          if (iconElement) {
+            iconElement.setAttribute('data-lucide', 'play-circle');
+          }
+        }
+
+        // Update onclick handler
+        toggleButton.setAttribute('onclick', `toggleRestaurantActive(${restaurantId}, ${isActive})`);
+
+        // Reinitialize lucide icons
+        if (window.lucide) {
+          lucide.createIcons();
+        }
+      }
+
+      // Move card to appropriate position (inactive cards go to bottom)
+      const container = restaurantCard.parentElement;
+      const allCards = Array.from(container.querySelectorAll('[data-restaurant-id]'));
+
+      // Remove card temporarily
+      restaurantCard.remove();
+
+      // Find correct position
+      let insertBefore = null;
+      for (const card of allCards) {
+        if (card === restaurantCard) continue;
+
+        const cardIsActive = !card.classList.contains('opacity-60');
+
+        if (isActive && !cardIsActive) {
+          // Current card is active, insert before first inactive
+          insertBefore = card;
+          break;
+        } else if (!isActive && cardIsActive) {
+          // Current card is inactive, keep looking for inactive section
+          continue;
+        }
+      }
+
+      if (insertBefore) {
+        container.insertBefore(restaurantCard, insertBefore);
+      } else {
+        container.appendChild(restaurantCard);
+      }
+
+      // Highlight updated card briefly
+      restaurantCard.style.transition = 'all 0.3s ease';
+      restaurantCard.style.boxShadow = '0 0 0 3px rgba(34, 197, 94, 0.5)';
+      setTimeout(() => {
+        restaurantCard.style.boxShadow = '';
+      }, 2000);
+    }
+
+    // Simple toast notification
+    function showToast(message, type = 'info') {
+      const toast = document.createElement('div');
+      const bgColor = type === 'success' ? 'bg-green-600' : type === 'error' ? 'bg-red-600' : 'bg-blue-600';
+      toast.className = `fixed bottom-4 right-4 ${bgColor} text-white px-6 py-3 rounded-lg shadow-lg z-50 transition-opacity`;
+      toast.textContent = message;
+      document.body.appendChild(toast);
+
+      setTimeout(() => {
+        toast.style.opacity = '0';
+        setTimeout(() => toast.remove(), 300);
+      }, 3000);
     }
   </script>
 </body>

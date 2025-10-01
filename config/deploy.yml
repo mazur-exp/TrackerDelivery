@@ -21,7 +21,15 @@ servers:
 # Note: If using Cloudflare, set encryption mode in SSL/TLS setting to "Full" to enable CF-to-app encryption.
 proxy:
   ssl: true
-  host: aidelivery.tech 
+  host: aidelivery.tech
+
+# Healthcheck configuration for slower startup with SolidQueue
+healthcheck:
+  interval: 5s        # Increase interval between checks
+  max_attempts: 15    # More attempts (5s × 15 = 75s total timeout)
+  path: /up           # Standard Rails health endpoint
+  port: 3000          # Puma port
+  log_lines: 50       # Show more logs on failure
 
 # Credentials for your image host.
 registry:

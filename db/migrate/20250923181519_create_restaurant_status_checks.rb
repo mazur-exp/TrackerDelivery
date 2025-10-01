@@ -11,8 +11,8 @@ class CreateRestaurantStatusChecks < ActiveRecord::Migration[8.0]
       t.timestamps
     end
 
-    add_index :restaurant_status_checks, :restaurant_id
-    add_index :restaurant_status_checks, :checked_at
-    add_index :restaurant_status_checks, :is_anomaly
+    add_index :restaurant_status_checks, :restaurant_id, if_not_exists: true
+    add_index :restaurant_status_checks, :checked_at, if_not_exists: true
+    add_index :restaurant_status_checks, :is_anomaly, if_not_exists: true
   end
 end

@@ -4,7 +4,8 @@ service: ai
 # Name of the container image.
 image: mazur-exp/trackerdelivery
 
-
+# How long to wait for new containers to boot (increased for SolidQueue startup)
+deploy_timeout: 120
 
 # Deploy to these servers.
 servers:
@@ -22,9 +23,9 @@ servers:
 proxy:
   ssl: true
   host: aidelivery.tech
-  deploy_timeout: 120
   healthcheck:
-    interval: 10s
+    interval: 10
+    timeout: 5
     path: /up
 
 # Credentials for your image host.

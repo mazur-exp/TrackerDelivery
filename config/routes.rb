@@ -2,6 +2,10 @@ Rails.application.routes.draw do
   # Root - главная страница лендинга DeliveryTracker
   root "landing#index"
 
+  if Rails.env.development? || Rails.env.test?
+    mount MissionControl::Jobs::Engine => "/jobs"
+  end
+
   # Authentication routes
   resource :session, only: [ :new, :create, :destroy ]
   get "login" => "sessions#new"

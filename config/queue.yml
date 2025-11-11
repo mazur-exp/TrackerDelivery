@@ -8,7 +8,12 @@ default: &default
       processes: 1
       polling_interval: 5
       max_executions: 50
-
+    - queues: "restaurants"
+      threads: 2
+      processes: 1
+      polling_interval: 1
+      max_executions: 50
+      
 development:
   <<: *default
 

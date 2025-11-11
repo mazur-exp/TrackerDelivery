@@ -1,2 +1,3 @@
 web: bin/rails server
-jobs: bin/rails solid_queue:start
+jobs: bin/jobs 
+ngrok: ngrok http --url=karri-unexpunged-becomingly.ngrok-free.dev 3000

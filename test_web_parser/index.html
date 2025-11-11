@@ -150,8 +150,31 @@
                     html += `<div class="data-field"><strong>Название:</strong> ${result.data.name}</div>`;
                 }
                 
-                if (result.data.rating) {
-                    html += `<div class="data-field"><strong>Рейтинг:</strong> ${result.data.rating}</div>`;
+                // Рейтинг - handle NEW restaurants (rating: 0 or "NEW")
+                if (result.data.rating !== undefined && result.data.rating !== null) {
+                    const rating = result.data.rating;
+                    const isNew = rating === 0 || rating === "0" || rating === "NEW";
+
+                    if (isNew) {
+                        html += `<div class="data-field"><strong>Рейтинг:</strong> <span style="color: #F59E0B; font-weight: bold;">NEW</span></div>`;
+                    } else {
+                        const reviewText = result.data.review_count ? ` <span style="color: #666; font-size: 0.9em;">(${result.data.review_count} отзывов)</span>` : '';
+                        html += `<div class="data-field"><strong>Рейтинг:</strong> ⭐ ${rating}${reviewText}</div>`;
+                    }
+                }
+
+                // Статус открыто/закрыто
+                if (result.data.status) {
+                    const isOpen = result.data.status.is_open;
+                    const statusEmoji = isOpen ? '🟢' : '🔴';
+                    const statusText = isOpen ? 'ОТКРЫТО' : 'ЗАКРЫТО';
+                    const statusColor = isOpen ? 'color: #16A34A; font-weight: bold;' : 'color: #DC2626; font-weight: bold;';
+                    const coreStatus = result.data.status.core_status || '';
+
+                    html += `<div class="data-field status-field" style="${statusColor}">
+                        ${statusEmoji} <strong>Статус:</strong> ${statusText}
+                        ${coreStatus ? `<span style="color: #666; font-size: 0.9em;">(core_status: ${coreStatus})</span>` : ''}
+                    </div>`;
                 }
                 
                 if (result.data.address) {

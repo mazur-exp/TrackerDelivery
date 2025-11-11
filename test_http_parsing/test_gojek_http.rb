@@ -680,6 +680,7 @@ class TestGojekHttpParser
         name: outlet.dig('core', 'displayName'),
         address: address,
         rating: outlet.dig('ratings', 'average')&.to_s,
+        review_count: outlet.dig('ratings', 'total'),  # 'total' not 'reviewCount'
         cuisines: cuisines,
         image_url: outlet.dig('media', 'coverImgUrl'),
         status: status
@@ -697,8 +698,24 @@ class TestGojekHttpParser
       puts "No data extracted"
       return
     end
-    
-    data.each do |key, value|
+
+    # Display in specific order with formatting
+    puts "Name: #{data[:name]}" if data[:name]
+    puts "Address: #{data[:address]}" if data[:address]
+
+    if data[:rating]
+      rating_text = data[:rating]
+      rating_text += " (#{data[:review_count]} reviews)" if data[:review_count]
+      puts "Rating: #{rating_text}"
+    end
+
+    puts "Cuisines: #{data[:cuisines].join(', ')}" if data[:cuisines]&.any?
+    puts "Image_url: #{data[:image_url]}" if data[:image_url]
+    puts "Status: #{data[:status]}" if data[:status]
+
+    # Any remaining fields
+    (data.keys - [:name, :address, :rating, :review_count, :cuisines, :image_url, :status]).each do |key|
+      value = data[key]
       if value.is_a?(Array)
         puts "#{key.capitalize}: #{value.join(', ')}"
       elsif value.is_a?(Hash)
@@ -707,9 +724,9 @@ class TestGojekHttpParser
         puts "#{key.capitalize}: #{value}"
       end
     end
-    
+
     # Check if sufficient for onboarding
-    sufficient = data[:name] && !data[:name].empty? && 
+    sufficient = data[:name] && !data[:name].empty? &&
                 ((data[:address] && !data[:address].empty?) || (data[:rating] && !data[:rating].empty?))
     puts "\nSufficient for onboarding: #{sufficient ? '✓' : '✗'}"
   end

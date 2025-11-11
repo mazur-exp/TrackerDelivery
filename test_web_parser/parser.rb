@@ -10,7 +10,15 @@ class ParserServer
   def initialize(port = 3000)
     @port = port
     @grab_parser = TestGrabHttpParser.new
-    @gojek_parser = TestGojekHttpParser.new
+
+    # Initialize GoJek parser with cookies
+    cookies_file = File.join(File.dirname(__FILE__), '..', 'gojek_cookies.json')
+    @gojek_parser = TestGojekHttpParser.new(
+      proxy_manager: nil,  # No proxy needed with cookies
+      cookies_file: File.exist?(cookies_file) ? cookies_file : nil
+    )
+
+    puts "🍪 GoJek cookies: #{File.exist?(cookies_file) ? 'LOADED' : 'MISSING'}"
   end
   
   def start

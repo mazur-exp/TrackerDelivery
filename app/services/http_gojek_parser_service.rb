@@ -188,6 +188,7 @@ class HttpGojekParserService
       name: outlet.dig('core', 'displayName'),
       address: address,
       rating: outlet.dig('ratings', 'average')&.to_s || "NEW",
+      review_count: outlet.dig('ratings', 'total'),  # Total number of reviews
       cuisines: cuisines,
       image_url: outlet.dig('media', 'coverImgUrl'),
       status: status

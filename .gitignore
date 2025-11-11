@@ -40,3 +40,8 @@
 
 # macOS system files
 .DS_Store
+
+# GoJek cookies (session data - do not commit)
+gojek_cookies.json
+gojek_cookies_test.json
+**/gojek_cookies*.json

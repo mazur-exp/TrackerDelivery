@@ -1,6 +1,8 @@
-# HTTP Parsing Test Suite
+# GoJek HTTP Parser - Quick Start Guide
 
-Тестовая среда для проверки HTTP парсинга ресторанов вместо Chrome/Selenium.
+**Обновлено**: 2025-11-11 (20:00 Bali time)
+
+✅ **РАБОТАЕТ!** Cookie-based HTTP parsing с auto-refresh механизмом.
 
 ## Структура файлов
 
@@ -17,16 +19,33 @@
 gem install httparty nokogiri
 ```
 
-## Использование
+## 🚀 Быстрый старт
 
-### 1. Тестирование одного URL
+### 1. Запуск development сервера с auto-refresh:
 
 ```bash
-# Grab URL
-ruby test_grab_http.rb "https://food.grab.com/id/en/restaurant/example/IDGFTI123"
+# Из корня TrackerDelivery:
+bin/dev
+```
 
-# GoJek URL  
-ruby test_gojek_http.rb "https://gofood.gojek.com/jakarta/restaurant/example-123"
+Автоматически запустятся:
+- Rails server (port 3000)
+- SolidQueue jobs
+- Ngrok tunnel
+- **GoJek Cookie Refresh Service** (каждые 4 часа)
+
+### 2. Тестирование GoJek парсера:
+
+```bash
+cd test_http_parsing
+ruby test_gojek_http.rb "https://gofood.link/a/MrswDDW"
+```
+
+**Вывод**:
+```
+✅ Loaded 6 cookies from file
+Status: {is_open: true, status_text: "open", core_status: 1}
+Rating: 4.7
 ```
 
 ### 2. Массовое тестирование
@@ -91,19 +110,27 @@ ruby performance_comparison.rb
 3. Поиск в meta тегах и JSON-LD
 4. Обработка индонезийских локализаций
 
-## Ограничения HTTP подхода
+## 📊 GoJek core.status Values
 
-❌ **Не работает для:**
-- Динамического контента (JavaScript)
-- Данных в модальных окнах
-- Real-time статуса (открыт/закрыт)
-- Защищенных от ботов страниц
+| Value | Meaning | Когда |
+|-------|---------|-------|
+| **1** | OPEN | Ресторан работает, принимает заказы |
+| **2** | CLOSED | Закрыт (вне рабочих часов или временно) |
+| **7** | CLOSING_SOON | Скоро закрывается (< 21-30 минут) |
 
-✅ **Хорошо работает для:**
-- Статических мета-данных
-- JSON данных в HTML
-- Базовой информации о ресторане
-- Быстрого онбординга
+**Важно**: `core.status` ≠ `delivery.deliverable`
+- `core.status` = работает ли ресторан
+- `delivery.deliverable` = можно ли доставить на ваш адрес (зависит от расстояния)
+
+## ✅ Что работает (GoJek с cookies)
+
+- ✅ Точный статус OPEN/CLOSED через `core.status`
+- ✅ Rating и review count
+- ✅ Полный адрес
+- ✅ Cuisines (правильные, из tags)
+- ✅ Working hours (openPeriods)
+- ✅ Быстро (~0.5 сек на ресторан)
+- ✅ Масштабируемо (100+ ресторанов)
 
 ## Рекомендации
 

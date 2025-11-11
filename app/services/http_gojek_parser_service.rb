@@ -1,59 +1,131 @@
 require "httparty"
 require "nokogiri"
 require "json"
+require "http-cookie"
 
 class HttpGojekParserService
   include HTTParty
-  
+
   # Use browser-like headers to avoid blocking
   headers({
-    'User-Agent' => 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-    'Accept' => 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
-    'Accept-Language' => 'en-US,en;q=0.5',
+    'User-Agent' => 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36',
+    'Accept' => 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8',
+    'Accept-Language' => 'en-US,en;q=0.9,id;q=0.8',
     'Accept-Encoding' => 'gzip, deflate, br',
     'Connection' => 'keep-alive',
-    'Upgrade-Insecure-Requests' => '1'
+    'Upgrade-Insecure-Requests' => '1',
+    'Sec-Fetch-Dest' => 'document',
+    'Sec-Fetch-Mode' => 'navigate',
+    'Sec-Fetch-Site' => 'none',
+    'Cache-Control' => 'max-age=0'
   })
-  
+
   def initialize
     @timeout = 15  # Much faster than Chrome
+    @cookie_jar = HTTP::CookieJar.new
+    load_cookies_from_file
+  end
+
+  def load_cookies_from_file
+    # Load cookies from gojek_cookies.json
+    cookies_file = Rails.root.join('gojek_cookies.json')
+
+    return unless File.exist?(cookies_file)
+
+    data = JSON.parse(File.read(cookies_file))
+
+    # Add cookies to jar
+    data['cookies'].each do |name, value|
+      cookie = HTTP::Cookie.new(
+        name: name,
+        value: value,
+        domain: 'gofood.co.id',
+        path: '/'
+      )
+      @cookie_jar.add(cookie)
+    end
+
+    Rails.logger.info "HTTP GoJek: Loaded #{@cookie_jar.cookies.length} cookies from file"
+  rescue => e
+    Rails.logger.warn "HTTP GoJek: Could not load cookies: #{e.message}"
   end
   
   def parse(url)
     Rails.logger.info "=== HTTP GoJek Parser Starting for URL: #{url} ==="
     start_time = Time.current
-    
+
     begin
-      response = HTTParty.get(url, timeout: @timeout, headers: self.class.headers)
-      
+      # Resolve gofood.link redirects
+      resolved_url = resolve_gofood_link(url)
+
+      # Prepare headers with cookies
+      request_headers = self.class.headers.dup
+      cookie_header = @cookie_jar.cookies.map { |c| "#{c.name}=#{c.value}" }.join('; ')
+      request_headers['Cookie'] = cookie_header unless cookie_header.empty?
+
+      response = HTTParty.get(resolved_url, timeout: @timeout, headers: request_headers, follow_redirects: true)
+
       if response.success?
         Rails.logger.info "HTTP GoJek: Successfully fetched page (#{response.body.length} chars)"
-        
+
         # Try to extract data from HTML
-        data = extract_data_from_html(response.body)
-        
+        data = extract_data_from_html(response.body, response.request.last_uri.to_s)
+
         duration = Time.current - start_time
         Rails.logger.info "HTTP GoJek: Parsing completed in #{duration.round(2)}s"
-        
+
         return data
       else
         Rails.logger.error "HTTP GoJek: HTTP error #{response.code}: #{response.message}"
         return nil
       end
-      
+
     rescue => e
       duration = Time.current - start_time
       Rails.logger.error "HTTP GoJek: Error after #{duration.round(2)}s: #{e.class} - #{e.message}"
       return nil
     end
   end
+
+  def resolve_gofood_link(short_url)
+    # Resolve gofood.link JavaScript redirect to actual restaurant URL
+    return short_url unless short_url.include?('gofood.link')
+
+    Rails.logger.info "HTTP GoJek: Resolving gofood.link redirect..."
+
+    response = HTTParty.get(short_url, timeout: @timeout, headers: self.class.headers, follow_redirects: true)
+
+    if response.body.include?('window.location.href')
+      match = response.body.match(/window\.location\.href\s*=\s*["']([^"']+)["']/)
+      if match && match[1] != ' # '
+        redirect_url = match[1].strip.gsub('\\/', '/')
+        Rails.logger.info "HTTP GoJek: Resolved to #{redirect_url}"
+        return redirect_url
+      end
+    end
+
+    short_url
+  rescue => e
+    Rails.logger.warn "HTTP GoJek: Could not resolve redirect: #{e.message}"
+    short_url
+  end
   
   private
-  
-  def extract_data_from_html(html_content)
+
+  def extract_data_from_html(html_content, final_url = nil)
+    Rails.logger.info "HTTP GoJek: Parsing HTML (#{html_content.length} chars)..."
+
+    # Try Next.js JSON first (much more reliable and complete)
+    json_data = extract_from_nextjs_json(html_content)
+    if json_data && json_data[:name]
+      Rails.logger.info "HTTP GoJek: ✅ Extracted data from Next.js JSON"
+      return json_data
+    end
+
+    # Fallback to DOM parsing
+    Rails.logger.warn "HTTP GoJek: ⚠️  Falling back to DOM parsing (limited data quality)"
     doc = Nokogiri::HTML(html_content)
-    
-    # Extract data using same selectors as Chrome version
+
     {
       name: extract_restaurant_name_from_html(doc),
       address: extract_address_from_html(doc),
@@ -63,6 +135,67 @@ class HttpGojekParserService
       image_url: extract_image_url_from_html(doc),
       status: extract_status_from_html(doc)
     }.compact
+  end
+
+  def extract_from_nextjs_json(html_content)
+    # Search for Next.js __NEXT_DATA__ script tag
+    script_start = html_content.index('<script id="__NEXT_DATA__"')
+    return nil unless script_start
+
+    json_start_marker = html_content.index('>', script_start)
+    return nil unless json_start_marker
+
+    json_start = json_start_marker + 1
+    script_end = html_content.index('</script>', json_start)
+    return nil unless script_end
+
+    json_content = html_content[json_start...script_end].strip
+
+    parsed = JSON.parse(json_content)
+    outlet = parsed.dig('props', 'pageProps', 'outlet')
+    return nil unless outlet
+
+    # Extract cuisines from tags (taxonomy=2)
+    cuisines = []
+    if outlet['core'] && outlet['core']['tags']
+      cuisines = outlet['core']['tags']
+        .select { |tag| tag['taxonomy'] == 2 }
+        .map { |tag| tag['displayName'] }
+        .compact
+        .first(3)
+    end
+
+    # Extract address from rows array
+    address = nil
+    if outlet['core'] && outlet['core']['address'] && outlet['core']['address']['rows']
+      rows = outlet['core']['address']['rows'].compact.reject(&:empty?)
+      address = rows.join(', ') unless rows.empty?
+    end
+
+    # Extract status from core.status (1 = OPEN, 2 = CLOSED)
+    core_status = outlet.dig('core', 'status')
+    is_open = core_status == 1
+
+    status = {
+      is_open: is_open,
+      status_text: is_open ? 'open' : 'closed',
+      core_status: core_status,
+      deliverable: outlet.dig('delivery', 'deliverable'),
+      error: nil
+    }
+
+    {
+      name: outlet.dig('core', 'displayName'),
+      address: address,
+      rating: outlet.dig('ratings', 'average')&.to_s || "NEW",
+      cuisines: cuisines,
+      image_url: outlet.dig('media', 'coverImgUrl'),
+      status: status
+    }.compact
+
+  rescue JSON::ParserError => e
+    Rails.logger.error "HTTP GoJek: JSON parsing failed: #{e.message}"
+    nil
   end
   
   def extract_restaurant_name_from_html(doc)

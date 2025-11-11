@@ -10,10 +10,10 @@ deploy_timeout: 120
 # Deploy to these servers.
 servers:
   web:
-    - "ssh://deploy@46.62.195.19:2222"
+    - 46.62.195.19
   job:
     hosts:
-      - "ssh://deploy@46.62.195.19:2222"
+      - 46.62.195.19
     cmd: bin/jobs
 
 # Enable SSL auto certification via Let's Encrypt and allow for multiple apps on a single web server.
@@ -98,8 +98,9 @@ builder:
   #   - RAILS_MASTER_KEY
 
 # Use a different ssh user than root
-# ssh:
-#   user: app
+ssh:
+  user: root
+  port: "2222"
 
 # Use accessory services (secrets come from .kamal/secrets).
 # accessories:

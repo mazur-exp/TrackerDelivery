@@ -103,9 +103,9 @@ class RestaurantMonitoringWorkerJob < ApplicationJob
 
     case restaurant.platform
     when "grab"
-      GrabParserService.new.parse(restaurant.platform_url)
+      GrabApiParserService.new.parse(restaurant.platform_url)
     when "gojek"
-      GojekParserService.new.parse(restaurant.platform_url)
+      HttpGojekParserService.new.parse(restaurant.platform_url)
     else
       Rails.logger.error "Unknown platform: #{restaurant.platform}"
       nil

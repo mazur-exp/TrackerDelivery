@@ -93,7 +93,7 @@ class RestaurantsController < ApplicationController
       start_time = Time.current
       Rails.logger.info "=== GoJek Individual Parser Starting ==="
 
-      gojek_data = GojekParserService.new.parse(gojek_url)
+      gojek_data = HttpGojekParserService.new.parse(gojek_url)
 
       if gojek_data
         elapsed_time = Time.current - start_time
@@ -145,7 +145,7 @@ class RestaurantsController < ApplicationController
       start_time = Time.current
       Rails.logger.info "=== Grab Individual Parser Starting ==="
 
-      grab_data = GrabParserService.new.parse(grab_url)
+      grab_data = GrabApiParserService.new.parse(grab_url)
 
       if grab_data
         elapsed_time = Time.current - start_time
@@ -529,9 +529,9 @@ class RestaurantsController < ApplicationController
     begin
       case platform
       when "grab"
-        GrabParserService.new.parse(platform_url)
+        GrabApiParserService.new.parse(platform_url)
       when "gojek"
-        GojekParserService.new.parse(platform_url)
+        HttpGojekParserService.new.parse(platform_url)
       else
         nil
       end

@@ -211,7 +211,8 @@ class HttpGojekParserService
       cuisines: cuisines,
       image_url: outlet.dig('media', 'coverImgUrl'),
       status: status,
-      open_periods: open_periods
+      open_periods: open_periods,
+      working_hours: open_periods  # Backward compatibility with old parser
     }.compact
 
   rescue JSON::ParserError => e

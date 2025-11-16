@@ -165,6 +165,7 @@ class GrabApiParserService
       image_url: merchant["photoHref"],
       status: status,
       opening_hours: opening_hours,
+      working_hours: opening_hours,  # Backward compatibility with old parser
       distance_km: merchant["distanceInKm"]
     }.compact
   end

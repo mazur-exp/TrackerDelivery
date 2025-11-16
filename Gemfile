@@ -24,6 +24,7 @@ gem "bcrypt", "~> 3.1.7"
 
 # HTTP client for API calls
 gem "httparty"
+gem "http-cookie"  # Required for HTTP parsers to handle cookies
 
 # Browser automation for parsing dynamic content
 gem "selenium-webdriver", "~> 4.35.0"

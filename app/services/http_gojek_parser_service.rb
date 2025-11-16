@@ -184,6 +184,25 @@ class HttpGojekParserService
       error: nil
     }
 
+    # Extract openPeriods (working hours for 7 days)
+    open_periods = []
+    if outlet['core'] && outlet['core']['openPeriods']
+      day_names = ['', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu', 'Minggu']
+
+      open_periods = outlet['core']['openPeriods'].map do |period|
+        start_time = format('%02d:%02d', period.dig('startTime', 'hours'), period.dig('startTime', 'minutes'))
+        end_time = format('%02d:%02d', period.dig('endTime', 'hours'), period.dig('endTime', 'minutes'))
+
+        {
+          day: period['day'],
+          day_name: day_names[period['day']],
+          start_time: start_time,
+          end_time: end_time,
+          formatted: "#{day_names[period['day']]}: #{start_time}-#{end_time}"
+        }
+      end
+    end
+
     {
       name: outlet.dig('core', 'displayName'),
       address: address,
@@ -191,7 +210,8 @@ class HttpGojekParserService
       review_count: outlet.dig('ratings', 'total'),  # Total number of reviews
       cuisines: cuisines,
       image_url: outlet.dig('media', 'coverImgUrl'),
-      status: status
+      status: status,
+      open_periods: open_periods
     }.compact
 
   rescue JSON::ParserError => e

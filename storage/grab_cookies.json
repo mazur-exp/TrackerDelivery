@@ -23,8 +23,7 @@
     "_gat_UA-73060858-24": "1",
     "_gcl_au": "1.1.319370402.1763103006"
   },
-  "jwt_token": null,
-  "api_version": null,
-  "timestamp": "2025-11-16T07:00:54.000Z",
-  "error": "JWT not found in network requests"
+  "jwt_token": "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJnYWEiLCJhdWQiOiJnZnciLCJuYW1lIjoiZ3JhYnRheGkiLCJpYXQiOjE3NjMyNjE2NDMsImV4cCI6MTc2MzI2MjI0MywibmJmIjoxNzYzMjYxNjQzLCJ2ZXIiOiIxLjE5LjAuMjQiLCJicklEIjoiYzlmNTBiOTJkNGRkZjZkNTE3ZWMzZDRkMjI2NzVmY2Y5NjZ5NnIiLCJzdXMiOmZhbHNlLCJicklEdjIiOiIzODMzNGFjOTQ3ZTRlNzAwNWEyNTFmYjE2ZjNiMjBjOThkYXk2ciIsImJyVUlEIjoiYzQ0YjE5MTQtZjU2Ny00NjUyLWE4ZTktZjRmZjVmMWNlN2ZmIn0.eiFRk5smjB_yaRWRJGFmRem81EuLSKO7z02sM-hx_cx-zZWXW0F34FeJ3gnnYlLU2WL7LGjz-MHnIdsksGhadb3hF287KF8V0xYlxvyCie_upH1CyzPvgGSmuwlHdVIQETXedpXAR-CDrv6la9qC7F2qUjjh9XWzmzcyesL6pRjAD-8kzxTSCJLkAiecCg569PsfXzfuUsrITfQ5n1tw3pFzvpN1RdcN6D5AyDfRJcfVB5vi-FiFBZALDE0wY-lVF7Fez7cRhG9ahoC6MjTj-cklQM5pHR2tec55qNg8gcN4RoHcxfwqjArEK4BvXM3M1nX8eQ83RP0LP8IWyObZ8g",
+  "api_version": "uaf6yDMWlVv0CaTK5fHdB",
+  "timestamp": "2025-11-16T07:00:54.000Z"
 }

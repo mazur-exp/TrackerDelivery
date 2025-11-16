@@ -28,7 +28,8 @@ class HttpGojekParserService
 
   def load_cookies_from_file
     # Load cookies from gojek_cookies.json
-    cookies_file = Rails.root.join('gojek_cookies.json')
+    # Use storage volume for persistent credentials (survives container restarts!)
+    cookies_file = Rails.root.join('storage/gojek_cookies.json')
 
     return unless File.exist?(cookies_file)
 

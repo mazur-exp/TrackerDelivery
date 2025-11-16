@@ -9,7 +9,8 @@ class GrabApiParserService
 
   def initialize
     @timeout = 10
-    @cookies_file = Rails.root.join("grab_cookies.json")
+    # Use storage volume for persistent credentials (survives container restarts!)
+    @cookies_file = Rails.root.join("storage/grab_cookies.json")
     load_credentials
   end
 

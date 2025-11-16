@@ -119,7 +119,8 @@ def refresh_grab_jwt():
         })
 
         # Load existing cookies to establish session BEFORE opening page
-        cookies_file = 'grab_cookies.json'
+        # Use storage/ directory for persistent credentials
+        cookies_file = 'storage/grab_cookies.json' if os.path.exists('storage') else 'grab_cookies.json'
         if os.path.exists(cookies_file):
             log("🍪 Загрузка существующих cookies из grab_cookies.json...")
             try:
@@ -280,7 +281,8 @@ def refresh_grab_jwt():
                 'timestamp': datetime.utcnow().strftime('%Y-%m-%dT%H:%M:%S.000Z')
             }
 
-            with open('grab_cookies.json', 'w') as f:
+            output_file = 'storage/grab_cookies.json' if os.path.exists('storage') else 'grab_cookies.json'
+            with open(output_file, 'w') as f:
                 json.dump(data, f, indent=2)
 
             log(f"✅ JWT token сохранен в grab_cookies.json")
@@ -307,7 +309,8 @@ def refresh_grab_jwt():
                 'error': 'JWT not found in network requests'
             }
 
-            with open('grab_cookies.json', 'w') as f:
+            output_file = 'storage/grab_cookies.json' if os.path.exists('storage') else 'grab_cookies.json'
+            with open(output_file, 'w') as f:
                 json.dump(data, f, indent=2)
 
             return False

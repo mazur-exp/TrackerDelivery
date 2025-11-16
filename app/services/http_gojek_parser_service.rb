@@ -21,7 +21,7 @@ class HttpGojekParserService
   })
 
   def initialize
-    @timeout = 15  # Much faster than Chrome
+    @timeout = 20  # Increased for Finland → Indonesia network latency
     @cookie_jar = HTTP::CookieJar.new
     load_cookies_from_file
   end

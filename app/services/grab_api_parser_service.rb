@@ -8,7 +8,7 @@ class GrabApiParserService
   base_uri "https://portal.grab.com/foodweb/guest/v2"
 
   def initialize
-    @timeout = 10
+    @timeout = 20  # Increased for Finland → Singapore network latency
     @cookies_file = Rails.root.join("grab_cookies.json")
     load_credentials
   end

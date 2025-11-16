@@ -101,18 +101,35 @@ class RestaurantMonitoringWorkerJob < ApplicationJob
   def get_full_restaurant_data(restaurant)
     Rails.logger.info "Getting full restaurant data for monitoring"
 
-    case restaurant.platform
-    when "grab"
-      GrabApiParserService.new.parse(restaurant.platform_url)
-    when "gojek"
-      HttpGojekParserService.new.parse(restaurant.platform_url)
-    else
-      Rails.logger.error "Unknown platform: #{restaurant.platform}"
+    max_attempts = 3
+    attempt = 0
+
+    begin
+      attempt += 1
+
+      case restaurant.platform
+      when "grab"
+        GrabApiParserService.new.parse(restaurant.platform_url)
+      when "gojek"
+        HttpGojekParserService.new.parse(restaurant.platform_url)
+      else
+        Rails.logger.error "Unknown platform: #{restaurant.platform}"
+        nil
+      end
+
+    rescue Net::OpenTimeout, Net::ReadTimeout => e
+      if attempt < max_attempts
+        Rails.logger.warn "Monitoring: Network timeout on attempt #{attempt}/#{max_attempts}, retrying..."
+        sleep(2)  # Brief pause before retry
+        retry
+      else
+        Rails.logger.error "Monitoring: Failed after #{max_attempts} attempts: #{e.class}"
+        nil
+      end
+    rescue => e
+      Rails.logger.error "Error getting full restaurant data: #{e.message}"
       nil
     end
-  rescue => e
-    Rails.logger.error "Error getting full restaurant data: #{e.message}"
-    nil
   end
 
   def extract_status_from_full_data(full_data)

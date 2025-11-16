@@ -1,0 +1,17 @@
+{
+  "cookies": {
+    "XSRF-TOKEN": "Rr7M0WXz-5XN8sSFkvp8ufHAG-TARqFmymYk.BNZizsl2I3babrMn5Lrbmj42yfBfRDa8zv13vf9TMpk",
+    "_ga_SFEHM3SCGE": "GS2.1.s1763106012$o1$g0$t1763106012$j60$l0$h0",
+    "_ga": "GA1.1.2115128660.1763106013",
+    "w_tsfp": "ltvuV0MF2utBvS0Q76nolE2uFD0lcTg4h0wpEaR0f5thQLErU5mD0od6uMv1Nnfb4sxnvd7DsZoyJTLYCJI3dwMSTcmTcohFhV7GwIh32osQVxJgQ5yODwEfJb9y7DVHdXhCNxS00jA8eIUd379yilkMsyN1zap3TO14fstJ019E6KDQmI5uDW3HlFWQRzaLbjcMcuqPr6g18L5a5TbY5An8KA4gCr9C2E2UhilOXXEmsES7IehdMk6sd8yuSqA=",
+    "csrfSecret": "ljWtqEXK7aAmD0kHYBMHjQgQ",
+    "gf_chosen_loc": "%7B%22name%22%3A%22Sitara%20Loft%22%2C%22latitude%22%3A-8.66257132322872%2C%22longitude%22%3A115.151090749324%2C%22serviceAreaId%22%3A%223%22%2C%22serviceArea%22%3A%22bali%22%2C%22locality%22%3A%22kuta-utara%22%2C%22timezone%22%3A%22Asia%2FMakassar%22%2C%22address%22%3A%22Gg.%20P.%20Karimata%2C%20Kerobokan%2C%20Kec.%20Kuta%20Utara%2C%20Kabupaten%20Badung%2C%20Bali%2080361%2C%20Indonesia%22%7D",
+    "x-waf-captcha-referer": ""
+  },
+  "localStorage": {
+    "w_tsfp": "ltv2UU8E3ewC6mwF46vukkivFj4ndDkslgBsXqNmeJ94Q7ErU5mD0od6uMv2MX3c6sxnt9jMsoszd3qAUdAmfBESRc2Qe4oZkB/Gy99yicxUQ0k5VYnWS1EXJrl07WRPLzwMLBfgiWsoJ9MTyuc23FkKtyR1yKt+XvFqL5kXjB0ZufzCkpxuDW3HlFWQRzaZciVfKr/c9OtwraxQ9z/c5Vv7LFt0A6hewgfHg31dWzox6wOpaPsYd0W/Kdz3HKlw7ibwsyz1HIWur0F8tw9o5ABuXcutjSDIWWRYMlgzMAvpwft5aaS5YuclvGBKWv1NGFkd/AkbsuQ7+UNKWXm/MyeOVKlytAkSCw==",
+    "wafts": "1763106011"
+  },
+  "url": "https://gofood.co.id/",
+  "timestamp": "2025-11-14T15:40:26.817147"
+}

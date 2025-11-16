@@ -311,12 +311,46 @@ bin/rails db:migrate
 bin/rails db:seed
 ```
 
+## Recent Updates
+
+### v2.1 - Working Hours Feature (2025-11-12)
+
+**Added**: HTTP парсинг режима работы (openPeriods) для GoJek
+
+**Изменения**:
+- ✅ Извлечение `outlet.core.openPeriods` из __NEXT_DATA__ JSON
+- ✅ Форматирование 7 дней недели с временем работы
+- ✅ Индонезийские названия дней (Senin, Selasa, Rabu, и т.д.)
+- ✅ Отображение в test_web_parser UI
+- ✅ Console output с "Working Hours:" секцией
+
+**Данные**:
+```ruby
+{
+  open_periods: [
+    {day: 1, day_name: "Senin", start_time: "09:00", end_time: "20:00", formatted: "Senin: 09:00-20:00"},
+    {day: 2, day_name: "Selasa", start_time: "09:00", end_time: "20:00", formatted: "Selasa: 09:00-20:00"},
+    # ... 5 more days
+  ]
+}
+```
+
+**Performance**: Никаких дополнительных HTTP запросов - данные уже в __NEXT_DATA__
+
+**Files Updated**:
+- `test_http_parsing/test_gojek_http.rb`
+- `test_web_parser/index.html`
+- `ai_docs/development/http_gojek_parser_specification.md`
+- `ai_docs/development/version_5_5_release_notes.md`
+
+---
+
 ## Git History
 
 ### Release Commits
 - **a9c7f89** - Fix Grab parser cuisine formatting to match GoJek structure
 - **ddae2f4** - Add restaurant monitoring auto-start system
-- **26695ac** - Restore complete restaurant monitoring system with dynamic dashboard  
+- **26695ac** - Restore complete restaurant monitoring system with dynamic dashboard
 - **084fad0** - Refactor restaurant architecture to support single platform per restaurant
 - **b3cf73f** - Optimize GoJek parser for production server performance
 - **Latest** - Remove review_count functionality completely from system

@@ -67,6 +67,7 @@ gem install webrick httparty nokogiri
 - 🍽️ **Типы кухонь**
 - 📌 **Координаты** (для Grab)
 - 🖼️ **Изображение ресторана**
+- 🕒 **Режим работы** (7 дней недели с временем открытия/закрытия)
 
 ## 🎨 Интерфейс
 
@@ -89,6 +90,7 @@ gem install webrick httparty nokogiri
 - ✅ Address: 100%
 - ✅ Cuisines: 100%
 - ✅ Image: 100%
+- ✅ Working Hours: 100% (все 7 дней недели)
 
 ## 🛑 Остановка сервера
 

@@ -192,7 +192,18 @@
                 if (result.data.image_url) {
                     html += `<div class="data-field"><strong>Изображение:</strong> <img src="${result.data.image_url}" alt="Restaurant" class="result-image"></div>`;
                 }
-                
+
+                // Режим работы (Working Hours) - support both GoJek and Grab formats
+                const workingHours = result.data.open_periods || result.data.opening_hours;
+                if (workingHours && workingHours.length > 0) {
+                    html += `<div class="data-field"><strong>Режим работы:</strong></div>`;
+                    html += `<div class="data-field" style="margin-left: 20px; font-size: 0.95em;">`;
+                    workingHours.forEach(period => {
+                        html += `<div style="padding: 2px 0;">${period.formatted}</div>`;
+                    });
+                    html += `</div>`;
+                }
+
                 html += '</div>';
             } else if (!result.success) {
                 html += `<div class="error-message">❌ Ошибка: ${result.error}</div>`;

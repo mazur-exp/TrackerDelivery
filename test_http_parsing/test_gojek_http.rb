@@ -674,6 +674,25 @@ class TestGojekHttpParser
         error: nil
       }
 
+      # Extract openPeriods (working hours)
+      open_periods = []
+      if outlet['core'] && outlet['core']['openPeriods']
+        day_names = ['', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu', 'Minggu']
+
+        open_periods = outlet['core']['openPeriods'].map do |period|
+          start_time = format('%02d:%02d', period.dig('startTime', 'hours'), period.dig('startTime', 'minutes'))
+          end_time = format('%02d:%02d', period.dig('endTime', 'hours'), period.dig('endTime', 'minutes'))
+
+          {
+            day: period['day'],
+            day_name: day_names[period['day']],
+            start_time: start_time,
+            end_time: end_time,
+            formatted: "#{day_names[period['day']]}: #{start_time}-#{end_time}"
+          }
+        end
+      end
+
       puts "Found Next.js JSON with outlet data"
 
       return {
@@ -683,7 +702,8 @@ class TestGojekHttpParser
         review_count: outlet.dig('ratings', 'total'),  # 'total' not 'reviewCount'
         cuisines: cuisines,
         image_url: outlet.dig('media', 'coverImgUrl'),
-        status: status
+        status: status,
+        open_periods: open_periods
       }.compact
 
     rescue JSON::ParserError => e
@@ -713,8 +733,16 @@ class TestGojekHttpParser
     puts "Image_url: #{data[:image_url]}" if data[:image_url]
     puts "Status: #{data[:status]}" if data[:status]
 
+    # Display working hours
+    if data[:open_periods]&.any?
+      puts "\nWorking Hours:"
+      data[:open_periods].each do |period|
+        puts "  #{period[:formatted]}"
+      end
+    end
+
     # Any remaining fields
-    (data.keys - [:name, :address, :rating, :review_count, :cuisines, :image_url, :status]).each do |key|
+    (data.keys - [:name, :address, :rating, :review_count, :cuisines, :image_url, :status, :open_periods]).each do |key|
       value = data[key]
       if value.is_a?(Array)
         puts "#{key.capitalize}: #{value.join(', ')}"

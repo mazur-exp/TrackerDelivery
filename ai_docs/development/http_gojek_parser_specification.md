@@ -1,7 +1,7 @@
 # HttpGojekParserService Specification
 
-**Version**: 2.0 (HTTP-based)
-**Date**: 2025-11-11 (22:45 Bali time)
+**Version**: 2.1 (HTTP-based)
+**Date**: 2025-11-12 (11:10 Bali time)
 **Status**: ✅ Production Ready
 
 ---
@@ -93,7 +93,17 @@ result = service.parse("https://gofood.link/a/MrswDDW")
     core_status: 1,          # 1=OPEN, 2=CLOSED, 7=CLOSING_SOON
     deliverable: false,      # Distance-based delivery availability
     error: nil
-  }
+  },
+  open_periods: [            # ← Working hours (NEW in v2.1)
+    {
+      day: 1,                # 1=Monday, 7=Sunday
+      day_name: "Senin",     # Indonesian day name
+      start_time: "09:00",   # Opening time (HH:MM)
+      end_time: "20:00",     # Closing time (HH:MM)
+      formatted: "Senin: 09:00-20:00"  # Human-readable format
+    },
+    # ... 6 more days
+  ]
 }
 ```
 
@@ -103,6 +113,7 @@ result = service.parse("https://gofood.link/a/MrswDDW")
 - **gofood.link resolution**: Automatically resolves JavaScript redirects
 - **Accurate status**: Uses `outlet.core.status` (1/2/7), not `deliverable`
 - **Review count**: Extracts from `outlet.ratings.total`
+- **Working hours**: Extracts from `outlet.core.openPeriods` (7 days)
 - **Performance**: ~0.5-1.6 seconds per restaurant
 - **No headless browser**: Pure HTTP requests
 
@@ -378,7 +389,24 @@ GoFood использует **Next.js SSR**. Полные данные рест�
             {"taxonomy": 2, "displayName": "Barat"},
             {"taxonomy": 2, "displayName": "Makanan sehat"}
           ],
-          "openPeriods": [...],     // Working hours
+          "openPeriods": [          // ← Working hours (7 days)
+            {
+              "day": 1,             // 1=Monday, 2=Tuesday, ... 7=Sunday
+              "startTime": {
+                "hours": 9,
+                "minutes": 0,
+                "seconds": 0,
+                "nanos": 0
+              },
+              "endTime": {
+                "hours": 20,
+                "minutes": 0,
+                "seconds": 0,
+                "nanos": 0
+              }
+            },
+            // ... 6 more days
+          ],
           "nextCloseTime": "2025-11-11T12:30:00.000Z"
         },
         "ratings": {
@@ -399,6 +427,54 @@ GoFood использует **Next.js SSR**. Полные данные рест�
 }
 </script>
 ```
+
+---
+
+### openPeriods Structure (Working Hours)
+
+**Location**: `outlet.core.openPeriods`
+
+**Description**: Array of 7 objects (one per day of week), each containing opening and closing times.
+
+**Day Numbering**:
+- `1` = Monday (Senin)
+- `2` = Tuesday (Selasa)
+- `3` = Wednesday (Rabu)
+- `4` = Thursday (Kamis)
+- `5` = Friday (Jumat)
+- `6` = Saturday (Sabtu)
+- `7` = Sunday (Minggu)
+
+**Example**:
+```json
+{
+  "day": 1,
+  "startTime": {"hours": 9, "minutes": 0, "seconds": 0, "nanos": 0},
+  "endTime": {"hours": 20, "minutes": 0, "seconds": 0, "nanos": 0}
+}
+```
+
+**Parsing Implementation**:
+```ruby
+open_periods = outlet['core']['openPeriods'].map do |period|
+  start_time = format('%02d:%02d', period.dig('startTime', 'hours'), period.dig('startTime', 'minutes'))
+  end_time = format('%02d:%02d', period.dig('endTime', 'hours'), period.dig('endTime', 'minutes'))
+
+  {
+    day: period['day'],
+    day_name: day_names[period['day']],  # ["", "Senin", "Selasa", ...]
+    start_time: start_time,               # "09:00"
+    end_time: end_time,                   # "20:00"
+    formatted: "#{day_names[period['day']]}: #{start_time}-#{end_time}"  # "Senin: 09:00-20:00"
+  }
+end
+```
+
+**Use Cases**:
+- Display working hours to users
+- Calculate if restaurant is open at specific time
+- Show "Opens at HH:MM" / "Closes at HH:MM"
+- Automated alerts for schedule changes
 
 ---
 
@@ -561,6 +637,21 @@ class HttpGojekParserService
     # 4. Parse outlet data
     outlet = json_data.dig('props', 'pageProps', 'outlet')
 
+    # Extract working hours
+    day_names = ['', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu', 'Minggu']
+    open_periods = outlet.dig('core', 'openPeriods')&.map do |period|
+      start_time = format('%02d:%02d', period.dig('startTime', 'hours'), period.dig('startTime', 'minutes'))
+      end_time = format('%02d:%02d', period.dig('endTime', 'hours'), period.dig('endTime', 'minutes'))
+
+      {
+        day: period['day'],
+        day_name: day_names[period['day']],
+        start_time: start_time,
+        end_time: end_time,
+        formatted: "#{day_names[period['day']]}: #{start_time}-#{end_time}"
+      }
+    end || []
+
     {
       name: outlet.dig('core', 'displayName'),
       address: address_rows.join(', '),
@@ -574,7 +665,8 @@ class HttpGojekParserService
         core_status: outlet.dig('core', 'status'),
         deliverable: outlet.dig('delivery', 'deliverable'),
         error: nil
-      }
+      },
+      open_periods: open_periods  # ← Working hours (v2.1)
     }
   end
 end
@@ -994,6 +1086,15 @@ For established restaurant (with rating):
 Адрес: Jl Subak Sari 13, Tibubeneng, Kuta Utara
 Кухни: Barat, Makanan sehat, Cepat saji
 [Restaurant Image Preview]
+
+Режим работы:
+  Senin: 09:00-20:00
+  Selasa: 09:00-20:00
+  Rabu: 09:00-20:00
+  Kamis: 09:00-20:00
+  Jumat: 09:00-20:00
+  Sabtu: 09:00-20:00
+  Minggu: 09:00-16:00
 ```
 
 For NEW restaurant (no rating):
@@ -1060,6 +1161,46 @@ if (result.data.status) {
 ---
 
 ## Changelog
+
+### v2.1 (2025-11-12 11:10 Bali time)
+
+**Added**:
+- ✅ **open_periods** field from `outlet.core.openPeriods`
+- ✅ Working hours extraction for all 7 days of the week
+- ✅ Indonesian day names (Senin, Selasa, Rabu, etc.)
+- ✅ Formatted display: "Senin: 09:00-20:00"
+- ✅ Working hours display in test UI
+- ✅ Console output shows "Working Hours:" section
+
+**Features**:
+- Extracts opening/closing times from Next.js JSON
+- Parses `startTime` and `endTime` objects (hours, minutes)
+- Provides both structured data and formatted strings
+- No additional HTTP requests needed - data already in __NEXT_DATA__
+
+**Use Cases**:
+- Display working hours to restaurant owners
+- Calculate if restaurant should be open at specific time
+- Automated alerts for schedule violations
+- Business analytics (operating hours patterns)
+
+**Files Updated**:
+- `test_http_parsing/test_gojek_http.rb` - Added openPeriods extraction and display
+- `test_web_parser/index.html` - Added working hours UI section
+- `ai_docs/development/http_gojek_parser_specification.md` - This doc updated
+
+**Example Output**:
+```ruby
+{
+  open_periods: [
+    {day: 1, day_name: "Senin", start_time: "09:00", end_time: "20:00", formatted: "Senin: 09:00-20:00"},
+    {day: 2, day_name: "Selasa", start_time: "09:00", end_time: "20:00", formatted: "Selasa: 09:00-20:00"},
+    # ... 5 more days
+  ]
+}
+```
+
+---
 
 ### v2.0 (2025-11-11 22:45)
 

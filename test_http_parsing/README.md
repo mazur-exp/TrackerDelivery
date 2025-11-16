@@ -128,8 +128,8 @@ ruby performance_comparison.rb
 - ✅ Rating и review count
 - ✅ Полный адрес
 - ✅ Cuisines (правильные, из tags)
-- ✅ Working hours (openPeriods)
-- ✅ Быстро (~0.5 сек на ресторан)
+- ✅ **Working hours (openPeriods)** - режим работы на всю неделю
+- ✅ Быстро (~0.5-0.8 сек на ресторан)
 - ✅ Масштабируемо (100+ ресторанов)
 
 ## Рекомендации

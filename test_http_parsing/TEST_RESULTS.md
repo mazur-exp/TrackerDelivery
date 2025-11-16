@@ -57,10 +57,18 @@ TDC_itoken          - Session identifier
           "status": 1,              // 1 = OPEN, 2 = CLOSED
           "displayName": "...",
           "address": {"rows": [...]},
-          "tags": [...]              // taxonomy=2 для cuisines
+          "tags": [...],            // taxonomy=2 для cuisines
+          "openPeriods": [          // Working hours (7 days)
+            {
+              "day": 1,
+              "startTime": {"hours": 9, "minutes": 0},
+              "endTime": {"hours": 20, "minutes": 0}
+            }
+          ]
         },
         "ratings": {
-          "average": 4.7
+          "average": 4.7,
+          "total": 305              // Review count
         },
         "delivery": {
           "deliverable": false       // Distance-based availability
@@ -91,3 +99,41 @@ TDC_itoken          - Session identifier
 - `app/services/http_gojek_parser_service.rb` - Production service
 - `test_http_parsing/proxies_test.txt` - Proxy list (for WAF bypass)
 - `gojek_cookies.json` - Extracted cookies from browser
+
+---
+
+## 🕒 Working Hours Feature (v2.1 - 2025-11-12)
+
+### Implementation:
+
+**Добавлено извлечение режима работы** из `outlet.core.openPeriods`.
+
+**Example Output**:
+```
+Working Hours:
+  Senin: 09:00-20:00
+  Selasa: 09:00-20:00
+  Rabu: 09:00-20:00
+  Kamis: 09:00-20:00
+  Jumat: 09:00-20:00
+  Sabtu: 09:00-20:00
+  Minggu: 09:00-16:00
+```
+
+### Test Result (Kue Tiram Ny Hok):
+- ✅ Successfully extracted 7 days of working hours
+- ✅ Correctly formatted with Indonesian day names
+- ✅ Parsing time: 0.80-4.44 seconds (including all data)
+- ✅ Data matches GoFood website modal popup
+
+### Features:
+- Array of 7 objects (Monday=1 to Sunday=7)
+- Each day has: day, day_name, start_time, end_time, formatted
+- No additional HTTP requests needed (data already in __NEXT_DATA__)
+- UI displays working hours in test_web_parser
+
+### Benefits:
+- Restaurant owners can see operating hours
+- Can calculate if restaurant should be open
+- Automated schedule violation alerts
+- Business analytics on operating patterns

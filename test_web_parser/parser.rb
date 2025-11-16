@@ -3,22 +3,28 @@
 require 'webrick'
 require 'json'
 require 'cgi'
-require_relative '../test_http_parsing/test_grab_http'
+require_relative '../test_http_parsing/test_grab_http_v2'
 require_relative '../test_http_parsing/test_gojek_http'
 
 class ParserServer
   def initialize(port = 3000)
     @port = port
-    @grab_parser = TestGrabHttpParser.new
 
-    # Initialize GoJek parser with cookies
-    cookies_file = File.join(File.dirname(__FILE__), '..', 'gojek_cookies.json')
-    @gojek_parser = TestGojekHttpParser.new(
-      proxy_manager: nil,  # No proxy needed with cookies
-      cookies_file: File.exist?(cookies_file) ? cookies_file : nil
+    # Initialize Grab parser with cookies and JWT
+    grab_cookies_file = File.join(File.dirname(__FILE__), '..', 'grab_cookies.json')
+    @grab_parser = TestGrabHttpParserV2.new(
+      cookies_file: File.exist?(grab_cookies_file) ? grab_cookies_file : nil
     )
 
-    puts "🍪 GoJek cookies: #{File.exist?(cookies_file) ? 'LOADED' : 'MISSING'}"
+    # Initialize GoJek parser with cookies
+    gojek_cookies_file = File.join(File.dirname(__FILE__), '..', 'gojek_cookies.json')
+    @gojek_parser = TestGojekHttpParser.new(
+      proxy_manager: nil,  # No proxy needed with cookies
+      cookies_file: File.exist?(gojek_cookies_file) ? gojek_cookies_file : nil
+    )
+
+    puts "🍪 Grab cookies: #{File.exist?(grab_cookies_file) ? 'LOADED' : 'MISSING'}"
+    puts "🍪 GoJek cookies: #{File.exist?(gojek_cookies_file) ? 'LOADED' : 'MISSING'}"
   end
   
   def start

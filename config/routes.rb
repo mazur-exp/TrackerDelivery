@@ -1,9 +1,4 @@
 Rails.application.routes.draw do
-  # HTTP Parser Testing Routes
-  get "test-parsers" => "parser_test#index"
-  post "test-parsers/grab" => "parser_test#test_grab"
-  post "test-parsers/gojek" => "parser_test#test_gojek"
-
   # Root - главная страница лендинга DeliveryTracker
   root "landing#index"
 

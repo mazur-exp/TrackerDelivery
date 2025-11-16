@@ -1,0 +1,20 @@
+#!/usr/bin/env bash
+# Wrapper script для refresh_grab_jwt.py
+# Автоматически использует xvfb-run на headless серверах
+
+set -e
+
+# Определяем нужен ли xvfb
+if [[ "$OSTYPE" == "darwin"* ]]; then
+  # MacOS - запускаем напрямую (visible mode)
+  echo "🍎 MacOS detected - running in visible mode"
+  python3 refresh_grab_jwt.py
+elif command -v xvfb-run &> /dev/null; then
+  # Linux с xvfb - используем для bypass WAF
+  echo "🐧 Linux with Xvfb detected - running with virtual display"
+  xvfb-run -a python3 refresh_grab_jwt.py
+else
+  # Linux без xvfb - пробуем напрямую (может не сработать)
+  echo "⚠️  Linux without Xvfb - trying direct run (may fail with WAF)"
+  python3 refresh_grab_jwt.py
+fi

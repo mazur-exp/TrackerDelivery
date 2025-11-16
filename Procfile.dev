@@ -1,4 +1,5 @@
 web: bin/rails server
 jobs: bin/jobs
 ngrok: ngrok http --url=karri-unexpunged-becomingly.ngrok-free.dev 3000
-gojek_cookies: /Users/mzr/Developments/restaurant_parser/venv/bin/python3 refresh_gojek_cookies.py
+gojek_cookies: python3 refresh_gojek_cookies.py
+grab_jwt: bin/refresh-grab-jwt

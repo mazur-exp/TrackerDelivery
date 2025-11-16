@@ -41,7 +41,12 @@
 # macOS system files
 .DS_Store
 
-# GoJek cookies (session data - do not commit)
+# Parser credentials (session data - do not commit!)
 gojek_cookies.json
 gojek_cookies_test.json
 **/gojek_cookies*.json
+
+# Grab cookies and JWT (do not commit!)
+grab_cookies.json
+grab_cookies_test.json
+**/grab_cookies*.json

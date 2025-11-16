@@ -1,0 +1,40 @@
+#!/usr/bin/env bash
+
+# Pre-deploy hook: Copy credentials to server before deployment
+# This ensures grab_cookies.json and gojek_cookies.json are available
+
+set -e
+
+echo "📦 Pre-Deploy: Copying parser credentials to server..."
+
+# Check if credentials exist locally
+if [ ! -f "grab_cookies.json" ]; then
+  echo "⚠️  Warning: grab_cookies.json not found - Grab parser may not work!"
+fi
+
+if [ ! -f "gojek_cookies.json" ]; then
+  echo "⚠️  Warning: gojek_cookies.json not found - GoJek parser may not work!"
+fi
+
+# Get server info from Kamal
+KAMAL_HOSTS=$(kamal config | grep "Primary host" | awk '{print $NF}' || echo "")
+
+if [ -z "$KAMAL_HOSTS" ]; then
+  echo "⚠️  Could not determine Kamal host - skipping credential copy"
+  exit 0
+fi
+
+echo "🎯 Target server: $KAMAL_HOSTS"
+
+# Copy credentials if they exist
+if [ -f "grab_cookies.json" ]; then
+  echo "📤 Copying grab_cookies.json..."
+  scp -o StrictHostKeyChecking=no grab_cookies.json root@$KAMAL_HOSTS:/root/TrackerDelivery/ || true
+fi
+
+if [ -f "gojek_cookies.json" ]; then
+  echo "📤 Copying gojek_cookies.json..."
+  scp -o StrictHostKeyChecking=no gojek_cookies.json root@$KAMAL_HOSTS:/root/TrackerDelivery/ || true
+fi
+
+echo "✅ Credentials copied successfully"

@@ -2,9 +2,9 @@ Rails.application.routes.draw do
   # Root - главная страница лендинга DeliveryTracker
   root "landing#index"
 
-  if Rails.env.development? || Rails.env.test?
-    mount MissionControl::Jobs::Engine => "/jobs"
-  end
+  # Mission Control Jobs (SolidQueue monitoring)
+  # Protected by authentication in production
+  mount MissionControl::Jobs::Engine => "/jobs"
 
   # Authentication routes
   resource :session, only: [ :new, :create, :destroy ]

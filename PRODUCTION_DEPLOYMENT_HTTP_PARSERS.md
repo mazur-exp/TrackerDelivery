@@ -13,70 +13,84 @@
 - [x] `HttpGojekParserService` существует
 - [x] `/test-parsers` route настроен
 - [x] `refresh_grab_jwt.py` исправлен (case-sensitive headers)
-- [x] `grab_cookies.json` содержит валидный JWT
-- [x] `gojek_cookies.json` содержит валидные cookies
+- [x] `grab_cookies.json` содержит валидный JWT ← **Закоммичен в git!**
+- [x] `gojek_cookies.json` содержит валидные cookies ← **Закоммичен в git!**
 
-### 2. Проверка credentials
+### 2. Проверка credentials (ВАЖНО!)
 
 ```bash
-# JWT должен быть свежим (< 10 минут!)
-cat grab_cookies.json | grep -E '(jwt_token|timestamp)'
+# JWT должен быть ВАЛИДНЫМ (не null!)
+cat grab_cookies.json | grep jwt_token
+# Должно быть: "jwt_token": "eyJ..." (НЕ null!)
 
-# Cookies должны быть свежими (< 6 часов)
-cat gojek_cookies.json | grep timestamp
+# Cookies должны быть свежими
+cat gojek_cookies.json | grep w_tsfp
+# Должен быть WAF token
 ```
+
+**КРИТИЧНО:** Файлы `grab_cookies.json` и `gojek_cookies.json` **включены в Docker image**!
+- При build Docker копирует их в `/rails/*.json`
+- Refresh scripts обновляют файлы **inside container** каждые 4 минуты
+- Updates НЕ сохраняются между container restarts (ephemeral)
+- Для production stability: перебилдить image с fresh JWT каждые несколько часов
 
 ---
 
-## 🚀 Deployment Steps
+## 🚀 Deployment Steps (SIMPLE!)
 
-### Step 1: Bundle install
-
-```bash
-bundle install
-# Должно установить http-cookie gem
-```
-
-### Step 2: Update Procfile.dev для production
-
-```ruby
-# Procfile.dev
-web: bin/rails server
-jobs: bin/jobs
-gojek_cookies: python3 refresh_gojek_cookies.py
-grab_jwt: xvfb-run -a python3 refresh_grab_jwt.py  # ← Добавлен xvfb-run!
-```
-
-**Важно**: `xvfb-run` bypasses AWS WAF на headless сервере!
-
-### Step 3: Copy credentials на сервер
+### Step 1: Verify credentials committed
 
 ```bash
-# SCP credentials на production
-scp grab_cookies.json root@your-server:/root/TrackerDelivery/
-scp gojek_cookies.json root@your-server:/root/TrackerDelivery/
+# Проверить что JWT валидный (НЕ null!)
+git show HEAD:grab_cookies.json | grep jwt_token
 
-# В Docker они будут в /rails/
+# Должно быть: "jwt_token": "eyJ..."
 ```
 
-### Step 4: Deploy via Kamal
+### Step 2: Push и Deploy
 
 ```bash
+git push
 kamal deploy
 ```
 
-### Step 5: Verify deployment
+**Вот и всё!** Credentials включены в Docker image автоматически!
 
-```bash
-# SSH на сервер
-ssh root@your-server
+---
 
-# Проверить credentials скопированы
-ls -lh /root/TrackerDelivery/*.json
+## ✅ Как это работает (Simple Architecture)
 
-# Проверить процессы
-ps aux | grep -E "(refresh_grab|refresh_gojek)"
+### Docker Build:
+```dockerfile
+# Dockerfile автоматически копирует:
+COPY . /rails
+# ↑ Включает grab_cookies.json и gojek_cookies.json!
 ```
+
+### Container Runtime:
+```
+/rails/
+├── grab_cookies.json     ← Initial JWT (baked in image)
+├── gojek_cookies.json    ← Initial cookies
+├── refresh_grab_jwt.py   ← Updates grab_cookies.json every 4 min
+└── refresh_gojek_cookies.py  ← Updates gojek_cookies.json every 4 hours
+```
+
+### JWT Lifecycle:
+```
+1. Docker build → grab_cookies.json с JWT копируется в image
+2. Container starts → файл в /rails/grab_cookies.json
+3. refresh_grab_jwt.py запускается → обновляет JWT каждые 4 минуты
+4. Parser читает → СВЕЖИЙ JWT! ✅
+5. Container restart → JWT возвращается к initial (from image)
+   └─> refresh скрипт сразу обновит! (4 min cycle)
+```
+
+### Важно:
+- ✅ Initial JWT работает первые 10 минут после deployment
+- ✅ Refresh обновляет JWT каждые 4 минуты
+- ⚠️ Container restart → возврат к initial JWT (но быстро обновляется)
+- 💡 Для длительной стабильности: redeploy каждые несколько дней с fresh JWT
 
 ---
 

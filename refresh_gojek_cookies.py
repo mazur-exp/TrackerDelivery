@@ -21,12 +21,7 @@ class GoJekCookieRefresher:
 
     def __init__(self):
         self.driver = None
-        # Use storage/ directory for persistent credentials (production)
-        storage_path = Path(__file__).parent / "storage" / self.OUTPUT_FILE
-        if storage_path.parent.exists():
-            self.cookies_file = storage_path
-        else:
-            self.cookies_file = Path(__file__).parent / self.OUTPUT_FILE
+        self.cookies_file = Path(__file__).parent / self.OUTPUT_FILE
 
     def init_browser(self):
         """Инициализирует undetected ChromeDriver"""

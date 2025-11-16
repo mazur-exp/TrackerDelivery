@@ -28,10 +28,7 @@ class HttpGojekParserService
 
   def load_cookies_from_file
     # Load cookies from gojek_cookies.json
-    # Try storage first (new location), fallback to root (backward compatibility)
-    storage_path = Rails.root.join('storage/gojek_cookies.json')
-    root_path = Rails.root.join('gojek_cookies.json')
-    cookies_file = File.exist?(storage_path) ? storage_path : root_path
+    cookies_file = Rails.root.join('gojek_cookies.json')
 
     return unless File.exist?(cookies_file)
 

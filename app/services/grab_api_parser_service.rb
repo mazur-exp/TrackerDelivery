@@ -9,10 +9,7 @@ class GrabApiParserService
 
   def initialize
     @timeout = 10
-    # Try storage first (new location), fallback to root (backward compatibility)
-    storage_path = Rails.root.join("storage/grab_cookies.json")
-    root_path = Rails.root.join("grab_cookies.json")
-    @cookies_file = File.exist?(storage_path) ? storage_path : root_path
+    @cookies_file = Rails.root.join("grab_cookies.json")
     load_credentials
   end
 

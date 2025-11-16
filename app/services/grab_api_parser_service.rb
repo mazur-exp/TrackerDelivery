@@ -190,13 +190,21 @@ class GrabApiParserService
         parsed = parse_hours_string(hours_str)
 
         if parsed
+          # day_of_week: 0=Sunday, 1=Monday, ...6=Saturday (for UI compatibility)
+          day_of_week_index = info[:order] == 7 ? 0 : info[:order]
+
           days << {
             day: info[:order],
             day_name: info[:short],
             day_name_en: info[:full],
             start_time: parsed[:start_time],
             end_time: parsed[:end_time],
-            formatted: "#{info[:short]}: #{parsed[:start_time]}-#{parsed[:end_time]}"
+            formatted: "#{info[:short]}: #{parsed[:start_time]}-#{parsed[:end_time]}",
+            # UI compatibility fields:
+            day_of_week: day_of_week_index,
+            opens_at: parsed[:start_time],
+            closes_at: parsed[:end_time],
+            is_closed: false
           }
         end
       end

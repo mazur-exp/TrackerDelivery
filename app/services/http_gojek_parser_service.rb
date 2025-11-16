@@ -193,12 +193,20 @@ class HttpGojekParserService
         start_time = format('%02d:%02d', period.dig('startTime', 'hours'), period.dig('startTime', 'minutes'))
         end_time = format('%02d:%02d', period.dig('endTime', 'hours'), period.dig('endTime', 'minutes'))
 
+        # day_of_week: 0=Sunday, 1=Monday, ...6=Saturday (for UI compatibility)
+        day_of_week_index = period['day'] == 7 ? 0 : period['day']
+
         {
           day: period['day'],
           day_name: day_names[period['day']],
           start_time: start_time,
           end_time: end_time,
-          formatted: "#{day_names[period['day']]}: #{start_time}-#{end_time}"
+          formatted: "#{day_names[period['day']]}: #{start_time}-#{end_time}",
+          # UI compatibility fields:
+          day_of_week: day_of_week_index,
+          opens_at: start_time,
+          closes_at: end_time,
+          is_closed: false
         }
       end
     end

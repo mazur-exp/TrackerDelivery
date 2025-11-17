@@ -97,75 +97,33 @@ data = parser.parse("https://gofood.link/a/...")
 
 ---
 
-## Testing Route: /test-parsers
+## Production Monitoring: /jobs
 
-**URL**: `https://your-domain.com/test-parsers`
+**URL**: `https://your-domain.com/jobs`
 
-**Назначение:**
-- Production testing обоих парсеров
-- Проверка JWT/cookies валидности
-- Performance benchmarking
-- Debugging в production окружении
-
-### Файлы:
-
-**Controller**: `app/controllers/parser_test_controller.rb`
-```ruby
-class ParserTestController < ApplicationController
-  skip_before_action :require_authentication  # Public access для тестирования
-
-  def index  # GET /test-parsers
-  def test_grab  # POST /test-parsers/grab
-  def test_gojek  # POST /test-parsers/gojek
-end
+**Access:**
+```
+Username: admin
+Password: TrackerDelivery2025!
 ```
 
-**Routes**: `config/routes.rb`
-```ruby
-get "test-parsers" => "parser_test#index"
-post "test-parsers/grab" => "parser_test#test_grab"
-post "test-parsers/gojek" => "parser_test#test_gojek"
-```
+**Purpose:**
+- Monitor all background jobs
+- View HTTP parser performance in real-time
+- Check errors and retries
+- Queue status and processing times
 
-**View**: `app/views/parser_test/index.html.erb`
-- Gradient design (следует UI Design System)
-- Два input поля (Grab URL, GoJek URL)
-- Real-time results с JSON preview
-- Performance metrics (duration, quality score)
+**Features:**
+- Live job status updates
+- Error tracking
+- Performance metrics
+- Retry attempts visibility
 
-### API Response Format:
-
-```json
-{
-  "success": true,
-  "parser": "GrabApiParserService (JWT + API v2)",
-  "data": { /* restaurant data */ },
-  "duration": 0.45,
-  "quality": 75,
-  "timestamp": "2025-11-16T03:36:00Z"
-}
-```
-
-### Usage:
-
-**В браузере:**
-1. Открыть `https://your-domain.com/test-parsers`
-2. Ввести URL ресторана
-3. Кликнуть "Test Parser"
-4. Увидеть результаты в реальном времени
-
-**Через API:**
-```bash
-# Test Grab
-curl -X POST https://your-domain.com/test-parsers/grab \
-  -H "Content-Type: application/json" \
-  -d '{"url": "https://r.grab.com/g/6-..."}'
-
-# Test GoJek
-curl -X POST https://your-domain.com/test-parsers/gojek \
-  -H "Content-Type: application/json" \
-  -d '{"url": "https://gofood.link/a/..."}'
-```
+### What you see:
+- RestaurantMonitoringWorkerJob execution
+- HTTP parser durations
+- Success/failure rates
+- Network timeouts and retries
 
 ---
 

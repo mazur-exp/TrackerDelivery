@@ -9,6 +9,12 @@ class RestaurantMonitoringWorkerJob < ApplicationJob
 
     check_restaurant_status(restaurant)
 
+    # Rate limiting: delay after Grab API calls to prevent 429 errors
+    if restaurant.platform == "grab"
+      sleep(0.5)
+      Rails.logger.info "Rate limiting: Paused 500ms after Grab request"
+    end
+
     Rails.logger.info "Worker completed for restaurant: #{restaurant.name}"
   rescue ActiveRecord::RecordNotFound
     Rails.logger.error "Restaurant with ID #{restaurant_id} not found"

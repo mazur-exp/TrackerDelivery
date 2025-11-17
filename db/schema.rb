@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2025_10_01_152925) do
+ActiveRecord::Schema[8.0].define(version: 2025_11_16_210649) do
   create_table "cuisine_translations", force: :cascade do |t|
     t.string "indonesian", null: false
     t.string "english", null: false
@@ -224,6 +224,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_10_01_152925) do
     t.datetime "password_reset_sent_at"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.boolean "admin"
     t.index ["email_address"], name: "index_users_on_email_address", unique: true
     t.index ["email_confirmation_token"], name: "index_users_on_email_confirmation_token", unique: true
     t.index ["password_reset_token"], name: "index_users_on_password_reset_token", unique: true

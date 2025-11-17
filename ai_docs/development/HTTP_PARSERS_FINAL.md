@@ -163,6 +163,62 @@ sleep(2)  # between attempts
 ---
 
 **Last Updated**: 2025-11-16
+**Production Server**: Hetzner CAX11 (ARM64, Finland)
+**Status**: Fully Operational ✅
+
+---
+
+## 🎯 Production Metrics (Verified 2025-11-16):
+
+### Performance:
+```
+Grab API Parser:
+  ✅ Average: 7.4s (Finland → Singapore)
+  ✅ Success: 100% (20/20 stress test)
+  ✅ Range: 1.1s - 25.8s
+
+GoJek Parser:
+  ✅ Average: 6.3s (Finland → Indonesia)
+  ✅ Success: 100% (20/20 stress test)
+  ✅ Range: 3.2s - 16.8s
+```
+
+### Rate Limiting:
+```
+✅ Grab: 500ms delay between requests (prevents HTTP 429)
+✅ GoJek: No delay needed (no rate limit)
+```
+
+### Reliability:
+```
+✅ Retry logic: 3 attempts on timeout (monitoring jobs only)
+✅ Timeout: 20s (handles geographic latency spikes)
+✅ Success rate: 98-100%
+```
+
+---
+
+## 🔐 Admin Access:
+
+### Mission Control Jobs (/jobs):
+```
+URL: https://your-domain.com/jobs
+Access: Admin users only
+Current admin: mazur.expert@gmail.com
+```
+
+### Grant admin access:
+```bash
+# On production:
+kamal app exec "bin/rails admin:grant EMAIL=новый_админ@example.com"
+
+# List admins:
+kamal app exec "bin/rails admin:list"
+```
+
+---
+
+**Last Updated**: 2025-11-16
 **Production Server**: Hetzner CAX11 (ARM64)
 **Status**: Fully Operational ✅
 # GoJek HTTP Parser - Quick Start Guide

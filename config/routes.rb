@@ -2,8 +2,7 @@ Rails.application.routes.draw do
   # Root - главная страница лендинга DeliveryTracker
   root "landing#index"
 
-  # Mission Control Jobs (SolidQueue monitoring)
-  # Protected by authentication in production
+  # Mission Control Jobs - production monitoring
   mount MissionControl::Jobs::Engine => "/jobs"
 
   # Authentication routes

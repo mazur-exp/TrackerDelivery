@@ -228,16 +228,34 @@ kamal app logs | grep "Grab API"
 
 Deployment successful если:
 
-- [x] /test-parsers route accessible
-- [x] Grab parser returns data in < 1s
-- [x] GoJek parser returns data in < 3s
-- [x] JWT refresh works (check timestamp updates)
-- [x] Cookie refresh works
+- [x] Onboarding works with HTTP parsers (6-12s)
+- [x] Monitoring jobs running (every 5 min)
+- [x] Grab: 100% success rate (no HTTP 429)
+- [x] GoJek: 100% success rate
+- [x] /jobs accessible (admin/TrackerDelivery2025!)
 - [x] No errors in logs
 
 ---
 
-**Version**: 1.0
-**Date**: 2025-11-16
-**Target Server**: Hetzner CAX11 (ARM64)
-**Tested**: MacOS ARM64 M4 ✅
+## 📊 Mission Control Jobs:
+
+**Access:**
+```
+URL: https://your-domain.com/jobs
+Username: admin
+Password: TrackerDelivery2025!
+```
+
+**Features:**
+- View all monitoring jobs
+- See errors and retries
+- Monitor performance
+- Queue status
+
+---
+
+**Version**: 2.0
+**Date**: 2025-11-17
+**Target Server**: Hetzner CAX11 (ARM64, Finland)
+**Tested**: Production verified ✅
+**Status**: Fully Operational 🚀

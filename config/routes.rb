@@ -5,29 +5,39 @@ Rails.application.routes.draw do
   # Mission Control Jobs - production monitoring
   mount MissionControl::Jobs::Engine => "/jobs"
 
-  # Authentication routes
-  resource :session, only: [ :new, :create, :destroy ]
+  # Authentication routes - Telegram (MVP)
   get "login" => "sessions#new"
-  post "login" => "sessions#create"
+  get "signup" => "users#new"
   delete "logout" => "sessions#destroy"
 
-  # User registration
-  resources :users, only: [ :new, :create ]
-  get "signup" => "users#new"
-  post "signup" => "users#create"
+  # Telegram authentication
+  post "auth/telegram/webhook" => "telegram_auth#webhook"
+  get "auth/telegram/:token" => "telegram_auth#auth_with_token", as: :telegram_token_auth
+  post "auth/telegram/callback" => "telegram_auth#create", as: :telegram_callback
 
-  # Email confirmation
-  get "email_confirmation" => "email_confirmations#show"
-  resources :email_confirmations, only: [ :new, :create ]
-  get "resend_confirmation" => "email_confirmations#new"
-  post "resend_confirmation" => "email_confirmations#create"
+  # TODO: RESTORE EMAIL AUTHENTICATION ROUTES AFTER MVP
+  # Email-based authentication temporarily disabled for MVP
+  # Uncomment these routes to re-enable email/password authentication
 
-  # Password reset
-  resources :passwords, param: :token, only: [ :new, :create, :edit, :update ]
-  get "forgot_password" => "passwords#new"
-  post "forgot_password" => "passwords#create"
-  get "reset_password" => "passwords#edit"
-  patch "reset_password" => "passwords#update"
+  # resource :session, only: [ :new, :create, :destroy ]
+  # post "login" => "sessions#create"
+
+  # # User registration
+  # resources :users, only: [ :new, :create ]
+  # post "signup" => "users#create"
+
+  # # Email confirmation
+  # get "email_confirmation" => "email_confirmations#show"
+  # resources :email_confirmations, only: [ :new, :create ]
+  # get "resend_confirmation" => "email_confirmations#new"
+  # post "resend_confirmation" => "email_confirmations#create"
+
+  # # Password reset
+  # resources :passwords, param: :token, only: [ :new, :create, :edit, :update ]
+  # get "forgot_password" => "passwords#new"
+  # post "forgot_password" => "passwords#create"
+  # get "reset_password" => "passwords#edit"
+  # patch "reset_password" => "passwords#update"
 
   # Protected routes
   get "dashboard" => "dashboards#show"

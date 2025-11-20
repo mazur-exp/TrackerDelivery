@@ -82,12 +82,12 @@ module Authentication
     cookies.delete(:session_id)
   end
 
-  def after_authentication_url
+  def after_authentication_url(user = current_user)
     return session.delete(:return_to_after_authenticating) if session[:return_to_after_authenticating].present?
 
     # If user has restaurants configured, redirect to dashboard
     # Otherwise, redirect to onboarding
-    if current_user.has_restaurants?
+    if user&.has_restaurants?
       "/dashboard"
     else
       "/onboarding"

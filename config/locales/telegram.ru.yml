@@ -1,0 +1,29 @@
+ru:
+  telegram:
+    # Welcome message for new users
+    welcome_new_title: "Добро пожаловать в DeliveryTracker!"
+    welcome_new_description: "Мы помогаем владельцам ресторанов в Бали отслеживать статус на платформах доставки 24/7."
+    feature_monitoring: "Автоматический мониторинг GrabFood и GoFood"
+    feature_frequency: "Проверка каждые 5 минут"
+    feature_notifications: "Мгновенные уведомления об изменениях"
+    click_to_register: "Нажмите кнопку ниже чтобы завершить регистрацию ⬇️"
+
+    # Welcome back message for existing users
+    welcome_back_title: "С возвращением в DeliveryTracker!"
+    click_to_login: "Нажмите кнопку ниже чтобы войти на сайт ⬇️"
+
+    # Button text
+    button_complete_registration: "✅ Завершить регистрацию"
+    button_sign_in: "🔐 Войти на сайт"
+
+    # Thank you messages
+    thank_you_new_title: "Отлично! Регистрация завершена."
+    thank_you_new_features: |
+      Теперь вы можете:
+      • Добавить свои рестораны
+      • Настроить рабочие часы
+      • Получать уведомления о проблемах
+    thank_you_new_action: "Можете вернуться на сайт и начать работу! 🚀"
+
+    thank_you_existing_title: "Авторизация завершена!"
+    thank_you_existing_action: "Можете вернуться на сайт и продолжить работу."

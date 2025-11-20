@@ -1,0 +1,33 @@
+en:
+  auth:
+    # Login page
+    sign_in: "Sign In"
+    sign_in_subtitle: "Sign in with your Telegram account"
+    click_button_below: "Click the button below to sign in using Telegram"
+    sign_in_with_telegram: "Sign In with Telegram"
+
+    # Signup page
+    create_account: "Create Account"
+    get_started: "Get started instantly with Telegram"
+    click_to_create: "Click the button below to create your account using Telegram"
+    sign_up_with_telegram: "Sign Up with Telegram"
+
+    # How it works
+    how_it_works: "How it works?"
+    step_1: "Click the button above"
+    step_2: "Telegram bot will open"
+    step_3: "Click /start"
+    step_4_login: "Bot will send you a login link"
+    step_4_signup: "Bot will send you a registration link"
+
+    # Common
+    already_have_account: "Already have an account?"
+    terms_text: "By creating an account, you agree to our"
+    terms_of_service: "Terms of Service"
+    and: "and"
+    privacy_policy: "Privacy Policy"
+
+    # Flash messages
+    invalid_link: "Invalid login link."
+    link_expired: "Login link expired. Please try again."
+    welcome: "Welcome, %{name}!"

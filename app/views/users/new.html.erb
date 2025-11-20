@@ -1,8 +1,15 @@
-<% content_for :title, "Create Account - DeliveryTracker" %>
+<% content_for :title, "#{t('auth.create_account')} - DeliveryTracker" %>
+<%
+  # Prefix session token with locale for Telegram bot
+  base_token = SecureRandom.urlsafe_base64(32)
+  session_token = I18n.locale == :ru ? "ru_#{base_token}" : base_token
+%>
 
 <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
 
-<div class="min-h-screen bg-white flex items-center justify-center px-4 py-8">
+<div class="min-h-screen bg-white flex items-center justify-center px-4 py-8"
+     data-controller="auth"
+     data-auth-session-token-value="<%= session_token %>">
   <div class="max-w-md w-full">
     <!-- Logo/Brand -->
     <div class="text-center mb-8">
@@ -18,73 +25,126 @@
     <!-- Signup Form Card -->
     <div class="bg-white rounded-xl border shadow-sm p-8">
       <div class="text-center mb-6">
-        <h2 class="text-2xl font-semibold text-gray-900">Create Account</h2>
-        <p class="text-gray-600 mt-1">Get started with delivery monitoring</p>
+        <h2 class="text-2xl font-semibold text-gray-900"><%= t('auth.create_account') %></h2>
+        <p class="text-gray-600 mt-1"><%= t('auth.get_started') %></p>
       </div>
 
-      <%= form_with model: @user, url: signup_path, local: true, class: "space-y-6" do |form| %>
-        <!-- Error Messages -->
-        <% if @user.errors.any? %>
-          <div class="bg-red-50 border border-red-200 rounded-lg p-4">
-            <div class="flex">
-              <div class="flex-shrink-0">
-                <i data-lucide="alert-circle" class="h-5 w-5 text-red-400"></i>
-              </div>
-              <div class="ml-3">
-                <h3 class="text-sm font-medium text-red-800">Please fix the following errors:</h3>
-                <div class="mt-2 text-sm text-red-700">
-                  <ul class="list-disc pl-5 space-y-1">
-                    <% @user.errors.full_messages.each do |message| %>
-                      <li><%= message %></li>
-                    <% end %>
-                  </ul>
-                </div>
-              </div>
+      <!-- Telegram Registration -->
+      <div class="flex flex-col items-center justify-center py-8">
+        <p class="text-sm text-gray-600 mb-6">
+          <%= t('auth.click_to_create') %>
+        </p>
+
+        <!-- Telegram Bot Registration Button -->
+        <a href="https://t.me/<%= ENV['TELEGRAM_BOT_USERNAME'] || 'delivery_tracker_auth_bot' %>?start=signup_<%= session_token %>"
+           target="_blank"
+           class="inline-flex items-center justify-center px-6 py-3 bg-blue-500 hover:bg-blue-600 text-white font-medium rounded-lg transition-colors duration-200 shadow-sm hover:shadow-md">
+          <svg class="w-6 h-6 mr-2" fill="currentColor" viewBox="0 0 24 24">
+            <path d="M12 0C5.373 0 0 5.373 0 12s5.373 12 12 12 12-5.373 12-12S18.627 0 12 0zm5.562 8.161c-.18 1.897-.962 6.502-1.359 8.627-.168.9-.5 1.201-.82 1.23-.697.064-1.226-.461-1.901-.903-1.056-.693-1.653-1.124-2.678-1.8-1.185-.781-.417-1.21.258-1.911.177-.184 3.247-2.977 3.307-3.23.007-.032.014-.15-.056-.212s-.174-.041-.248-.024c-.106.024-1.793 1.139-5.062 3.345-.479.329-.913.489-1.302.481-.428-.009-1.252-.242-1.865-.442-.752-.244-1.349-.374-1.297-.789.027-.216.325-.437.893-.663 3.498-1.524 5.831-2.529 6.998-3.014 3.332-1.386 4.025-1.627 4.476-1.635.099-.002.321.023.465.14.121.099.155.233.171.326.016.094.037.308.021.475z"/>
+          </svg>
+          <%= t('auth.sign_up_with_telegram') %>
+        </a>
+
+        <div class="mt-6 p-4 bg-blue-50 rounded-lg border border-blue-200 max-w-sm">
+          <div class="flex items-start">
+            <div class="flex-shrink-0">
+              <i data-lucide="zap" class="w-5 h-5 text-blue-600 mt-0.5"></i>
+            </div>
+            <div class="ml-3">
+              <p class="text-xs text-blue-700">
+                <strong><%= t('auth.how_it_works') %></strong><br>
+                1. <%= t('auth.step_1') %><br>
+                2. <%= t('auth.step_2') %><br>
+                3. <%= t('auth.step_3') %><br>
+                4. <%= t('auth.step_4_signup') %>
+              </p>
             </div>
           </div>
-        <% end %>
-        <!-- Name Field -->
-        <div>
-          <%= form.label :name, class: "block text-sm font-medium text-gray-700 mb-2" %>
-          <%= form.text_field :name, 
-              placeholder: "Your full name (optional)",
-              class: "w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-600/20 focus:border-green-600 transition-all duration-300" %>
         </div>
+      </div>
 
-        <!-- Email Field -->
-        <div>
-          <%= form.label :email_address, "Email Address", class: "block text-sm font-medium text-gray-700 mb-2" %>
-          <%= form.email_field :email_address, 
-              placeholder: "you@restaurant.com",
-              required: true,
-              class: "w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-600/20 focus:border-green-600 transition-all duration-300" %>
-        </div>
+      <%# TODO: RESTORE EMAIL SIGNUP AFTER MVP %>
+      <%# Email-based registration temporarily disabled for MVP %>
+      <%#=
+      # form_with model: @user, url: signup_path, local: true, class: "space-y-6" do |form|
+        <%# <!-- Error Messages --> %>
+        <%# <% if @user.errors.any? %>
+          <%# <div class="bg-red-50 border border-red-200 rounded-lg p-4"> %>
+            <%# <div class="flex"> %>
+              <%# <div class="flex-shrink-0"> %>
+                <%# <i data-lucide="alert-circle" class="h-5 w-5 text-red-400"></i> %>
+              <%# </div> %>
+              <%# <div class="ml-3"> %>
+                <%# <h3 class="text-sm font-medium text-red-800">Please fix the following errors:</h3> %>
+                <%# <div class="mt-2 text-sm text-red-700"> %>
+                  <%# <ul class="list-disc pl-5 space-y-1"> %>
+                    <%# @user.errors.full_messages.each do |message| %>
+                      <%# <li>message</li> %>
+                    <%# end %>
+                  <%# </ul> %>
+                <%# </div> %>
+              <%# </div> %>
+            <%# </div> %>
+          <%# </div> %>
+        <%# end %>
+        <%# <!-- Name Field --> %>
+        <%# <div> %>
+          <%#= form.label :name, class: "block text-sm font-medium text-gray-700 mb-2" %>
+          <%#= form.text_field :name,  %>
+              <%# placeholder: "Your full name (optional)", %>
+              <%# class: "w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-600/20 focus:border-green-600 transition-all duration-300" %>
+        <%# </div> %>
 
-        <!-- Password Field -->
-        <div>
-          <%= form.label :password, class: "block text-sm font-medium text-gray-700 mb-2" %>
-          <%= form.password_field :password, 
-              placeholder: "Minimum 8 characters",
-              required: true,
-              class: "w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-600/20 focus:border-green-600 transition-all duration-300" %>
-          <p class="text-xs text-gray-500 mt-1">Must be at least 8 characters long</p>
-        </div>
+        <%# <!-- Email Field --> %>
+        <%# <div> %>
+          <%#= form.label :email_address, "Email Address", class: "block text-sm font-medium text-gray-700 mb-2" %>
+          <%#= form.email_field :email_address,  %>
+              <%# placeholder: "you@restaurant.com", %>
+              <%# required: true, %>
+              <%# class: "w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-600/20 focus:border-green-600 transition-all duration-300" %>
+        <%# </div> %>
 
-        <!-- Password Confirmation Field -->
-        <div>
-          <%= form.label :password_confirmation, "Confirm Password", class: "block text-sm font-medium text-gray-700 mb-2" %>
-          <%= form.password_field :password_confirmation, 
-              placeholder: "Confirm your password",
-              required: true,
-              class: "w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-600/20 focus:border-green-600 transition-all duration-300" %>
-        </div>
+        <%# <!-- Password Field --> %>
+        <%# <div> %>
+          <%#= form.label :password, class: "block text-sm font-medium text-gray-700 mb-2" %>
+          <%#= form.password_field :password,  %>
+              <%# placeholder: "Minimum 8 characters", %>
+              <%# required: true, %>
+              <%# class: "w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-600/20 focus:border-green-600 transition-all duration-300" %>
+          <%# <p class="text-xs text-gray-500 mt-1">Must be at least 8 characters long</p> %>
+        <%# </div> %>
 
-        <!-- Submit Button -->
-        <div>
-          <%= form.submit "Create Account", 
-              class: "w-full bg-green-600 hover:bg-green-700 text-white font-medium py-3 px-4 rounded-md transition-colors duration-200" %>
-        </div>
-      <% end %>
+        <%# <!-- Password Confirmation Field --> %>
+        <%# <div> %>
+          <%#= form.label :password_confirmation, "Confirm Password", class: "block text-sm font-medium text-gray-700 mb-2" %>
+          <%#= form.password_field :password_confirmation,  %>
+              <%# placeholder: "Confirm your password", %>
+              <%# required: true, %>
+              <%# class: "w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-600/20 focus:border-green-600 transition-all duration-300" %>
+        <%# </div> %>
+
+        <%# <!-- Submit Button --> %>
+        <%# <div> %>
+          <%#= form.submit "Create Account",  %>
+              <%# class: "w-full bg-green-600 hover:bg-green-700 text-white font-medium py-3 px-4 rounded-md transition-colors duration-200" %>
+        <%# </div> %>
+      <%# end %>
+
+      <%# <!-- Divider --> %>
+      <%# <div class="relative my-6"> %>
+        <%# <div class="absolute inset-0 flex items-center"> %>
+          <%# <div class="w-full border-t border-gray-200"></div> %>
+        <%# </div> %>
+        <%# <div class="relative flex justify-center text-sm"> %>
+          <%# <span class="px-2 bg-white text-gray-500">Already have an account?</span> %>
+        <%# </div> %>
+      <%# </div> %>
+
+      <%# <!-- Login Link --> %>
+      <%# <div class="text-center"> %>
+        <%#= link_to "Sign In", login_path,  %>
+            <%# class: "inline-flex items-center justify-center w-full py-3 px-4 border border-gray-300 rounded-md text-gray-700 font-medium hover:bg-gray-50 transition-colors duration-200" %>
+      <%# </div> %>
 
       <!-- Divider -->
       <div class="relative my-6">
@@ -92,23 +152,23 @@
           <div class="w-full border-t border-gray-200"></div>
         </div>
         <div class="relative flex justify-center text-sm">
-          <span class="px-2 bg-white text-gray-500">Already have an account?</span>
+          <span class="px-2 bg-white text-gray-500"><%= t('auth.already_have_account') %></span>
         </div>
       </div>
 
       <!-- Login Link -->
       <div class="text-center">
-        <%= link_to "Sign In", login_path, 
+        <%= link_to t('auth.sign_in'), login_path,
             class: "inline-flex items-center justify-center w-full py-3 px-4 border border-gray-300 rounded-md text-gray-700 font-medium hover:bg-gray-50 transition-colors duration-200" %>
       </div>
     </div>
 
     <!-- Terms -->
     <p class="text-center text-xs text-gray-500 mt-6">
-      By creating an account, you agree to our 
-      <a href="#" class="text-green-600 hover:text-green-700">Terms of Service</a> 
-      and 
-      <a href="#" class="text-green-600 hover:text-green-700">Privacy Policy</a>
+      <%= t('auth.terms_text') %>
+      <a href="#" class="text-green-600 hover:text-green-700"><%= t('auth.terms_of_service') %></a>
+      <%= t('auth.and') %>
+      <a href="#" class="text-green-600 hover:text-green-700"><%= t('auth.privacy_policy') %></a>
     </p>
   </div>
 </div>

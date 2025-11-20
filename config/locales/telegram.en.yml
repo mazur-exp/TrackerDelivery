@@ -1,0 +1,29 @@
+en:
+  telegram:
+    # Welcome message for new users
+    welcome_new_title: "Welcome to DeliveryTracker!"
+    welcome_new_description: "We help restaurant owners in Bali monitor their delivery platform status 24/7."
+    feature_monitoring: "Automatic monitoring of GrabFood and GoFood"
+    feature_frequency: "Checks every 5 minutes"
+    feature_notifications: "Instant notifications about changes"
+    click_to_register: "Click the button below to complete your registration ⬇️"
+
+    # Welcome back message for existing users
+    welcome_back_title: "Welcome back to DeliveryTracker!"
+    click_to_login: "Click the button below to sign in ⬇️"
+
+    # Button text
+    button_complete_registration: "✅ Complete Registration"
+    button_sign_in: "🔐 Sign In"
+
+    # Thank you messages
+    thank_you_new_title: "Perfect! Registration completed."
+    thank_you_new_features: |
+      Now you can:
+      • Add your restaurants
+      • Configure working hours
+      • Receive notifications about issues
+    thank_you_new_action: "You can return to the website and start working! 🚀"
+
+    thank_you_existing_title: "Authentication successful!"
+    thank_you_existing_action: "You can return to the website and continue working."

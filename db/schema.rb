@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2025_11_16_210649) do
+ActiveRecord::Schema[8.0].define(version: 2025_11_20_034102) do
   create_table "cuisine_translations", force: :cascade do |t|
     t.string "indonesian", null: false
     t.string "english", null: false
@@ -225,9 +225,30 @@ ActiveRecord::Schema[8.0].define(version: 2025_11_16_210649) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.boolean "admin"
+    t.bigint "telegram_id"
+    t.string "telegram_username"
+    t.string "telegram_first_name"
+    t.string "telegram_last_name"
+    t.string "telegram_photo_url"
+    t.datetime "telegram_auth_date"
+    t.string "auth_token"
+    t.datetime "auth_token_expires_at"
+    t.string "session_token"
+    t.string "locale"
+    t.string "google_id"
+    t.string "google_email"
+    t.string "google_picture"
+    t.string "apple_id"
+    t.string "facebook_id"
+    t.index ["apple_id"], name: "index_users_on_apple_id", unique: true
+    t.index ["auth_token"], name: "index_users_on_auth_token", unique: true
     t.index ["email_address"], name: "index_users_on_email_address", unique: true
     t.index ["email_confirmation_token"], name: "index_users_on_email_confirmation_token", unique: true
+    t.index ["facebook_id"], name: "index_users_on_facebook_id", unique: true
+    t.index ["google_id"], name: "index_users_on_google_id", unique: true
     t.index ["password_reset_token"], name: "index_users_on_password_reset_token", unique: true
+    t.index ["session_token"], name: "index_users_on_session_token", unique: true
+    t.index ["telegram_id"], name: "index_users_on_telegram_id", unique: true
   end
 
   create_table "working_hours", force: :cascade do |t|

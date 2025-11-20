@@ -1,0 +1,33 @@
+ru:
+  auth:
+    # Login page
+    sign_in: "Вход"
+    sign_in_subtitle: "Войдите через свой аккаунт Telegram"
+    click_button_below: "Нажмите кнопку ниже для входа через Telegram"
+    sign_in_with_telegram: "Войти через Telegram"
+
+    # Signup page
+    create_account: "Создать аккаунт"
+    get_started: "Начните мгновенно с Telegram"
+    click_to_create: "Нажмите кнопку ниже для создания аккаунта через Telegram"
+    sign_up_with_telegram: "Зарегистрироваться через Telegram"
+
+    # How it works
+    how_it_works: "Как это работает?"
+    step_1: "Нажмите кнопку выше"
+    step_2: "Откроется бот в Telegram"
+    step_3: "Нажмите /start"
+    step_4_login: "Бот отправит ссылку для входа"
+    step_4_signup: "Бот отправит ссылку для регистрации"
+
+    # Common
+    already_have_account: "Уже есть аккаунт?"
+    terms_text: "Создавая аккаунт, вы соглашаетесь с нашими"
+    terms_of_service: "Условиями использования"
+    and: "и"
+    privacy_policy: "Политикой конфиденциальности"
+
+    # Flash messages
+    invalid_link: "Недействительная ссылка для входа."
+    link_expired: "Ссылка для входа истекла. Пожалуйста, попробуйте снова."
+    welcome: "Добро пожаловать, %{name}!"

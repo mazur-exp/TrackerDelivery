@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="csrf-token" content="<%= form_authenticity_token %>">
-  <title>DeliveryTracker - Restaurant Dashboard</title>
+  <title><%= t('dashboard.page_title') %></title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
   <script>
@@ -43,17 +43,17 @@
             <i data-lucide="log-out" class="w-6 h-6 text-red-600"></i>
           </div>
           <div>
-            <h3 class="text-lg font-semibold text-gray-900">Confirm Logout</h3>
-            <p class="text-sm text-gray-500">Are you sure you want to log out?</p>
+            <h3 class="text-lg font-semibold text-gray-900"><%= t('dashboard.logout_modal.title') %></h3>
+            <p class="text-sm text-gray-500"><%= t('dashboard.logout_modal.message') %></p>
           </div>
         </div>
-        
+
         <div class="flex space-x-3">
           <button id="cancelLogout" class="flex-1 px-4 py-2 text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg font-medium transition-colors">
-            Cancel
+            <%= t('dashboard.logout_modal.cancel') %>
           </button>
           <button id="confirmLogout" class="flex-1 px-4 py-2 text-white bg-red-600 hover:bg-red-700 rounded-lg font-medium transition-colors">
-            Log Out
+            <%= t('dashboard.logout_modal.confirm') %>
           </button>
         </div>
       </div>
@@ -70,28 +70,28 @@
               <div class="w-8 h-8 bg-green-600 rounded-lg flex items-center justify-center">
                 <i data-lucide="monitor" class="w-5 h-5 text-white"></i>
               </div>
-              <span class="text-xl font-bold text-gray-900">DeliveryTracker</span>
+              <span class="text-xl font-bold text-gray-900"><%= t('dashboard.header.brand_name') %></span>
             </a>
           </div>
-          <h1 class="text-3xl font-bold text-gray-900">Restaurant Dashboard</h1>
-          <p class="text-gray-600">Monitor your delivery platforms in real-time</p>
+          <h1 class="text-3xl font-bold text-gray-900"><%= t('dashboard.header.title') %></h1>
+          <p class="text-gray-600"><%= t('dashboard.header.subtitle') %></p>
         </div>
         <div class="flex items-center gap-3">
           <div class="inline-flex items-center px-3 py-1 rounded-full border text-sm">
             <div class="w-2 h-2 bg-green-500 rounded-full animate-pulse mr-2"></div>
-            Live
+            <%= t('dashboard.header.live') %>
           </div>
           <button id="refreshBtn" class="inline-flex items-center px-3 py-2 border border-gray-300 rounded-md text-sm font-medium hover:bg-gray-50 transition-colors">
             <i data-lucide="refresh-cw" class="w-4 h-4 mr-2"></i>
-            Refresh
+            <%= t('dashboard.header.refresh') %>
           </button>
           <button id="addRestaurantBtn" class="inline-flex items-center px-3 py-2 border border-green-200 text-green-600 hover:bg-green-50 rounded-md text-sm font-medium transition-colors">
             <i data-lucide="plus" class="w-4 h-4 mr-2"></i>
-            Add Restaurant
+            <%= t('dashboard.header.add_restaurant') %>
           </button>
           <button id="logoutBtn" onclick="testLogout()" class="inline-flex items-center px-3 py-2 border border-red-200 text-red-600 hover:bg-red-50 rounded-md text-sm font-medium transition-colors">
             <i data-lucide="log-out" class="w-4 h-4 mr-2"></i>
-            Log Out
+            <%= t('dashboard.header.log_out') %>
           </button>
         </div>
       </div>
@@ -100,46 +100,46 @@
       <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <div class="bg-white rounded-xl border border-green-200 bg-green-50/50 p-6 shadow-sm">
           <div class="flex flex-row items-center justify-between space-y-0 pb-2">
-            <h3 class="text-sm font-medium">Total Revenue</h3>
+            <h3 class="text-sm font-medium"><%= t('dashboard.overview_cards.total_revenue') %></h3>
             <i data-lucide="dollar-sign" class="h-4 w-4 text-green-600"></i>
           </div>
           <div class="text-2xl font-bold text-green-700" id="totalRevenue">Rp 4,240,000</div>
           <p class="text-xs text-green-600 flex items-center gap-1">
             <i data-lucide="trending-up" class="w-3 h-3"></i>
-            +12% from yesterday
+            <%= t('dashboard.overview_cards.from_yesterday') %>
           </p>
         </div>
 
         <div class="bg-white rounded-xl border border-blue-200 bg-blue-50/50 p-6 shadow-sm">
           <div class="flex flex-row items-center justify-between space-y-0 pb-2">
-            <h3 class="text-sm font-medium">Total Orders</h3>
+            <h3 class="text-sm font-medium"><%= t('dashboard.overview_cards.total_orders') %></h3>
             <i data-lucide="shopping-bag" class="h-4 w-4 text-blue-600"></i>
           </div>
           <div class="text-2xl font-bold text-blue-700" id="totalOrders">135</div>
           <p class="text-xs text-blue-600 flex items-center gap-1">
             <i data-lucide="trending-up" class="w-3 h-3"></i>
-            +8% from yesterday
+            <%= t('dashboard.overview_cards.orders_from_yesterday') %>
           </p>
         </div>
 
         <div class="bg-white rounded-xl border border-purple-200 bg-purple-50/50 p-6 shadow-sm">
           <div class="flex flex-row items-center justify-between space-y-0 pb-2">
-            <h3 class="text-sm font-medium">Online Stores</h3>
+            <h3 class="text-sm font-medium"><%= t('dashboard.overview_cards.online_stores') %></h3>
             <i data-lucide="store" class="h-4 w-4 text-purple-600"></i>
           </div>
           <div class="text-2xl font-bold text-purple-700" id="onlineStores"><%= @total_restaurants %></div>
-          <p class="text-xs text-purple-600" id="operationalPercentage">Total restaurants</p>
+          <p class="text-xs text-purple-600" id="operationalPercentage"><%= t('dashboard.overview_cards.total_restaurants') %></p>
         </div>
 
         <div class="bg-white rounded-xl border border-orange-200 bg-orange-50/50 p-6 shadow-sm">
           <div class="flex flex-row items-center justify-between space-y-0 pb-2">
-            <h3 class="text-sm font-medium">Avg Rating</h3>
+            <h3 class="text-sm font-medium"><%= t('dashboard.overview_cards.avg_rating') %></h3>
             <i data-lucide="star" class="h-4 w-4 text-orange-600"></i>
           </div>
           <div class="text-2xl font-bold text-orange-700" id="avgRating"><%= @average_rating > 0 ? @average_rating : "N/A" %></div>
           <p class="text-xs text-orange-600 flex items-center gap-1">
             <i data-lucide="star" class="w-3 h-3 fill-current"></i>
-            Across all platforms
+            <%= t('dashboard.overview_cards.across_all_platforms') %>
           </p>
         </div>
       </div>
@@ -149,16 +149,16 @@
         <!-- Tab Navigation -->
         <div class="bg-gray-100 rounded-lg p-1 inline-flex">
           <button class="tab-btn px-4 py-2 text-sm font-medium rounded-md transition-colors bg-white text-gray-900 shadow-sm" data-tab="restaurants">
-            Restaurants
+            <%= t('dashboard.tabs.restaurants') %>
           </button>
           <button class="tab-btn px-4 py-2 text-sm font-medium rounded-md transition-colors text-gray-500 hover:text-gray-700" data-tab="outofstock">
-            Out of Stock
+            <%= t('dashboard.tabs.out_of_stock') %>
           </button>
           <button class="tab-btn px-4 py-2 text-sm font-medium rounded-md transition-colors text-gray-500 hover:text-gray-700" data-tab="reviews">
-            Reviews
+            <%= t('dashboard.tabs.reviews') %>
           </button>
           <button class="tab-btn px-4 py-2 text-sm font-medium rounded-md transition-colors text-gray-500 hover:text-gray-700" data-tab="settings">
-            Settings
+            <%= t('dashboard.tabs.settings') %>
           </button>
         </div>
 
@@ -201,37 +201,37 @@
                         <% case latest_check.actual_status %>
                         <% when 'open' %>
                           <div class="w-3 h-3 rounded-full bg-green-500 animate-pulse"></div>
-                          <span class="text-sm font-medium text-green-700">Online</span>
+                          <span class="text-sm font-medium text-green-700"><%= t('dashboard.restaurants_tab.online') %></span>
                         <% when 'closed' %>
                           <div class="w-3 h-3 rounded-full bg-red-500 animate-pulse"></div>
-                          <span class="text-sm font-medium text-red-700">Offline</span>
+                          <span class="text-sm font-medium text-red-700"><%= t('dashboard.restaurants_tab.offline') %></span>
                         <% else %>
                           <div class="w-3 h-3 rounded-full bg-gray-500 animate-pulse"></div>
-                          <span class="text-sm font-medium text-gray-700">Unknown</span>
+                          <span class="text-sm font-medium text-gray-700"><%= t('dashboard.restaurants_tab.unknown') %></span>
                         <% end %>
                       <% else %>
                         <div class="w-3 h-3 rounded-full bg-gray-400"></div>
-                        <span class="text-sm font-medium text-gray-500">Not monitored</span>
+                        <span class="text-sm font-medium text-gray-500"><%= t('dashboard.restaurants_tab.not_monitored') %></span>
                       <% end %>
                     </div>
                     
                     <div class="grid grid-cols-2 lg:grid-cols-3 gap-4 text-sm">
                       <div>
-                        <p class="text-gray-500">Rating</p>
+                        <p class="text-gray-500"><%= t('dashboard.restaurants_tab.rating') %></p>
                         <p class="font-semibold flex items-center gap-1">
                           <i data-lucide="star" class="w-3 h-3 fill-yellow-400 text-yellow-400"></i>
-                          <span><%= restaurant.rating == "NEW" ? "NEW" : restaurant.rating || "N/A" %></span>
+                          <span><%= restaurant.rating == "NEW" ? t('dashboard.restaurants_tab.rating_new') : restaurant.rating || t('dashboard.restaurants_tab.rating_na') %></span>
                         </p>
                       </div>
                       <div>
-                        <p class="text-gray-500">Reviews</p>
+                        <p class="text-gray-500"><%= t('dashboard.restaurants_tab.reviews') %></p>
                         <p class="font-semibold">-</p>
                       </div>
                       <div>
-                        <p class="text-gray-500">Platform</p>
+                        <p class="text-gray-500"><%= t('dashboard.restaurants_tab.platform') %></p>
                         <p class="font-semibold">
                           <a href="<%= restaurant.platform_url %>" target="_blank" class="text-blue-600 hover:text-blue-800 text-xs">
-                            View <i data-lucide="external-link" class="w-3 h-3 inline ml-1"></i>
+                            <%= t('dashboard.restaurants_tab.view') %> <i data-lucide="external-link" class="w-3 h-3 inline ml-1"></i>
                           </a>
                         </p>
                       </div>
@@ -251,11 +251,11 @@
               <div class="text-gray-400 mb-4">
                 <i data-lucide="store" class="w-12 h-12 mx-auto"></i>
               </div>
-              <h3 class="text-lg font-semibold text-gray-900 mb-2">No Restaurants Added</h3>
-              <p class="text-gray-600 mb-4">Start by adding your first restaurant to monitor delivery platforms.</p>
+              <h3 class="text-lg font-semibold text-gray-900 mb-2"><%= t('dashboard.restaurants_tab.no_restaurants_title') %></h3>
+              <p class="text-gray-600 mb-4"><%= t('dashboard.restaurants_tab.no_restaurants_message') %></p>
               <button onclick="window.location.href='/onboarding'" class="inline-flex items-center px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors">
                 <i data-lucide="plus" class="w-4 h-4 mr-2"></i>
-                Add Your First Restaurant
+                <%= t('dashboard.restaurants_tab.add_first_restaurant') %>
               </button>
             </div>
           <% end %>
@@ -618,7 +618,7 @@
 
       <!-- Footer -->
       <div class="text-center text-sm text-gray-500">
-        Last updated: <span id="lastUpdate">-</span>
+        <%= t('dashboard.footer.last_updated') %> <span id="lastUpdate">-</span>
       </div>
     </div>
   </div>

@@ -1,6 +1,8 @@
 class RestaurantsController < ApplicationController
   Rails.logger.info "=== RestaurantsController loaded at #{Time.current} ==="
 
+  include AnalyticsHelper
+
   before_action :require_authentication, except: [ :extract_data, :extract_gojek_data, :extract_grab_data ]
   skip_before_action :verify_authenticity_token, only: [ :extract_data, :extract_gojek_data, :extract_grab_data ]
 
@@ -752,22 +754,21 @@ class RestaurantsController < ApplicationController
     @restaurant = current_user.restaurants.find(params[:id])
     period = params[:period] || "24h"
 
-    helper = AnalyticsHelper.new(@restaurant)
-    checks = helper.fetch_checks_for_period(period)
+    checks = fetch_checks_for_period(@restaurant, period)
 
     render json: {
       success: true,
       period: period,
       metrics: {
-        uptime_percentage: helper.calculate_uptime(checks),
-        revenue_loss: helper.calculate_revenue_loss(checks),
+        uptime_percentage: calculate_uptime(checks),
+        revenue_loss: calculate_revenue_loss(checks),
         total_checks: checks.count,
         anomalies_count: checks.select(&:is_anomaly?).count,
         avg_rating: @restaurant.rating || 0
       },
-      timeline: helper.aggregate_checks_by_time(checks, period),
-      platform_comparison: helper.platform_comparison_data(period),
-      recent_anomalies: helper.recent_anomalies(checks, limit: 10)
+      timeline: aggregate_checks_by_time(checks, period),
+      platform_comparison: platform_comparison_data(@restaurant, period),
+      recent_anomalies: recent_anomalies(checks, limit: 10)
     }
   rescue ActiveRecord::RecordNotFound
     render json: {

@@ -104,11 +104,15 @@ export default class extends Controller {
       this.chart.destroy()
     }
 
-    // Prepare data for Chart.js
+    // Prepare data for Chart.js - show actual status (1=open, 0=closed)
     const labels = timelineData.map(d => d.label)
-    const onlineData = timelineData.map(d => d.online)
-    const closedData = timelineData.map(d => d.closed)
-    const anomalyData = timelineData.map(d => d.anomalies)
+    const actualStatusData = timelineData.map(d => d.actual_status === 'open' ? 1 : 0)
+    const expectedStatusData = timelineData.map(d => d.expected_status === 'open' ? 1 : 0)
+
+    // Create anomaly points (yellow markers)
+    const anomalyPoints = timelineData
+      .map((d, i) => d.is_anomaly ? { x: i, y: actualStatusData[i] } : null)
+      .filter(p => p !== null)
 
     this.chart = new Chart(ctx, {
       type: 'line',
@@ -116,29 +120,36 @@ export default class extends Controller {
         labels: labels,
         datasets: [
           {
-            label: 'Online',
-            data: onlineData,
+            label: 'Actual Status',
+            data: actualStatusData,
+            stepped: 'after',
             borderColor: '#16A34A',
-            backgroundColor: 'rgba(22, 163, 74, 0.1)',
-            tension: 0.3,
-            fill: true
+            backgroundColor: (context) => {
+              const value = context.parsed?.y
+              return value === 1 ? 'rgba(22, 163, 74, 0.3)' : 'rgba(220, 38, 38, 0.3)'
+            },
+            borderWidth: 2,
+            fill: 'origin',
+            pointRadius: 0
           },
           {
-            label: 'Closed',
-            data: closedData,
-            borderColor: '#DC2626',
-            backgroundColor: 'rgba(220, 38, 38, 0.1)',
-            tension: 0.3,
-            fill: true
+            label: 'Expected (Schedule)',
+            data: expectedStatusData,
+            stepped: 'after',
+            borderColor: '#9CA3AF',
+            borderDash: [5, 5],
+            borderWidth: 2,
+            fill: false,
+            pointRadius: 0
           },
           {
             label: 'Anomalies',
-            data: anomalyData,
-            borderColor: '#EAB308',
-            backgroundColor: 'rgba(234, 179, 8, 0.1)',
-            tension: 0.3,
-            fill: true,
-            borderDash: [5, 5]
+            data: anomalyPoints,
+            type: 'scatter',
+            pointRadius: 8,
+            pointBackgroundColor: '#EAB308',
+            pointBorderColor: '#fff',
+            pointBorderWidth: 2
           }
         ]
       },
@@ -169,16 +180,24 @@ export default class extends Controller {
             },
             callbacks: {
               label: function(context) {
-                return `${context.dataset.label}: ${context.parsed.y} checks`
+                if (context.dataset.type === 'scatter') {
+                  return `Anomaly at ${context.label}`
+                }
+                const status = context.parsed.y === 1 ? 'Open' : 'Closed'
+                return `${context.dataset.label}: ${status}`
               }
             }
           }
         },
         scales: {
           y: {
-            beginAtZero: true,
+            min: 0,
+            max: 1,
             ticks: {
-              precision: 0
+              stepSize: 1,
+              callback: function(value) {
+                return value === 1 ? 'Open' : 'Closed'
+              }
             },
             grid: {
               color: 'rgba(0, 0, 0, 0.05)'

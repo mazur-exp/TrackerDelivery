@@ -1,13 +1,9 @@
-class AnalyticsHelper
+module AnalyticsHelper
   # Revenue loss assumption: Rp 50,000 per hour when restaurant should be open but is closed
   REVENUE_LOSS_PER_HOUR = 50_000
 
-  def initialize(restaurant)
-    @restaurant = restaurant
-  end
-
   # Fetch status checks for a given period
-  def fetch_checks_for_period(period)
+  def fetch_checks_for_period(restaurant, period)
     time_range = case period
     when "24h"
       24.hours.ago..Time.current
@@ -19,9 +15,9 @@ class AnalyticsHelper
       24.hours.ago..Time.current
     end
 
-    @restaurant.restaurant_status_checks
-               .where(checked_at: time_range)
-               .order(checked_at: :asc)
+    restaurant.restaurant_status_checks
+              .where(checked_at: time_range)
+              .order(checked_at: :asc)
   end
 
   # Calculate uptime percentage
@@ -71,56 +67,59 @@ class AnalyticsHelper
     end
   end
 
-  # Aggregate checks by hour
+  # Aggregate checks by hour - return status for each hour
   def aggregate_checks_by_hour(checks)
     grouped = checks.group_by { |c| c.checked_at.beginning_of_hour }
 
     grouped.map do |hour, hour_checks|
-      online_count = hour_checks.count { |c| c.actual_status == "open" }
-      closed_count = hour_checks.count { |c| c.actual_status == "closed" }
-      unknown_count = hour_checks.count { |c| c.actual_status == "unknown" }
-      anomaly_count = hour_checks.count(&:is_anomaly?)
+      # Take the last check of the hour as representative
+      last_check = hour_checks.last
 
       {
         timestamp: hour.to_i * 1000, # JavaScript timestamp
         label: hour.strftime("%H:%M"),
-        online: online_count,
-        closed: closed_count,
-        unknown: unknown_count,
-        anomalies: anomaly_count,
-        total: hour_checks.count
+        actual_status: last_check.actual_status,
+        expected_status: last_check.expected_status,
+        is_anomaly: last_check.is_anomaly?
       }
     end.sort_by { |h| h[:timestamp] }
   end
 
-  # Aggregate checks by day
+  # Aggregate checks by day - return average status for each day
   def aggregate_checks_by_day(checks)
     grouped = checks.group_by { |c| c.checked_at.beginning_of_day }
 
     grouped.map do |day, day_checks|
-      online_count = day_checks.count { |c| c.actual_status == "open" }
-      closed_count = day_checks.count { |c| c.actual_status == "closed" }
-      unknown_count = day_checks.count { |c| c.actual_status == "unknown" }
-      anomaly_count = day_checks.count(&:is_anomaly?)
+      # Calculate percentage of day when restaurant was open (when it should be)
+      expected_open_checks = day_checks.select { |c| c.expected_status == "open" }
+
+      if expected_open_checks.any?
+        actually_open = expected_open_checks.count { |c| c.actual_status == "open" }
+        uptime_ratio = actually_open.to_f / expected_open_checks.count
+      else
+        uptime_ratio = 0
+      end
+
+      # Determine if day had anomalies
+      has_anomalies = day_checks.any?(&:is_anomaly?)
 
       {
         timestamp: day.to_i * 1000,
         label: day.strftime("%b %d"),
-        online: online_count,
-        closed: closed_count,
-        unknown: unknown_count,
-        anomalies: anomaly_count,
-        total: day_checks.count
+        actual_status: uptime_ratio > 0.5 ? "open" : "closed", # Majority status
+        expected_status: expected_open_checks.any? ? "open" : "closed",
+        is_anomaly: has_anomalies,
+        uptime_percentage: (uptime_ratio * 100).round(1)
       }
     end.sort_by { |h| h[:timestamp] }
   end
 
   # Platform comparison data (for future multi-platform support)
-  def platform_comparison_data(period)
-    checks = fetch_checks_for_period(period)
+  def platform_comparison_data(restaurant, period)
+    checks = fetch_checks_for_period(restaurant, period)
 
     {
-      platform: @restaurant.platform,
+      platform: restaurant.platform,
       total_checks: checks.count,
       uptime: calculate_uptime(checks),
       anomalies: checks.count(&:is_anomaly?),

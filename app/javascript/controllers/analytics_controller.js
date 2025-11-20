@@ -87,7 +87,8 @@ export default class extends Controller {
 
     // Update rating
     if (this.hasRatingValueTarget) {
-      this.ratingValueTarget.textContent = metrics.avg_rating.toFixed(1)
+      const rating = parseFloat(metrics.avg_rating) || 0
+      this.ratingValueTarget.textContent = rating > 0 ? rating.toFixed(1) : 'N/A'
     }
   }
 

@@ -238,6 +238,10 @@
                     </div>
 
                     <div class="flex items-center gap-2">
+                      <%= link_to analytics_restaurant_path(restaurant), class: "inline-flex items-center gap-1 px-3 py-2 bg-green-600 hover:bg-green-700 text-white text-xs font-medium rounded-lg transition-colors" do %>
+                        <i data-lucide="bar-chart-3" class="w-4 h-4"></i>
+                        <span>Analytics</span>
+                      <% end %>
                       <button class="inline-flex items-center px-3 py-2 text-gray-400 hover:text-gray-600 rounded-md transition-colors">
                         <i data-lucide="eye" class="w-4 h-4"></i>
                       </button>

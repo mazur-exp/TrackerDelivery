@@ -1,4 +1,5 @@
 import { Controller } from "@hotwired/stimulus"
+import Chart from "chart.js"
 
 export default class extends Controller {
   static targets = [
@@ -104,9 +105,13 @@ export default class extends Controller {
       this.chart.destroy()
     }
 
-    // Prepare data for Chart.js - show actual status (1=open, 0=closed)
+    // Prepare data for Chart.js - show actual status (1=open, 0=closed, null=error/unknown)
     const labels = timelineData.map(d => d.label)
-    const actualStatusData = timelineData.map(d => d.actual_status === 'open' ? 1 : 0)
+    const actualStatusData = timelineData.map(d => {
+      if (d.actual_status === 'open') return 1
+      if (d.actual_status === 'closed') return 0
+      return null  // error/unknown - will show as gap in chart
+    })
     const expectedStatusData = timelineData.map(d => d.expected_status === 'open' ? 1 : 0)
 
     // Create anomaly points (yellow markers)

@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="<%= I18n.locale %>">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title><%= t('analytics.page_title') %> - <%= @restaurant.name %></title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            primary: '#16A34A',
+            'primary-dark': '#15803D',
+            'primary-light': '#4ADE80',
+            'green-50': '#F0FDF4',
+            'green-100': '#DCFCE7',
+            'green-600': '#16A34A',
+            'green-700': '#15803D',
+          }
+        }
+      }
+    }
+  </script>
+</head>
+<body class="min-h-screen bg-gray-50">
+  <div class="min-h-screen p-4 md:p-6 lg:p-8" data-controller="analytics" data-analytics-restaurant-id-value="<%= @restaurant.id %>" data-analytics-period-value="<%= @period %>">
+    <div class="max-w-7xl mx-auto space-y-6">
+
+      <!-- Header -->
+      <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+        <div>
+          <div class="flex items-center space-x-2 mb-2">
+            <a href="<%= dashboard_path %>" class="text-gray-500 hover:text-gray-700 transition-colors">
+              <i data-lucide="arrow-left" class="w-5 h-5"></i>
+            </a>
+            <div class="w-8 h-8 bg-green-600 rounded-lg flex items-center justify-center">
+              <i data-lucide="bar-chart-3" class="w-5 h-5 text-white"></i>
+            </div>
+            <span class="text-xl font-bold text-gray-900"><%= t('analytics.header.brand_name') %></span>
+          </div>
+          <h1 class="text-3xl font-bold text-gray-900"><%= @restaurant.name %></h1>
+          <p class="text-gray-600"><%= t('analytics.header.subtitle') %></p>
+        </div>
+        <div class="flex items-center gap-3">
+          <div class="inline-flex items-center px-3 py-1 rounded-full border text-sm">
+            <div class="w-2 h-2 bg-green-500 rounded-full animate-pulse mr-2"></div>
+            <%= t('analytics.header.live') %>
+          </div>
+        </div>
+      </div>
+
+      <!-- Period Selector Tabs -->
+      <div class="bg-white rounded-xl border shadow-sm p-4">
+        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+          <h2 class="text-lg font-semibold text-gray-900"><%= t('analytics.period_selector.title') %></h2>
+          <div class="bg-gray-100 rounded-lg p-1 inline-flex">
+            <button data-action="click->analytics#changePeriod" data-period="24h" class="period-btn px-4 py-2 text-sm font-medium rounded-md transition-colors bg-white text-gray-900 shadow-sm">
+              <%= t('analytics.period_selector.24h') %>
+            </button>
+            <button data-action="click->analytics#changePeriod" data-period="7d" class="period-btn px-4 py-2 text-sm font-medium rounded-md transition-colors text-gray-500 hover:text-gray-700">
+              <%= t('analytics.period_selector.7d') %>
+            </button>
+            <button data-action="click->analytics#changePeriod" data-period="30d" class="period-btn px-4 py-2 text-sm font-medium rounded-md transition-colors text-gray-500 hover:text-gray-700">
+              <%= t('analytics.period_selector.30d') %>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Loading State -->
+      <div id="loading-state" class="flex items-center justify-center py-12">
+        <div class="text-center">
+          <i data-lucide="loader-2" class="w-12 h-12 animate-spin text-green-600 mx-auto mb-4"></i>
+          <p class="text-gray-600"><%= t('analytics.loading') %></p>
+        </div>
+      </div>
+
+      <!-- Metrics Cards -->
+      <div id="metrics-cards" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 hidden">
+        <!-- Uptime Card -->
+        <div class="bg-white rounded-xl border border-green-200 bg-green-50/50 p-6 shadow-sm">
+          <div class="flex flex-row items-center justify-between space-y-0 pb-2">
+            <h3 class="text-sm font-medium"><%= t('analytics.metrics.uptime') %></h3>
+            <i data-lucide="check-circle" class="h-4 w-4 text-green-600"></i>
+          </div>
+          <div class="text-3xl font-bold text-green-700" data-analytics-target="uptimeValue">--%</div>
+          <p class="text-xs text-green-600 mt-1">
+            <%= t('analytics.metrics.uptime_description') %>
+          </p>
+        </div>
+
+        <!-- Revenue Loss Card -->
+        <div class="bg-white rounded-xl border border-red-200 bg-red-50/50 p-6 shadow-sm">
+          <div class="flex flex-row items-center justify-between space-y-0 pb-2">
+            <h3 class="text-sm font-medium"><%= t('analytics.metrics.revenue_loss') %></h3>
+            <i data-lucide="trending-down" class="h-4 w-4 text-red-600"></i>
+          </div>
+          <div class="text-3xl font-bold text-red-700" data-analytics-target="revenueLossValue">Rp 0</div>
+          <p class="text-xs text-red-600 mt-1">
+            <%= t('analytics.metrics.revenue_loss_description') %>
+          </p>
+        </div>
+
+        <!-- Anomalies Card -->
+        <div class="bg-white rounded-xl border border-yellow-200 bg-yellow-50/50 p-6 shadow-sm">
+          <div class="flex flex-row items-center justify-between space-y-0 pb-2">
+            <h3 class="text-sm font-medium"><%= t('analytics.metrics.anomalies') %></h3>
+            <i data-lucide="alert-triangle" class="h-4 w-4 text-yellow-600"></i>
+          </div>
+          <div class="text-3xl font-bold text-yellow-700" data-analytics-target="anomaliesValue">0</div>
+          <p class="text-xs text-yellow-600 mt-1">
+            <%= t('analytics.metrics.anomalies_description') %>
+          </p>
+        </div>
+
+        <!-- Rating Card -->
+        <div class="bg-white rounded-xl border border-orange-200 bg-orange-50/50 p-6 shadow-sm">
+          <div class="flex flex-row items-center justify-between space-y-0 pb-2">
+            <h3 class="text-sm font-medium"><%= t('analytics.metrics.avg_rating') %></h3>
+            <i data-lucide="star" class="h-4 w-4 text-orange-600"></i>
+          </div>
+          <div class="text-3xl font-bold text-orange-700" data-analytics-target="ratingValue">0.0</div>
+          <p class="text-xs text-orange-600 flex items-center gap-1 mt-1">
+            <i data-lucide="star" class="w-3 h-3 fill-current"></i>
+            <%= t('analytics.metrics.rating_description') %>
+          </p>
+        </div>
+      </div>
+
+      <!-- Timeline Chart -->
+      <div id="timeline-chart-container" class="bg-white rounded-xl border shadow-sm p-6 hidden">
+        <div class="mb-4">
+          <h3 class="text-lg font-semibold text-gray-900"><%= t('analytics.timeline.title') %></h3>
+          <p class="text-sm text-gray-600"><%= t('analytics.timeline.subtitle') %></p>
+        </div>
+        <div class="relative" style="height: 400px;">
+          <canvas id="statusTimeline" data-analytics-target="chart"></canvas>
+        </div>
+      </div>
+
+      <!-- Recent Anomalies Table -->
+      <div id="anomalies-table-container" class="bg-white rounded-xl border shadow-sm p-6 hidden">
+        <div class="mb-4">
+          <h3 class="text-lg font-semibold text-gray-900"><%= t('analytics.anomalies.title') %></h3>
+          <p class="text-sm text-gray-600"><%= t('analytics.anomalies.subtitle') %></p>
+        </div>
+
+        <div class="overflow-x-auto">
+          <table class="w-full">
+            <thead class="border-b">
+              <tr class="text-left text-sm text-gray-500">
+                <th class="pb-3 font-medium"><%= t('analytics.anomalies.time') %></th>
+                <th class="pb-3 font-medium"><%= t('analytics.anomalies.expected') %></th>
+                <th class="pb-3 font-medium"><%= t('analytics.anomalies.actual') %></th>
+                <th class="pb-3 font-medium"><%= t('analytics.anomalies.severity') %></th>
+              </tr>
+            </thead>
+            <tbody data-analytics-target="anomaliesTable" class="text-sm">
+              <!-- Populated by JavaScript -->
+            </tbody>
+          </table>
+        </div>
+
+        <div id="no-anomalies" class="text-center py-8 text-gray-500 hidden">
+          <i data-lucide="check-circle" class="w-12 h-12 mx-auto mb-2 text-green-500"></i>
+          <p><%= t('analytics.anomalies.no_anomalies') %></p>
+        </div>
+      </div>
+
+      <!-- Error State -->
+      <div id="error-state" class="bg-red-50 border border-red-200 rounded-xl p-6 hidden">
+        <div class="flex items-center gap-3">
+          <i data-lucide="alert-circle" class="w-6 h-6 text-red-600"></i>
+          <div>
+            <h3 class="font-semibold text-red-900"><%= t('analytics.error.title') %></h3>
+            <p class="text-sm text-red-700" data-analytics-target="errorMessage"></p>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <script>
+    // Initialize Lucide icons
+    lucide.createIcons();
+  </script>
+</body>
+</html>

@@ -52,6 +52,8 @@ Rails.application.routes.draw do
     end
     member do
       patch :toggle_active
+      get :analytics
+      get :analytics_data
     end
   end
 

@@ -1,6 +1,6 @@
 class RestaurantsController < ApplicationController
   Rails.logger.info "=== RestaurantsController loaded at #{Time.current} ==="
-  
+
   before_action :require_authentication, except: [ :extract_data, :extract_gojek_data, :extract_grab_data ]
   skip_before_action :verify_authenticity_token, only: [ :extract_data, :extract_gojek_data, :extract_grab_data ]
 
@@ -186,17 +186,17 @@ class RestaurantsController < ApplicationController
   def create
     Rails.logger.info "=== Restaurant Creation Started ==="
     Rails.logger.info "Received params: #{params.inspect}"
-    
+
     @contact_errors = []
     @created_restaurants = []
 
     ActiveRecord::Base.transaction do
       Rails.logger.info "Starting database transaction"
-      
+
       # Handle new platform-specific data format
       platforms_data = params[:platforms]
       Rails.logger.info "Platforms data: #{platforms_data.inspect}"
-      
+
       # Backward compatibility - check for old format
       if platforms_data.blank?
         Rails.logger.info "Using backward compatibility mode"
@@ -230,11 +230,11 @@ class RestaurantsController < ApplicationController
       else
         # New platform-specific data format
         Rails.logger.info "Creating restaurants with platform-specific data: #{platforms_data.keys.join(', ')}"
-        
+
         platforms_data.each do |platform, platform_data|
           Rails.logger.info "Creating #{platform} restaurant with data: #{platform_data[:name]}"
           Rails.logger.info "Platform data details: #{platform_data.inspect}"
-          
+
           restaurant = create_platform_restaurant_with_data(platform, platform_data)
           @created_restaurants << restaurant if restaurant
           Rails.logger.info "#{platform.capitalize} restaurant creation result: #{restaurant ? 'SUCCESS' : 'FAILED'}"
@@ -243,7 +243,7 @@ class RestaurantsController < ApplicationController
 
       Rails.logger.info "Created restaurants count: #{@created_restaurants.count}"
       Rails.logger.info "Created restaurants: #{@created_restaurants.map { |r| "#{r.name} (#{r.platform})" }.join(', ')}"
-      
+
       if @created_restaurants.empty?
         Rails.logger.error "No restaurants created - triggering rollback"
         @contact_errors << "Failed to create any restaurants"
@@ -266,14 +266,14 @@ class RestaurantsController < ApplicationController
 
       Rails.logger.info "Contact errors count: #{@contact_errors.count}"
       Rails.logger.info "Contact errors: #{@contact_errors}" if @contact_errors.any?
-      
+
       if @contact_errors.any?
         Rails.logger.error "Contact errors detected - triggering rollback"
         raise ActiveRecord::Rollback
       end
 
       Rails.logger.info "All validation passed - preparing success response"
-      
+
       # Prepare response data
       restaurants_data = @created_restaurants.map do |restaurant|
         {
@@ -305,7 +305,7 @@ class RestaurantsController < ApplicationController
     Rails.logger.error "Exception message: #{e.message}"
     Rails.logger.error "Backtrace: #{e.backtrace.first(10).join("\n")}"
     Rails.logger.error "Contact errors at exception: #{@contact_errors.inspect}"
-    
+
     render json: {
       success: false,
       errors: @contact_errors.presence || [ "An error occurred while creating the restaurant" ]
@@ -320,7 +320,7 @@ class RestaurantsController < ApplicationController
 
   def create_platform_restaurant(platform, platform_url)
     Rails.logger.info "Creating #{platform} restaurant with URL: #{platform_url}"
-    
+
     # Use data from params (frontend has already parsed the data)
     # Only fallback to parser if no data provided (backward compatibility)
     restaurant_attrs = {
@@ -365,7 +365,7 @@ class RestaurantsController < ApplicationController
         restaurant.set_coordinates(coordinates_data[:latitude], coordinates_data[:longitude])
       elsif coordinates_data.is_a?(String)
         # Handle coordinate string format (latitude, longitude)
-        coords = coordinates_data.split(',').map(&:strip)
+        coords = coordinates_data.split(",").map(&:strip)
         if coords.length == 2
           restaurant.set_coordinates(coords[0].to_f, coords[1].to_f)
         end
@@ -397,7 +397,7 @@ class RestaurantsController < ApplicationController
     Rails.logger.info "=== Creating #{platform} restaurant with provided data ==="
     Rails.logger.info "Platform data keys: #{platform_data.keys}"
     Rails.logger.info "Restaurant name: #{platform_data[:name]}"
-    
+
     # Build restaurant attributes from provided platform data
     restaurant_attrs = {
       platform: platform,
@@ -406,7 +406,7 @@ class RestaurantsController < ApplicationController
       address: platform_data[:address],
       phone: platform_data[:phone],
       image_url: platform_data[:image_url],
-      rating: platform_data[:rating],
+      rating: platform_data[:rating]
     }
     Rails.logger.info "Restaurant attributes: #{restaurant_attrs}"
     Rails.logger.info "=== Rating Debug ==="
@@ -425,7 +425,7 @@ class RestaurantsController < ApplicationController
         restaurant.set_coordinates(coordinates_data[:latitude], coordinates_data[:longitude])
       elsif coordinates_data.is_a?(String)
         # Handle coordinate string format (latitude, longitude)
-        coords = coordinates_data.split(',').map(&:strip)
+        coords = coordinates_data.split(",").map(&:strip)
         if coords.length == 2
           Rails.logger.info "Setting coordinates from string: #{coords[0]}, #{coords[1]}"
           restaurant.set_coordinates(coords[0].to_f, coords[1].to_f)
@@ -491,23 +491,23 @@ class RestaurantsController < ApplicationController
 
     # Map parser status to database status
     actual_status = case status_data[:status_text]
-    when 'open'
-      'open'
-    when 'closed', 'temporarily_closed'
-      'closed'
+    when "open"
+      "open"
+    when "closed", "temporarily_closed"
+      "closed"
     else
-      'unknown'
+      "unknown"
     end
 
     Rails.logger.info "Mapped actual_status: #{actual_status}"
 
     # Get expected status from restaurant's working hours
-    expected_status = restaurant.expected_status_at(Time.current) rescue 'unknown'
+    expected_status = restaurant.expected_status_at(Time.current) rescue "unknown"
     Rails.logger.info "Expected status: #{expected_status}"
 
     # Determine if this is an anomaly
-    is_anomaly = (expected_status == 'open' && actual_status == 'closed') ||
-                 (expected_status == 'closed' && actual_status == 'open')
+    is_anomaly = (expected_status == "open" && actual_status == "closed") ||
+                 (expected_status == "closed" && actual_status == "open")
     Rails.logger.info "Is anomaly: #{is_anomaly}"
 
     # Create the status check record
@@ -546,7 +546,7 @@ class RestaurantsController < ApplicationController
     Rails.logger.info "WhatsApp contacts param: #{params[:whatsapp_contacts].inspect}"
     Rails.logger.info "Telegram contacts param: #{params[:telegram_contacts].inspect}"
     Rails.logger.info "Email contacts param: #{params[:email_contacts].inspect}"
-    
+
     # Create WhatsApp contacts
     if params[:whatsapp_contacts].present?
       Rails.logger.info "Creating #{params[:whatsapp_contacts].count} WhatsApp contacts"
@@ -573,13 +573,13 @@ class RestaurantsController < ApplicationController
         create_contact(restaurant, "email", contact_value.strip)
       end
     end
-    
+
     Rails.logger.info "=== Completed creating contacts for #{restaurant.name} ==="
   end
 
   def create_contact(restaurant, contact_type, contact_value)
     Rails.logger.info "Creating #{contact_type} contact: #{contact_value} for restaurant #{restaurant.name}"
-    
+
     # Check if contact already exists for this restaurant
     existing_contact = restaurant.notification_contacts.find_by(
       contact_type: contact_type,
@@ -664,14 +664,14 @@ class RestaurantsController < ApplicationController
     Rails.logger.error "Restaurant not found: #{e.message}"
     render json: {
       success: false,
-      errors: ["Restaurant not found"]
+      errors: [ "Restaurant not found" ]
     }, status: :not_found
   rescue => e
     Rails.logger.error "Error fetching restaurant: #{e.message}"
     Rails.logger.error e.backtrace.join("\n")
     render json: {
       success: false,
-      errors: [e.message]
+      errors: [ e.message ]
     }, status: :unprocessable_entity
   end
 
@@ -704,7 +704,7 @@ class RestaurantsController < ApplicationController
     Rails.logger.error "Error updating restaurant: #{e.message}"
     render json: {
       success: false,
-      errors: [e.message]
+      errors: [ e.message ]
     }, status: :unprocessable_entity
   end
 
@@ -720,7 +720,7 @@ class RestaurantsController < ApplicationController
     Rails.logger.error "Error deleting restaurant: #{e.message}"
     render json: {
       success: false,
-      errors: [e.message]
+      errors: [ e.message ]
     }, status: :unprocessable_entity
   end
 
@@ -737,7 +737,49 @@ class RestaurantsController < ApplicationController
     Rails.logger.error "Error toggling restaurant status: #{e.message}"
     render json: {
       success: false,
-      errors: [e.message]
+      errors: [ e.message ]
+    }, status: :unprocessable_entity
+  end
+
+  def analytics
+    @restaurant = current_user.restaurants.find(params[:id])
+    @period = params[:period] || "24h"
+  rescue ActiveRecord::RecordNotFound
+    redirect_to dashboard_path, alert: "Restaurant not found"
+  end
+
+  def analytics_data
+    @restaurant = current_user.restaurants.find(params[:id])
+    period = params[:period] || "24h"
+
+    helper = AnalyticsHelper.new(@restaurant)
+    checks = helper.fetch_checks_for_period(period)
+
+    render json: {
+      success: true,
+      period: period,
+      metrics: {
+        uptime_percentage: helper.calculate_uptime(checks),
+        revenue_loss: helper.calculate_revenue_loss(checks),
+        total_checks: checks.count,
+        anomalies_count: checks.select(&:is_anomaly?).count,
+        avg_rating: @restaurant.rating || 0
+      },
+      timeline: helper.aggregate_checks_by_time(checks, period),
+      platform_comparison: helper.platform_comparison_data(period),
+      recent_anomalies: helper.recent_anomalies(checks, limit: 10)
+    }
+  rescue ActiveRecord::RecordNotFound
+    render json: {
+      success: false,
+      errors: [ "Restaurant not found" ]
+    }, status: :not_found
+  rescue => e
+    Rails.logger.error "Error fetching analytics data: #{e.message}"
+    Rails.logger.error e.backtrace.join("\n")
+    render json: {
+      success: false,
+      errors: [ e.message ]
     }, status: :unprocessable_entity
   end
 

@@ -249,3 +249,38 @@ en:
       network_error: "Network error. Please try again."
       extraction_failed: "Failed to extract restaurant data from any platform. Please enter details manually."
       missing_url: "Please provide at least one platform URL."
+
+  analytics:
+    page_title: "Restaurant Analytics"
+    header:
+      brand_name: "Analytics"
+      subtitle: "Track performance and identify issues"
+      live: "Live"
+    period_selector:
+      title: "Time Period"
+      24h: "Last 24 Hours"
+      7d: "Last 7 Days"
+      30d: "Last 30 Days"
+    loading: "Loading analytics data..."
+    metrics:
+      uptime: "Uptime"
+      uptime_description: "When restaurant should be open"
+      revenue_loss: "Revenue Loss"
+      revenue_loss_description: "Estimated from downtime"
+      anomalies: "Anomalies"
+      anomalies_description: "Status mismatches detected"
+      avg_rating: "Avg Rating"
+      rating_description: "Current platform rating"
+    timeline:
+      title: "Status Timeline"
+      subtitle: "Track your restaurant's online/offline status over time"
+    anomalies:
+      title: "Recent Anomalies"
+      subtitle: "Status issues that require attention"
+      time: "Time"
+      expected: "Expected"
+      actual: "Actual"
+      severity: "Severity"
+      no_anomalies: "No anomalies detected in this period"
+    error:
+      title: "Failed to load analytics"

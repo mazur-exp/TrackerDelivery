@@ -1,5 +1,4 @@
 import { Controller } from "@hotwired/stimulus"
-import Chart from "chart.js"
 
 export default class extends Controller {
   static targets = [
@@ -47,17 +46,22 @@ export default class extends Controller {
   }
 
   async loadAnalyticsData() {
+    console.log('📊 loadAnalyticsData called')
     try {
       const response = await fetch(`/restaurants/${this.restaurantIdValue}/analytics_data?period=${this.periodValue}`)
+      console.log('📡 Response received:', response.status)
 
       if (!response.ok) {
         throw new Error('Failed to fetch analytics data')
       }
 
       const data = await response.json()
+      console.log('📦 Data parsed:', data)
 
       if (data.success) {
+        console.log('✅ Data success, updating UI...')
         this.updateMetrics(data.metrics)
+        console.log('📈 Calling updateTimeline with', data.timeline.length, 'points')
         this.updateTimeline(data.timeline)
         this.updateAnomaliesTable(data.recent_anomalies)
         this.hideLoading()
@@ -65,7 +69,7 @@ export default class extends Controller {
         this.showError(data.errors?.join(', ') || 'Unknown error')
       }
     } catch (error) {
-      console.error('Error loading analytics:', error)
+      console.error('❌ Error loading analytics:', error)
       this.showError(error.message)
     }
   }
@@ -94,11 +98,18 @@ export default class extends Controller {
   }
 
   updateTimeline(timelineData) {
+    console.log('🎨 updateTimeline called')
+    console.log('Has chartTarget?', this.hasChartTarget)
+    console.log('Timeline data length:', timelineData?.length)
+
     if (!this.hasChartTarget || !timelineData || timelineData.length === 0) {
+      console.log('⚠️ Early return - missing target or data')
       return
     }
 
+    console.log('🎨 Getting canvas context...')
     const ctx = this.chartTarget.getContext('2d')
+    console.log('Canvas context:', ctx)
 
     // Destroy existing chart if it exists
     if (this.chart) {
@@ -119,7 +130,15 @@ export default class extends Controller {
       .map((d, i) => d.is_anomaly ? { x: i, y: actualStatusData[i] } : null)
       .filter(p => p !== null)
 
-    this.chart = new Chart(ctx, {
+    console.log('📊 Creating chart with data:', {
+      labels: labels.length,
+      actualStatus: actualStatusData.length,
+      expectedStatus: expectedStatusData.length,
+      anomalies: anomalyPoints.length
+    })
+
+    try {
+      this.chart = new Chart(ctx, {
       type: 'line',
       data: {
         labels: labels,
@@ -216,6 +235,10 @@ export default class extends Controller {
         }
       }
     })
+      console.log('✅ Chart created successfully!')
+    } catch (error) {
+      console.error('❌ Failed to create chart:', error)
+    }
   }
 
   updateAnomaliesTable(anomalies) {

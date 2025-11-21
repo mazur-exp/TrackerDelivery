@@ -75,9 +75,12 @@ module AnalyticsHelper
       # Take the last check of the hour as representative
       last_check = hour_checks.last
 
+      # Convert to Bali/Indonesia time for display
+      local_time = hour.in_time_zone('Asia/Jakarta')
+
       {
-        timestamp: hour.to_i * 1000, # JavaScript timestamp
-        label: hour.strftime("%H:%M"),
+        timestamp: hour.to_i * 1000, # JavaScript timestamp (UTC)
+        label: local_time.strftime("%H:%M"), # Display in WITA timezone
         actual_status: last_check.actual_status,
         expected_status: last_check.expected_status,
         is_anomaly: last_check.is_anomaly?
@@ -103,9 +106,12 @@ module AnalyticsHelper
       # Determine if day had anomalies
       has_anomalies = day_checks.any?(&:is_anomaly?)
 
+      # Convert to Bali/Indonesia time for display
+      local_day = day.in_time_zone('Asia/Jakarta')
+
       {
         timestamp: day.to_i * 1000,
-        label: day.strftime("%b %d"),
+        label: local_day.strftime("%b %d"),
         actual_status: uptime_ratio > 0.5 ? "open" : "closed", # Majority status
         expected_status: expected_open_checks.any? ? "open" : "closed",
         is_anomaly: has_anomalies,

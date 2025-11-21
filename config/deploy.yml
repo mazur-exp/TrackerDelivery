@@ -44,11 +44,17 @@ registry:
 env:
   secret:
     - RAILS_MASTER_KEY
+    - TELEGRAM_BOT_TOKEN
   clear:
     # Run the Solid Queue Supervisor inside the web server's Puma process to do jobs.
     # When you start using multiple servers, you should split out job processing to a dedicated machine.
     # SOLID_QUEUE_IN_PUMA: true  # Disabled - incompatible with Puma 7.0.0
     RAILS_ENV: production
+
+    # Telegram Bot Configuration (Production)
+    TELEGRAM_BOT_USERNAME: aidelivery_tracker_bot
+    APP_HOST: aidelivery.tech
+    APP_PROTOCOL: https
 
     # Set number of processes dedicated to Solid Queue (default: 1)
     # JOB_CONCURRENCY: 3

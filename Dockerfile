@@ -122,7 +122,8 @@ RUN . /tmp/chrome_env && \
     $CHROME_BIN --version && \
     $CHROMEDRIVER_PATH --version
 
-ENV RAILS_ENV="production" \
+ENV NODE_PATH="/usr/lib/node_modules" \
+    RAILS_ENV="production" \
     BUNDLE_DEPLOYMENT="1" \
     BUNDLE_PATH="/usr/local/bundle" \
     BUNDLE_WITHOUT="development" \

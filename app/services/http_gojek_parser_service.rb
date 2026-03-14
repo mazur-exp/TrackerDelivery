@@ -5,7 +5,7 @@ require "uri"
 class HttpGojekParserService
   SCRAPER_SCRIPT = Rails.root.join("lib", "gofood_scraper.js").to_s
   NODE_BIN = ENV.fetch("NODE_BIN", "node")
-  PLAYWRIGHT_PATH = ENV.fetch("PLAYWRIGHT_PATH", "/root/delivery-stats-parser/node_modules")
+  PLAYWRIGHT_PATH = ENV.fetch("PLAYWRIGHT_PATH", nil)
   CACHE_TTL = 4.minutes
   SCRAPER_TIMEOUT = 120 # seconds
 
@@ -176,10 +176,10 @@ class HttpGojekParserService
 
   def run_node_script(input_json)
     env = {
-      "NODE_PATH" => PLAYWRIGHT_PATH,
       "SCRAPING_BROWSER_WS" => ENV.fetch("SCRAPING_BROWSER_WS",
         "wss://brd-customer-hl_4f9d9889-zone-scraping_browser1:vcsa70x4kkpv@brd.superproxy.io:9222")
     }
+    env["NODE_PATH"] = PLAYWRIGHT_PATH if PLAYWRIGHT_PATH
 
     cmd = [NODE_BIN, SCRAPER_SCRIPT, input_json]
 

@@ -14,7 +14,7 @@ FROM docker.io/library/ruby:$RUBY_VERSION-slim AS base
 # Rails app lives here
 WORKDIR /rails
 
-# Install base packages and Chrome dependencies
+# Install base packages, Node.js, and Chrome dependencies
 RUN apt-get update -qq && \
     apt-get install --no-install-recommends -y \
     curl \
@@ -35,6 +35,14 @@ RUN apt-get update -qq && \
     libxss1 \
     libgbm1 && \
     rm -rf /var/lib/apt/lists /var/cache/apt/archives
+
+# Install Node.js 20 LTS + Playwright (needed for GoFood Scraping Browser parser)
+RUN curl -fsSL https://deb.nodesource.com/setup_20.x | bash - && \
+    apt-get install -y --no-install-recommends nodejs && \
+    rm -rf /var/lib/apt/lists /var/cache/apt/archives && \
+    node --version && \
+    npm install -g playwright-core && \
+    npm cache clean --force
 
 # Install Chrome using new key management (detect architecture)
 RUN ARCH=$(dpkg --print-architecture) && \

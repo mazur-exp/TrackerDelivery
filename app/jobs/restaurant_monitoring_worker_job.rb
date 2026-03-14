@@ -117,7 +117,8 @@ class RestaurantMonitoringWorkerJob < ApplicationJob
       when "grab"
         GrabApiParserService.new.parse(restaurant.platform_url)
       when "gojek"
-        HttpGojekParserService.new.parse(restaurant.platform_url)
+        # Use batch parsing for GoFood - one SBR session for all restaurants
+        gojek_batch_parse(restaurant)
       else
         Rails.logger.error "Unknown platform: #{restaurant.platform}"
         nil
@@ -136,6 +137,33 @@ class RestaurantMonitoringWorkerJob < ApplicationJob
       Rails.logger.error "Error getting full restaurant data: #{e.message}"
       nil
     end
+  end
+
+  # Batch parse all GoFood restaurants in one Scraping Browser session.
+  # First worker triggers the batch, others read from cache.
+  def gojek_batch_parse(restaurant)
+    parser = HttpGojekParserService.new
+
+    # Try cache first (filled by batch or previous call)
+    cached = parser.parse(restaurant.platform_url)
+    return cached if cached
+
+    # Cache miss - trigger batch for ALL GoFood restaurants
+    all_gojek_urls = Restaurant.where(platform: "gojek", is_active: true)
+                               .pluck(:platform_url)
+                               .uniq
+
+    if all_gojek_urls.size > 1
+      Rails.logger.info "GoFood SBR: Triggering batch parse for #{all_gojek_urls.size} restaurants"
+      parser.parse_batch(all_gojek_urls)
+    end
+
+    # Read from cache after batch
+    parser.parse(restaurant.platform_url)
+  rescue => e
+    Rails.logger.error "GoFood batch parse error: #{e.message}"
+    # Fallback to single parse
+    HttpGojekParserService.new.parse(restaurant.platform_url)
   end
 
   def extract_status_from_full_data(full_data)

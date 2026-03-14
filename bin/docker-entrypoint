@@ -6,6 +6,13 @@ if [ -z "${LD_PRELOAD+x}" ]; then
     export LD_PRELOAD
 fi
 
+# Start Xvfb virtual display for Chrome (needed by JWT/cookie refresh jobs)
+if ! pgrep -f "Xvfb :99" > /dev/null 2>&1; then
+    Xvfb :99 -screen 0 1920x1080x24 -ac &
+    echo "Started Xvfb on display :99"
+fi
+export DISPLAY=:99
+
 # If running the rails server then create or migrate existing database
 if [ "${@: -2:1}" == "./bin/rails" ] && [ "${@: -1:1}" == "server" ]; then
   ./bin/rails db:prepare

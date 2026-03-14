@@ -1,31 +1,30 @@
-# Rails HTTP Parsers Integration
+# Rails Parsers Integration
 
-**Production-Ready HTTP парсеры для TrackerDelivery**
+**Парсеры данных ресторанов для TrackerDelivery**
 
 ---
 
 ## Overview
 
-TrackerDelivery использует **HTTP-based парсеры** вместо Chrome automation для быстрого и надежного извлечения данных ресторанов.
+TrackerDelivery использует два парсера для мониторинга ресторанов на платформах доставки:
 
-**Performance:**
-- Grab: **~0.5 секунды** на ресторан
-- GoJek: **~1-2 секунды** на ресторан
-- **40-50x быстрее** чем Chrome Selenium!
+| Платформа | Парсер | Подход | Скорость |
+|-----------|--------|--------|----------|
+| **Grab** | `GrabApiParserService` | HTTP + JWT API | ~0.5s/ресторан |
+| **GoFood** | `HttpGojekParserService` | Scraping Browser + Next.js router | ~4-5s/ресторан |
+
+Оба парсера имеют одинаковый интерфейс: `parser.parse(url)` -> Hash с данными ресторана.
 
 ---
 
-## Production Parser Services
-
-### 1. GrabApiParserService (JWT + API v2)
+## 1. GrabApiParserService (JWT + API v2)
 
 **Файл**: `app/services/grab_api_parser_service.rb`
 
 **Подход:**
-- Использует **официальный Grab Guest API v2**
-- Требует **JWT token** (x-hydra-jwt)
-- Требует **API version** (x-grab-web-app-version)
-- Требует **cookies** для session
+- Использует Grab Guest API v2 (`portal.grab.com/foodweb/guest/v2`)
+- Требует JWT token (`x-hydra-jwt`) из `grab_cookies.json`
+- JWT TTL = 10 минут, обновляется каждые 4 минуты
 
 **Использование:**
 ```ruby
@@ -42,35 +41,38 @@ data = parser.parse("https://r.grab.com/g/6-...")
   coordinates: { latitude: -8.640, longitude: 115.142 },
   image_url: "https://food-cms.grab.com/...",
   status: { is_open: true, status_text: "open" },
-  opening_hours: [...],  # 7 days
+  working_hours: [...],  # 7 days
   distance_km: 12.198
 }
 ```
 
 **Зависимости:**
-- `grab_cookies.json` должен содержать валидный JWT token
-- JWT обновляется автоматически через `refresh_grab_jwt.py`
-- JWT TTL = **10 минут** → нужен частый refresh!
-
-**Performance:**
-- ~0.45 секунды на ресторан
-- 100% качество данных (official API)
+- `grab_cookies.json` с валидным JWT
+- JWT обновляется автоматически через `GrabJwtRefreshJob` (Selenium + Xvfb + BrightData proxy)
 
 ---
 
-### 2. HttpGojekParserService (__NEXT_DATA__ Parser)
+## 2. HttpGojekParserService (Scraping Browser + Next.js Router)
 
 **Файл**: `app/services/http_gojek_parser_service.rb`
+**Скрипт**: `lib/gofood_scraper.js`
 
 **Подход:**
-- Парсит **__NEXT_DATA__ JSON** из HTML
-- Требует **cookies** для обхода WAF
-- HTTP request → извлечение JSON → парсинг
+- gofood.co.id защищен Tencent Cloud WAF (EdgeOne) с CAPTCHA
+- Прямой HTTP-доступ невозможен (любой curl/HTTP библиотеки блокируются)
+- Решение: BrightData Scraping Browser загружает homepage (проходит JS challenge), затем использует `window.next.router.push()` для client-side навигации к ресторанам
+- Данные перехватываются из `_next/data` XHR ответов (полный `pageProps.outlet`)
+- Подробности: `GOFOOD_WAF_BYPASS.md`
 
 **Использование:**
 ```ruby
+# Одиночный запрос
 parser = HttpGojekParserService.new
-data = parser.parse("https://gofood.link/a/...")
+data = parser.parse("https://gofood.co.id/bali/restaurant/slug-uuid")
+data = parser.parse("https://gofood.link/a/CODE")  # короткие ссылки тоже работают
+
+# Батч (эффективнее - одна сессия Scraping Browser)
+results = parser.parse_batch([url1, url2, url3])
 
 # Возвращает:
 {
@@ -80,26 +82,37 @@ data = parser.parse("https://gofood.link/a/...")
   review_count: 330,
   cuisines: ["Cepat saji", "Barat"],
   image_url: "https://i.gojekapi.com/...",
-  status: { is_open: true, status_text: "open", core_status: 1 },
-  open_periods: [...]  # 7 days
+  status: {
+    is_open: true,
+    status_text: "open",
+    core_status: 1,       # 1=open, 2=closed
+    deliverable: false,
+    next_open_time: nil,   # ISO datetime when closed
+    next_close_time: "...",# ISO datetime when open
+    blocked_reason: nil
+  },
+  working_hours: [...]  # 7 days, same format as Grab
 }
 ```
 
 **Зависимости:**
-- `gojek_cookies.json` должен содержать WAF cookies
-- Cookies обновляются через `refresh_gojek_cookies.py`
-- Cookies TTL = **6-24 часа** → refresh каждые 4 часа
+- Node.js (на сервере)
+- Playwright (`/root/delivery-stats-parser/node_modules`)
+- BrightData Scraping Browser zone (`scraping_browser1`)
+- Кеш: результаты кешируются на 4 минуты в `tmp/gofood_cache/`
 
-**Performance:**
-- ~1-2 секунды на ресторан (2 HTTP requests если короткая ссылка)
-- ~0.5 секунды если использовать полный URL
-- 95-100% качество данных
+**ENV переменные:**
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `SCRAPING_BROWSER_WS` | hardcoded | BrightData WebSocket URL |
+| `NODE_BIN` | `node` | Путь к Node.js |
+| `PLAYWRIGHT_PATH` | `/root/delivery-stats-parser/node_modules` | Путь к Playwright |
 
 ---
 
 ## Production Monitoring: /jobs
 
-**URL**: `https://your-domain.com/jobs`
+**URL**: `https://aidelivery.tech/jobs`
 
 **Access:**
 ```
@@ -107,286 +120,89 @@ Username: admin
 Password: TrackerDelivery2025!
 ```
 
-**Purpose:**
-- Monitor all background jobs
-- View HTTP parser performance in real-time
-- Check errors and retries
-- Queue status and processing times
-
-**Features:**
-- Live job status updates
-- Error tracking
-- Performance metrics
-- Retry attempts visibility
-
-### What you see:
-- RestaurantMonitoringWorkerJob execution
-- HTTP parser durations
-- Success/failure rates
-- Network timeouts and retries
+Показывает: статус джобов, performance метрики, ошибки и ретраи.
 
 ---
 
 ## Credentials Management
 
-### grab_cookies.json
-
-**Location**: `/rails/grab_cookies.json` (в Docker container)
+### Grab: grab_cookies.json
 
 **Структура:**
 ```json
 {
-  "cookies": { /* 22 cookies */ },
-  "jwt_token": "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9...",
+  "cookies": { "...": "..." },
+  "jwt_token": "eyJhbGciOiJSUzI1NiIs...",
   "api_version": "uaf6yDMWlVv0CaTK5fHdB",
   "timestamp": "2025-11-16T02:54:30.000Z"
 }
 ```
 
-**Обновление:**
-- Автоматически через `refresh_grab_jwt.py` каждые 4 минуты
-- Или вручную через Chrome DevTools (см. GRAB_JWT_AUTO_REFRESH.md)
+**Обновление**: автоматически через `GrabJwtRefreshJob` каждые 4 минуты (Selenium + Xvfb + BrightData datacenter proxy).
 
-**Проверка валидности:**
-```ruby
-# В Rails console
-data = JSON.parse(File.read('grab_cookies.json'))
-jwt = data['jwt_token']
+### GoFood: НЕ требует credentials
 
-# Decode JWT (без валидации)
-require 'base64'
-payload = JSON.parse(Base64.decode64(jwt.split('.')[1]))
-exp_time = Time.at(payload['exp'])
+GoFood парсер **не использует файлы cookies**. Всё проходит через Scraping Browser, который сам получает и использует WAF tokens в рамках сессии.
 
-puts "Expires at: #{exp_time}"
-puts "Valid for: #{((exp_time - Time.now) / 60).round(1)} minutes"
-```
+Старые файлы (`gojek_cookies.json`, `GojekCookieRefreshService`, `GojekCookieRefreshJob`) больше не используются.
 
 ---
 
-### gojek_cookies.json
-
-**Location**: `/rails/gojek_cookies.json`
-
-**Структура:**
-```json
-{
-  "cookies": {
-    "w_tsfp": "ltv...",  // WAF token (КРИТИЧНО!)
-    "XSRF-TOKEN": "...",
-    "csrfSecret": "...",
-    "gf_chosen_loc": "{...}"  // Geolocation Bali
-  },
-  "localStorage": { /* backup tokens */ },
-  "timestamp": "2025-11-14T15:40:26.817147"
-}
-```
-
-**Обновление:**
-- Автоматически через `refresh_gojek_cookies.py` каждые 4 часа
-- Cookies TTL: 6-24 часа
-
----
-
-## Production Deployment
-
-### Prerequisites:
-
-1. **Gemfile dependencies:**
-```ruby
-gem "httparty"
-gem "http-cookie"  # Для HttpGojekParserService
-gem "selenium-webdriver"  # Для старых парсеров (optional)
-```
-
-2. **Docker image:**
-- Xvfb установлен (Dockerfile:27)
-- Chromium ARM64 установлен (Dockerfile:48-52)
-- ChromeDriver настроен
-
-3. **Credentials files:**
-- `grab_cookies.json` с валидным JWT
-- `gojek_cookies.json` с валидными cookies
-
-### Deployment Steps:
-
-**1. Копировать credentials на сервер:**
-```bash
-# Локально
-scp grab_cookies.json root@your-server:/root/TrackerDelivery/
-scp gojek_cookies.json root@your-server:/root/TrackerDelivery/
-```
-
-**2. Обновить Procfile.dev для production:**
-```ruby
-# Procfile.dev
-web: bin/rails server
-jobs: bin/jobs
-gojek_cookies: python3 refresh_gojek_cookies.py
-grab_jwt: xvfb-run -a python3 refresh_grab_jwt.py  # ← ДОБАВИТЬ xvfb-run!
-```
-
-**3. Deploy через Kamal:**
-```bash
-kamal deploy
-```
-
-**4. Тестировать через /test-parsers:**
-```bash
-# Открыть в браузере
-https://your-domain.com/test-parsers
-
-# Или через curl
-curl -X POST https://your-domain.com/test-parsers/grab \
-  -H "Content-Type: application/json" \
-  -d '{"url": "https://r.grab.com/g/6-..."}'
-```
-
----
-
-## Monitoring & Health Checks
-
-### Health Check Endpoints:
-
-```ruby
-# Проверка валидности JWT
-GET /api/health/grab-jwt
-→ { valid: true, expires_in_minutes: 8.5 }
-
-# Проверка валидности cookies
-GET /api/health/gojek-cookies
-→ { valid: true, age_hours: 2.3 }
-```
-
-### Scheduled Jobs:
+## Scheduled Jobs
 
 ```yaml
 # config/recurring.yml
 production:
-  monitor_grab_restaurants:
-    class: MonitorGrabRestaurantsJob
-    schedule: "*/5 * * * *"  # Every 5 minutes
+  grab_jwt_refresh:
+    class: GrabJwtRefreshJob
+    schedule: "*/4 * * * *"   # Every 4 minutes
 
-  monitor_gojek_restaurants:
-    class: MonitorGojekRestaurantsJob
-    schedule: "*/5 * * * *"  # Every 5 minutes
-```
-
-### Alerts:
-
-```ruby
-# app/jobs/monitor_grab_restaurants_job.rb
-def perform
-  parser = GrabApiParserService.new
-
-  # Check JWT validity before batch
-  unless jwt_valid?
-    AlertService.notify("Grab JWT expired!")
-    return
-  end
-
-  # Process restaurants...
-end
+  restaurant_monitoring:
+    class: RestaurantMonitoringSchedulerJob
+    schedule: "*/5 * * * *"   # Every 5 minutes
 ```
 
 ---
 
 ## Troubleshooting
 
-### Grab Parser не работает:
+### Grab Parser не работает
 
-**Проверка #1: JWT присутствует?**
+1. **JWT отсутствует?** `cat grab_cookies.json | grep jwt_token`
+2. **JWT истек?** Декодируй JWT и проверь `exp`
+3. **Refresh не работает?** Проверь логи `GrabJwtRefreshJob` в /jobs
+
+### GoFood Parser не работает
+
+1. **Node.js доступен?** `which node`
+2. **Playwright установлен?** `ls /root/delivery-stats-parser/node_modules/playwright`
+3. **Scraping Browser подключается?** Проверь логи -- `GoFood SBR: Connecting...`
+4. **Homepage не грузится?** Scraping Browser нестабилен (~80% success). Скрипт ретраит до 3 раз.
+5. **BrightData зона активна?** Проверь https://brightdata.com/cp/zones
+
+### GoFood: подробная диагностика
+
 ```bash
-cat grab_cookies.json | grep jwt_token
-# Должно быть: "jwt_token": "eyJ..."
-# НЕ null!
+# Тест скрипта вручную
+NODE_PATH=/root/delivery-stats-parser/node_modules \
+  node /root/TrackerDelivery/lib/gofood_scraper.js \
+  '{"urls":["https://gofood.co.id/bali/restaurant/SLUG"]}'
 ```
 
-**Проверка #2: JWT не истек?**
-```bash
-# Decode JWT и проверь exp time
-```
-
-**Проверка #3: API version актуальный?**
-```bash
-cat grab_cookies.json | grep api_version
-# "api_version": "uaf6yDMWlVv0CaTK5fHdB"
-```
-
-**Решение:**
-- Перезапустить `refresh_grab_jwt.py` вручную
-- Или извлечь JWT из Chrome DevTools вручную
+stderr покажет прогресс (`[GoFood] Homepage loaded...`), stdout -- JSON результат.
 
 ---
 
-### GoJek Parser не работает:
+## Performance
 
-**Проверка #1: Cookies присутствуют?**
-```bash
-cat gojek_cookies.json | grep w_tsfp
-# Должен быть WAF token!
-```
+| Parser | Одиночный | Батч 10 шт | Качество |
+|--------|-----------|------------|----------|
+| **Grab API** | 0.5s | 5s (parallel) | 75-100% |
+| **GoFood SBR** | 20s (homepage) + 5s | 20s + 50s = 70s | 100% |
 
-**Проверка #2: Cookies свежие?**
-```bash
-cat gojek_cookies.json | grep timestamp
-# < 6 часов назад
-```
-
-**Решение:**
-- Перезапустить `refresh_gojek_cookies.py`
+GoFood батч эффективнее: одна сессия Scraping Browser (~20s homepage) + ~5s на каждый ресторан.
 
 ---
 
-## Performance Metrics
-
-### Tested Results (2025-11-16):
-
-| Parser | Duration | Quality | Status |
-|--------|----------|---------|--------|
-| **Grab API** | 0.45s | 75-100% | ✅ Working |
-| **GoJek HTTP** | 2.09s | 100% | ✅ Working |
-
-**Batch Performance (500 restaurants):**
-- Sequential: 500 * 0.5s = 250 sec = 4.2 min
-- Parallel (20 threads): 500 / 20 * 0.5s = 12.5 sec ✅
-
-**Requirement**: < 3 минуты для 500 ресторанов
-**Solution**: Параллельная обработка (gem 'parallel')
-
----
-
-## Key Differences: HTTP vs Selenium
-
-| Аспект | HTTP Parser | Selenium Parser |
-|--------|-------------|-----------------|
-| **Speed** | 0.5-2 сек | 5-10 сек |
-| **CPU** | 5-10% | 30-50% |
-| **RAM** | 50 MB | 500-800 MB |
-| **Надежность** | 95-100% | 85-95% |
-| **Complexity** | Low | High |
-| **Dependencies** | httparty, http-cookie | selenium, chrome, chromedriver |
-
-**Вывод**: HTTP парсеры **НАМНОГО** лучше для production!
-
----
-
-## Summary
-
-✅ **GrabApiParserService**: Production-ready, 0.45s, 100% quality
-✅ **HttpGojekParserService**: Production-ready, 2s, 100% quality
-✅ **/test-parsers route**: Готов для production testing
-✅ **ARM64 compatible**: Все работает на Hetzner CAX11
-✅ **Auto-refresh**: JWT и cookies обновляются автоматически
-
-**Next Steps:**
-1. Deploy на production сервер
-2. Протестировать через /test-parsers
-3. Запустить monitoring jobs
-4. Мониторить performance и errors
-
----
-
-**Дата создания**: 2025-11-16
-**Автор**: TrackerDelivery Team
-**Status**: Production Ready ✅
+**Дата обновления**: 2026-03-15
+**Status**: Production Ready

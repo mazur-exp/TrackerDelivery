@@ -72,6 +72,12 @@ class GrabApiParserService
   private
 
   def load_credentials
+    # Try storage path first (writable by rails user), then root
+    storage_file = Rails.root.join("storage", "grab_cookies.json") rescue nil
+    if storage_file && File.exist?(storage_file)
+      @cookies_file = storage_file
+    end
+
     unless File.exist?(@cookies_file)
       Rails.logger.warn "Grab API: grab_cookies.json not found"
       @jwt_token = nil

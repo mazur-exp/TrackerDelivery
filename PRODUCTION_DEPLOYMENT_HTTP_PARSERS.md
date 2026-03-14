@@ -1,261 +1,177 @@
-# Production Deployment: HTTP Parsers
+# Production Deployment Guide
 
-**Quick Guide для deployment HTTP парсеров на Hetzner ARM64 сервер**
+**Deployment TrackerDelivery на Hetzner ARM64 сервер**
 
 ---
 
-## 📋 Pre-Deployment Checklist
+## Pre-Deployment Checklist
 
-### 1. Локальная подготовка
+### Grab Parser
+- [x] `GrabApiParserService` создан (`app/services/`)
+- [x] `grab_cookies.json` с валидным JWT
+- [x] `GrabJwtRefreshJob` настроен (каждые 4 мин)
+- [x] Xvfb + Selenium в Dockerfile
 
-- [x] `http-cookie` gem добавлен в Gemfile
-- [x] `GrabApiParserService` создан (app/services/)
-- [x] `HttpGojekParserService` существует
-- [x] `/test-parsers` route настроен
-- [x] `refresh_grab_jwt.py` исправлен (case-sensitive headers)
-- [x] `grab_cookies.json` содержит валидный JWT ← **Закоммичен в git!**
-- [x] `gojek_cookies.json` содержит валидные cookies ← **Закоммичен в git!**
+### GoFood Parser
+- [x] `HttpGojekParserService` переписан (Scraping Browser)
+- [x] `lib/gofood_scraper.js` создан
+- [x] Node.js доступен на сервере
+- [x] Playwright доступен (`/root/delivery-stats-parser/node_modules`)
+- [x] BrightData Scraping Browser zone активна
 
-### 2. Проверка credentials (ВАЖНО!)
+### Infrastructure
+- [x] Docker image с Chromium ARM64
+- [x] Kamal deployment настроен
+- [x] Mission Control Jobs (/jobs)
+
+---
+
+## Architecture
+
+```
+┌──────────────────────────────────────────────────┐
+│  TrackerDelivery (Rails 8 + Solid Queue)         │
+│                                                  │
+│  RestaurantMonitoringSchedulerJob (every 5min)   │
+│  └─> RestaurantMonitoringWorkerJob (per restaurant)
+│      ├─> GrabApiParserService (Grab restaurants) │
+│      │   └─> HTTP + JWT → portal.grab.com API    │
+│      └─> HttpGojekParserService (GoFood restaurants)
+│          └─> Node.js subprocess                  │
+│              └─> gofood_scraper.js               │
+│                  └─> BrightData Scraping Browser │
+│                      └─> gofood.co.id (Next.js)  │
+│                                                  │
+│  GrabJwtRefreshJob (every 4min)                  │
+│  └─> Selenium + Xvfb + BrightData proxy         │
+│      └─> grab_cookies.json (JWT token)           │
+└──────────────────────────────────────────────────┘
+```
+
+---
+
+## Deployment Steps
+
+### 1. Verify Grab JWT
 
 ```bash
-# JWT должен быть ВАЛИДНЫМ (не null!)
 cat grab_cookies.json | grep jwt_token
-# Должно быть: "jwt_token": "eyJ..." (НЕ null!)
-
-# Cookies должны быть свежими
-cat gojek_cookies.json | grep w_tsfp
-# Должен быть WAF token
+# Должно быть: "jwt_token": "eyJ..." (не null!)
 ```
 
-**КРИТИЧНО:** Файлы `grab_cookies.json` и `gojek_cookies.json` **включены в Docker image**!
-- При build Docker копирует их в `/rails/*.json`
-- Refresh scripts обновляют файлы **inside container** каждые 4 минуты
-- Updates НЕ сохраняются между container restarts (ephemeral)
-- Для production stability: перебилдить image с fresh JWT каждые несколько часов
-
----
-
-## 🚀 Deployment Steps (SIMPLE!)
-
-### Step 1: Verify credentials committed
-
-```bash
-# Проверить что JWT валидный (НЕ null!)
-git show HEAD:grab_cookies.json | grep jwt_token
-
-# Должно быть: "jwt_token": "eyJ..."
-```
-
-### Step 2: Push и Deploy
+### 2. Deploy
 
 ```bash
 git push
 kamal deploy
 ```
 
-**Вот и всё!** Credentials включены в Docker image автоматически!
+### 3. Verify
+
+```bash
+# Check Grab parser
+kamal app logs -f | grep "Grab API"
+
+# Check GoFood parser
+kamal app logs -f | grep "GoFood SBR"
+
+# Check jobs
+# https://aidelivery.tech/jobs (admin/TrackerDelivery2025!)
+```
 
 ---
 
-## ✅ Как это работает (Simple Architecture)
+## Container Runtime
 
-### Docker Build:
-```dockerfile
-# Dockerfile автоматически копирует:
-COPY . /rails
-# ↑ Включает grab_cookies.json и gojek_cookies.json!
-```
-
-### Container Runtime:
 ```
 /rails/
-├── grab_cookies.json     ← Initial JWT (baked in image)
-├── gojek_cookies.json    ← Initial cookies
-├── refresh_grab_jwt.py   ← Updates grab_cookies.json every 4 min
-└── refresh_gojek_cookies.py  ← Updates gojek_cookies.json every 4 hours
+├── grab_cookies.json          ← Grab JWT (initial, refreshed every 4 min)
+├── lib/gofood_scraper.js      ← GoFood Node.js scraper
+├── app/services/
+│   ├── grab_api_parser_service.rb
+│   └── http_gojek_parser_service.rb
+└── tmp/gofood_cache/          ← GoFood results cache (4 min TTL)
 ```
 
-### JWT Lifecycle:
-```
-1. Docker build → grab_cookies.json с JWT копируется в image
-2. Container starts → файл в /rails/grab_cookies.json
-3. refresh_grab_jwt.py запускается → обновляет JWT каждые 4 минуты
-4. Parser читает → СВЕЖИЙ JWT! ✅
-5. Container restart → JWT возвращается к initial (from image)
-   └─> refresh скрипт сразу обновит! (4 min cycle)
-```
+**Grab JWT lifecycle:**
+1. Docker build -> `grab_cookies.json` baked into image
+2. Container starts -> `GrabJwtRefreshJob` обновляет JWT каждые 4 мин
+3. Container restart -> initial JWT (valid ~10 min), refresh job обновит
 
-### Важно:
-- ✅ Initial JWT работает первые 10 минут после deployment
-- ✅ Refresh обновляет JWT каждые 4 минуты
-- ⚠️ Container restart → возврат к initial JWT (но быстро обновляется)
-- 💡 Для длительной стабильности: redeploy каждые несколько дней с fresh JWT
+**GoFood credentials:**
+- Не требуются! Scraping Browser получает WAF tokens автоматически.
+- Старые файлы `gojek_cookies.json` и `refresh_gojek_cookies.py` не нужны.
 
 ---
 
-## 🧪 Production Testing
+## Expected Performance
 
-### Via Web UI:
-
-```
-1. Открыть: https://your-domain.com/test-parsers
-2. Ввести Grab URL
-3. Кликнуть "Test Grab Parser"
-4. Проверить result: success=true, duration < 1s
-5. Repeat для GoJek
-```
-
-### Via API:
-
-```bash
-# Test Grab
-curl -X POST https://your-domain.com/test-parsers/grab \
-  -H "Content-Type: application/json" \
-  -d '{"url": "https://r.grab.com/g/6-C65ZV62KVNEDPE"}'
-
-# Expected:
-# {"success":true,"duration":0.45,"quality":75,...}
-
-# Test GoJek
-curl -X POST https://your-domain.com/test-parsers/gojek \
-  -H "Content-Type: application/json" \
-  -d '{"url": "https://gofood.link/a/MrswDDW"}'
-
-# Expected:
-# {"success":true,"duration":2.0,"quality":100,...}
-```
-
----
-
-## 🔧 Troubleshooting Production
-
-### Problem: Grab parser returns "No JWT token"
-
-**Причина**: grab_cookies.json не найден или JWT = null
-
-**Solution**:
-```bash
-# На сервере check file
-cat /root/TrackerDelivery/grab_cookies.json | grep jwt_token
-
-# Если null - copy fresh file from local
-scp grab_cookies.json root@server:/root/TrackerDelivery/
-kamal app exec -i -- cat /rails/grab_cookies.json
-```
-
-### Problem: GoJek parser fails with WAF
-
-**Причина**: Cookies истекли
-
-**Solution**:
-```bash
-# Copy fresh cookies
-scp gojek_cookies.json root@server:/root/TrackerDelivery/
-```
-
-### Problem: refresh_grab_jwt.py не запускается
-
-**Причина**: Xvfb не установлен или Python venv отсутствует
-
-**Solution**:
-```bash
-# На сервере
-which xvfb-run  # Должен быть /usr/bin/xvfb-run
-
-# Check Python venv
-ls /app/venv/bin/python3  # Или где установлен venv
-```
-
----
-
-## 📊 Expected Performance
-
-### After Deployment:
-
-| Metric | Expected | Acceptable Range |
-|--------|----------|------------------|
+| Metric | Expected | Acceptable |
+|--------|----------|------------|
 | Grab parser duration | 0.5s | 0.3-1.0s |
-| GoJek parser duration | 1.5s | 0.5-3.0s |
-| Grab quality | 75-100% | > 70% |
-| GoJek quality | 100% | > 90% |
-| JWT refresh success | 100% | > 95% |
-| Cookie refresh success | 100% | > 95% |
+| GoFood parser (single) | 25s | 15-60s |
+| GoFood parser (batch 10) | 70s | 40-120s |
+| Grab JWT refresh | 15-30s | < 60s |
+| Monitoring cycle (5min) | < 3min | < 5min |
 
-### Monitoring:
+### Monitoring logs
 
-```ruby
-# Check logs через Kamal
-kamal app logs -f | grep -E "(Grab API|HTTP GoJek)"
+```bash
+kamal app logs -f | grep -E "(Grab API|GoFood SBR)"
 
-# Expected output:
+# Expected:
 # Grab API: Parsing completed in 0.45s
-# HTTP GoJek: Parsing completed in 2.08s
+# GoFood SBR: Completed in 25.3s - Restaurant Name
+# GoFood SBR: Cache hit in 0.01s
 ```
 
 ---
 
-## 🎯 Post-Deployment Actions
+## Troubleshooting
 
-### 1. Verify auto-refresh works
-
+### Grab: "No JWT token"
 ```bash
-# Wait 4-5 minutes
-# Check JWT timestamp updated
-kamal app exec -- cat /rails/grab_cookies.json | grep timestamp
+# Check file exists and has JWT
+kamal app exec -- cat /rails/grab_cookies.json | grep jwt_token
+
+# If null - check GrabJwtRefreshJob in /jobs
+# Manual refresh: copy fresh grab_cookies.json to server
+scp -P 2222 grab_cookies.json root@46.62.195.19:/root/TrackerDelivery/
 ```
 
-### 2. Test monitoring jobs
-
+### GoFood: Scraper timeout
 ```bash
-# Trigger manual job run
-kamal app exec -- bin/rails runner "MonitorGrabRestaurantsJob.perform_now"
+# Test manually on server
+NODE_PATH=/root/delivery-stats-parser/node_modules \
+  node /root/TrackerDelivery/lib/gofood_scraper.js \
+  '{"urls":["https://gofood.co.id/bali/restaurant/SLUG-UUID"]}'
 
-# Check logs
-kamal app logs | grep "Grab API"
+# Common issues:
+# 1. Scraping Browser zone expired -> check BrightData dashboard
+# 2. Homepage WAF not passing -> retry (80% success rate)
+# 3. Node.js not found -> verify `which node`
+# 4. Playwright not found -> verify NODE_PATH
 ```
 
-### 3. Setup alerts
-
-```ruby
-# If parser fails > 5% → send alert
-# If JWT refresh fails → send critical alert
+### GoFood: Node.js not available in Docker
+```bash
+# If Docker container doesn't have Node.js:
+# Option 1: Install in Dockerfile
+# Option 2: Use host Node.js via volume mount
+# Option 3: Run scraper as external service
 ```
 
 ---
 
-## ✅ Success Criteria
+## Mission Control Jobs
 
-Deployment successful если:
+**URL**: `https://aidelivery.tech/jobs`
+**Auth**: `admin / TrackerDelivery2025!`
 
-- [x] Onboarding works with HTTP parsers (6-12s)
-- [x] Monitoring jobs running (every 5 min)
-- [x] Grab: 100% success rate (no HTTP 429)
-- [x] GoJek: 100% success rate
-- [x] /jobs accessible (admin/TrackerDelivery2025!)
-- [x] No errors in logs
+Shows: job status, errors, retries, queue health.
 
 ---
 
-## 📊 Mission Control Jobs:
-
-**Access:**
-```
-URL: https://your-domain.com/jobs
-Username: admin
-Password: TrackerDelivery2025!
-```
-
-**Features:**
-- View all monitoring jobs
-- See errors and retries
-- Monitor performance
-- Queue status
-
----
-
-**Version**: 2.0
-**Date**: 2025-11-17
+**Version**: 3.0
+**Date**: 2026-03-15
 **Target Server**: Hetzner CAX11 (ARM64, Finland)
-**Tested**: Production verified ✅
-**Status**: Fully Operational 🚀

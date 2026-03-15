@@ -258,9 +258,17 @@ class HttpGojekParserService
 
   def write_cache(url, data)
     file = cache_dir.join("#{cache_key(url)}.json")
-    cache_entry = { cached_at: Time.current.iso8601, url: url, data: data }
-    File.write(file, cache_entry.to_json)
+    cache_entry = { "cached_at" => Time.current.iso8601, "url" => url, "data" => deep_stringify(data) }
+    File.write(file, JSON.generate(cache_entry))
   rescue => e
     Rails.logger.warn "GoFood SBR: Cache write error: #{e.message}"
+  end
+
+  def deep_stringify(obj)
+    case obj
+    when Hash then obj.transform_keys(&:to_s).transform_values { |v| deep_stringify(v) }
+    when Array then obj.map { |v| deep_stringify(v) }
+    else obj
+    end
   end
 end

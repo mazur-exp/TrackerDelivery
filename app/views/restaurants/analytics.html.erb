@@ -182,8 +182,10 @@ function buildDayRows(sortedDays, days) {
     const hasIssues = anomalyCount > 0 || events.some(e => e.type === 'unexpected_close');
 
     // Uptime color
-    const uptimeColor = uptimePct >= 95 ? 'text-green-600' : uptimePct >= 70 ? 'text-yellow-600' : 'text-red-600';
-    const uptimeIcon = uptimePct >= 95 ? '✅' : uptimePct >= 70 ? '⚠️' : '🔴';
+    const pctNum = parseFloat(uptimePct) || 0;
+    const noData = validCount === 0;
+    const uptimeColor = noData ? 'text-gray-300' : pctNum >= 95 ? 'text-green-600' : pctNum >= 70 ? 'text-yellow-600' : 'text-red-600';
+    const uptimeIcon = noData ? '⚪' : pctNum >= 95 ? '✅' : pctNum >= 70 ? '⚠️' : '🔴';
     const bgClass = isToday ? 'bg-blue-50/30' : '';
 
     html += `<div class="group ${bgClass}">`;
@@ -192,7 +194,7 @@ function buildDayRows(sortedDays, days) {
     html += `<span class="text-sm ${uptimeColor} w-5 text-center flex-shrink-0">${uptimeIcon}</span>`;
     html += `<span class="text-sm ${isToday ? 'font-bold text-gray-900' : 'font-medium text-gray-700'} w-28 flex-shrink-0">${dayLabel}</span>`;
     html += `<span class="text-sm font-semibold ${uptimeColor} w-12 flex-shrink-0">${uptimePct}%</span>`;
-    html += `<span class="text-xs text-gray-400 flex-1">${openStr} open</span>`;
+    html += `<span class="text-xs text-gray-400 flex-1">${noData ? 'no data' : openStr + ' open'}</span>`;
 
     if (hasIssues) {
       const issueCount = events.filter(e => e.type === 'unexpected_close').length;

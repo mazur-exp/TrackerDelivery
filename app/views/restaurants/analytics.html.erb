@@ -231,12 +231,6 @@ function buildDayRows(sortedDays, days) {
           html += `<span class="text-red-600 font-medium">Closed unexpectedly</span>`;
           html += `<span class="text-xs bg-yellow-100 text-yellow-700 px-1.5 py-0.5 rounded font-medium ml-1">ANOMALY</span>`;
           html += '</div>';
-        } else if (ev.type === 'error_start') {
-          html += `<div class="flex items-center gap-2 text-sm">`;
-          html += `<span class="w-1.5 h-1.5 rounded-full bg-gray-300 flex-shrink-0"></span>`;
-          html += `<span class="text-gray-500 font-mono w-12">${time}</span>`;
-          html += `<span class="text-gray-400">Monitoring error</span>`;
-          html += '</div>';
         }
       });
       html += '</div></div>';
@@ -252,21 +246,32 @@ function buildDayRows(sortedDays, days) {
 function findEvents(checks) {
   if (!checks.length) return [];
   const events = [];
+
+  // Filter out errors: treat them as continuation of last known status
+  // This prevents "monitoring error" noise in the event log
+  const realChecks = [];
+  let lastReal = null;
+  checks.forEach(c => {
+    if (c.s === -1) return; // skip errors
+    realChecks.push(c);
+    lastReal = c;
+  });
+
+  if (!realChecks.length) return [];
+
   let prevStatus = null;
   let lastCloseTime = null;
 
-  checks.forEach((c, i) => {
-    const status = c.s; // 1=open, 0=closed, -1=error
+  realChecks.forEach((c, i) => {
+    const status = c.s; // 1=open, 0=closed
     const time = c.bali;
 
     if (prevStatus === null) {
-      // First check of the day
+      // First real check of the day
       if (status === 1) events.push({ type: 'opened', time });
-      else if (status === 0) events.push({ type: 'closed', time });
-      else events.push({ type: 'error_start', time });
+      else events.push({ type: 'closed', time });
     } else if (status !== prevStatus) {
-      // Status changed
-      if (status === 1 && (prevStatus === 0 || prevStatus === -1)) {
+      if (status === 1 && prevStatus === 0) {
         // Reopened
         let downtime = '';
         if (lastCloseTime) {
@@ -277,17 +282,9 @@ function findEvents(checks) {
         events.push({ type: 'opened', time, downtime });
         lastCloseTime = null;
       } else if (status === 0 && prevStatus === 1) {
-        // Closed - check if anomaly
         const isAnomaly = c.a === 1;
         events.push({ type: isAnomaly ? 'unexpected_close' : 'closed', time });
         lastCloseTime = time;
-      } else if (status === 0 && prevStatus === -1) {
-        // Was error, now closed
-        events.push({ type: 'closed', time });
-        lastCloseTime = time;
-      } else if (status === -1 && prevStatus !== -1) {
-        events.push({ type: 'error_start', time });
-        if (prevStatus === 1) lastCloseTime = time;
       }
     }
     prevStatus = status;

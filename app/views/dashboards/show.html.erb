@@ -222,7 +222,7 @@
 
                       <!-- OOS badge -->
                       <% if sd[:oos_menu_items] > 0 %>
-                        <span class="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded text-xs font-medium bg-red-100 text-red-700">
+                        <span onclick="showTab('outofstock')" class="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded text-xs font-medium bg-red-100 text-red-700 cursor-pointer hover:bg-red-200 transition-colors">
                           <i data-lucide="package-x" class="w-3 h-3"></i>
                           <%= sd[:oos_menu_items] %> OOS
                         </span>

@@ -140,30 +140,50 @@ class RestaurantMonitoringWorkerJob < ApplicationJob
   end
 
   # Batch parse all GoFood restaurants in one Scraping Browser session.
-  # First worker triggers the batch, others read from cache.
+  # Uses file lock to ensure only ONE worker triggers batch at a time.
+  # Other workers wait for cache to be filled.
+  GOFOOD_BATCH_LOCK = Rails.root.join("tmp", "gofood_batch.lock").to_s
+
   def gojek_batch_parse(restaurant)
     parser = HttpGojekParserService.new
 
-    # Try cache first (filled by batch or previous call)
+    # Try cache first
     cached = parser.parse(restaurant.platform_url)
     return cached if cached
 
-    # Cache miss - trigger batch for ALL GoFood restaurants
-    all_gojek_urls = Restaurant.where(platform: "gojek", is_active: true)
-                               .pluck(:platform_url)
-                               .uniq
+    # Cache miss - try to acquire lock for batch
+    lock_file = File.open(GOFOOD_BATCH_LOCK, File::RDWR | File::CREAT, 0644)
 
-    if all_gojek_urls.size > 1
-      Rails.logger.info "GoFood SBR: Triggering batch parse for #{all_gojek_urls.size} restaurants"
-      parser.parse_batch(all_gojek_urls)
+    if lock_file.flock(File::LOCK_EX | File::LOCK_NB)
+      # Got the lock - we do the batch
+      begin
+        all_gojek_urls = Restaurant.where(platform: "gojek", is_active: true)
+                                   .pluck(:platform_url)
+                                   .uniq
+
+        Rails.logger.info "GoFood SBR: Batch parse #{all_gojek_urls.size} restaurants (locked)"
+        parser.parse_batch(all_gojek_urls)
+      ensure
+        lock_file.flock(File::LOCK_UN)
+        lock_file.close
+      end
+    else
+      # Another worker is doing batch - wait for cache
+      lock_file.close
+      Rails.logger.info "GoFood SBR: Waiting for batch (another worker has lock)..."
+      sleep(15) # Wait for batch to fill cache
     end
 
-    # Read from cache after batch
+    # Read from cache
+    result = parser.parse(restaurant.platform_url)
+    return result if result
+
+    # Still no cache after wait - try once more
+    sleep(15)
     parser.parse(restaurant.platform_url)
   rescue => e
     Rails.logger.error "GoFood batch parse error: #{e.message}"
-    # Fallback to single parse
-    HttpGojekParserService.new.parse(restaurant.platform_url)
+    nil
   end
 
   def extract_status_from_full_data(full_data)

@@ -6,14 +6,9 @@
   <title>Analytics - <%= @restaurant.name %></title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
-  <script>
-    tailwind.config = {
-      theme: { extend: { colors: { primary: '#16A34A', 'primary-dark': '#15803D' } } }
-    }
-  </script>
 </head>
 <body class="min-h-screen bg-gray-50">
-  <div class="max-w-5xl mx-auto p-4 md:p-6 space-y-5">
+  <div class="max-w-5xl mx-auto p-4 md:p-6 space-y-4">
 
     <!-- Header -->
     <div class="flex items-center justify-between">
@@ -21,24 +16,13 @@
         <a href="<%= dashboard_path %>" class="text-gray-400 hover:text-gray-600 text-sm flex items-center gap-1 mb-1">
           <i data-lucide="arrow-left" class="w-4 h-4"></i> Dashboard
         </a>
-        <h1 class="text-2xl font-bold text-gray-900"><%= @restaurant.name %></h1>
-        <p class="text-sm text-gray-500"><%= @restaurant.platform_name %> · <%= @restaurant.address || @restaurant.platform_url %></p>
+        <h1 class="text-xl font-bold text-gray-900"><%= @restaurant.name %></h1>
+        <p class="text-xs text-gray-500"><%= @restaurant.platform_name %></p>
       </div>
-      <div class="flex items-center gap-2">
-        <div class="flex items-center gap-1.5 px-2.5 py-1 bg-green-50 border border-green-200 rounded-lg text-xs">
-          <div class="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-          Live
-        </div>
-      </div>
-    </div>
-
-    <!-- Period Selector -->
-    <div class="bg-white rounded-xl border p-3 flex items-center justify-between">
-      <span class="text-sm font-medium text-gray-700 ml-1">Period</span>
       <div class="bg-gray-100 rounded-lg p-0.5 inline-flex">
         <% %w[24h 7d 30d].each do |p| %>
           <button onclick="loadPeriod('<%= p %>')" id="btn-<%= p %>"
-            class="period-btn px-4 py-1.5 text-sm font-medium rounded-md transition-colors <%= p == @period ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700' %>">
+            class="period-btn px-3 py-1 text-xs font-medium rounded-md transition-colors <%= p == @period ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500' %>">
             <%= p %>
           </button>
         <% end %>
@@ -46,319 +30,284 @@
     </div>
 
     <!-- Metric Cards -->
-    <div class="grid grid-cols-2 lg:grid-cols-4 gap-3" id="metrics">
-      <!-- Uptime -->
+    <div class="grid grid-cols-4 gap-3" id="metrics">
       <div class="bg-white rounded-xl border p-4">
-        <div class="flex items-center justify-between mb-1">
-          <span class="text-xs font-medium text-gray-500">Uptime</span>
-          <i data-lucide="check-circle" class="w-4 h-4 text-green-500"></i>
-        </div>
-        <div class="text-2xl font-bold text-gray-900" id="m-uptime">--%</div>
-        <div class="text-xs text-gray-400 mt-0.5" id="m-uptime-sub"></div>
+        <div class="text-xs text-gray-400 mb-1">Uptime</div>
+        <div class="text-2xl font-bold" id="m-uptime">--%</div>
       </div>
-      <!-- Downtime -->
       <div class="bg-white rounded-xl border p-4">
-        <div class="flex items-center justify-between mb-1">
-          <span class="text-xs font-medium text-gray-500">Downtime</span>
-          <i data-lucide="clock" class="w-4 h-4 text-red-500"></i>
-        </div>
-        <div class="text-2xl font-bold text-gray-900" id="m-downtime">--</div>
-        <div class="text-xs text-gray-400 mt-0.5" id="m-downtime-sub"></div>
+        <div class="text-xs text-gray-400 mb-1">Closed</div>
+        <div class="text-2xl font-bold" id="m-closed">--</div>
       </div>
-      <!-- Anomalies -->
       <div class="bg-white rounded-xl border p-4">
-        <div class="flex items-center justify-between mb-1">
-          <span class="text-xs font-medium text-gray-500">Anomalies</span>
-          <i data-lucide="alert-triangle" class="w-4 h-4 text-yellow-500"></i>
-        </div>
-        <div class="text-2xl font-bold text-gray-900" id="m-anomalies">0</div>
-        <div class="text-xs text-gray-400 mt-0.5" id="m-anomalies-sub"></div>
+        <div class="text-xs text-gray-400 mb-1">Anomalies</div>
+        <div class="text-2xl font-bold" id="m-anomalies">0</div>
       </div>
-      <!-- Menu -->
       <div class="bg-white rounded-xl border p-4">
-        <div class="flex items-center justify-between mb-1">
-          <span class="text-xs font-medium text-gray-500">Menu Items</span>
-          <i data-lucide="utensils" class="w-4 h-4 text-orange-500"></i>
-        </div>
-        <div class="text-2xl font-bold text-gray-900" id="m-menu">--</div>
-        <div class="text-xs text-gray-400 mt-0.5" id="m-menu-sub"></div>
+        <div class="text-xs text-gray-400 mb-1">Menu</div>
+        <div class="text-2xl font-bold" id="m-menu">--</div>
       </div>
     </div>
 
-    <!-- Daily Heatmap (stacked timeline bars) -->
+    <!-- Status Timeline Heatmap -->
     <div class="bg-white rounded-xl border p-5">
-      <h3 class="text-sm font-semibold text-gray-900 mb-3">Status Timeline</h3>
-      <div id="heatmap" class="space-y-1.5">
-        <div class="text-center text-sm text-gray-400 py-8">Loading...</div>
+      <div class="flex items-center justify-between mb-4">
+        <h3 class="text-sm font-semibold text-gray-900">Status Timeline</h3>
+        <div class="flex items-center gap-3 text-[10px] text-gray-400">
+          <span class="flex items-center gap-1"><span class="w-2.5 h-2.5 rounded-sm bg-green-500"></span>Open</span>
+          <span class="flex items-center gap-1"><span class="w-2.5 h-2.5 rounded-sm bg-red-400"></span>Closed</span>
+          <span class="flex items-center gap-1"><span class="w-2.5 h-2.5 rounded-sm bg-gray-200"></span>No data</span>
+          <span class="flex items-center gap-1"><span class="w-2.5 h-2.5 rounded-sm bg-yellow-400"></span>Anomaly</span>
+        </div>
       </div>
-      <!-- Legend -->
-      <div class="flex items-center gap-4 mt-3 text-xs text-gray-500">
-        <span class="flex items-center gap-1"><span class="w-3 h-3 rounded-sm bg-green-500"></span> Open</span>
-        <span class="flex items-center gap-1"><span class="w-3 h-3 rounded-sm bg-red-400"></span> Closed</span>
-        <span class="flex items-center gap-1"><span class="w-3 h-3 rounded-sm bg-gray-300"></span> Error/Unknown</span>
-        <span class="flex items-center gap-1"><span class="w-3 h-3 rounded-sm bg-yellow-400 border border-yellow-500"></span> Anomaly</span>
+      <div id="heatmap">
+        <div class="text-center text-sm text-gray-300 py-12">Loading...</div>
       </div>
     </div>
 
     <!-- Downtime Episodes -->
     <div class="bg-white rounded-xl border p-5">
       <h3 class="text-sm font-semibold text-gray-900 mb-3">Downtime Episodes</h3>
-      <div id="episodes">
-        <div class="text-center text-sm text-gray-400 py-4">Loading...</div>
-      </div>
+      <div id="episodes"></div>
     </div>
 
-    <!-- Out of Stock Items (for this restaurant) -->
+    <!-- Menu Availability -->
     <div class="bg-white rounded-xl border p-5">
-      <h3 class="text-sm font-semibold text-gray-900 mb-3 flex items-center gap-2">
-        Menu Availability
-        <span class="text-xs font-normal text-gray-400" id="menu-count"></span>
-      </h3>
+      <h3 class="text-sm font-semibold text-gray-900 mb-3">Menu Availability</h3>
       <div id="menu-items">
-        <div class="text-center text-sm text-gray-400 py-4">Loading...</div>
+        <div class="text-sm text-gray-300 py-4 text-center">Loading...</div>
       </div>
     </div>
-
   </div>
 
-  <script>
+<script>
+lucide.createIcons();
+const RID = <%= @restaurant.id %>;
+let currentPeriod = '<%= @period %>';
+const BALI_OFFSET = 8; // UTC+8
+
+function loadPeriod(p) {
+  currentPeriod = p;
+  document.querySelectorAll('.period-btn').forEach(b => {
+    b.classList.remove('bg-white','text-gray-900','shadow-sm');
+    b.classList.add('text-gray-500');
+  });
+  const btn = document.getElementById('btn-'+p);
+  btn.classList.add('bg-white','text-gray-900','shadow-sm');
+  btn.classList.remove('text-gray-500');
+  loadData();
+}
+
+async function loadData() {
+  const resp = await fetch(`/restaurants/${RID}/analytics_data?period=${currentPeriod}`);
+  const data = await resp.json();
+  if (!data.success) return;
+
+  const m = data.metrics;
+  const uptimePct = m.uptime_percentage.toFixed(1);
+  document.getElementById('m-uptime').textContent = uptimePct + '%';
+  document.getElementById('m-uptime').className = 'text-2xl font-bold ' +
+    (uptimePct >= 95 ? 'text-green-600' : uptimePct >= 70 ? 'text-yellow-600' : 'text-red-600');
+
+  const closedMin = m.closed_checks * 5;
+  const cH = Math.floor(closedMin/60), cM = closedMin%60;
+  document.getElementById('m-closed').textContent = closedMin === 0 ? '0' : (cH > 0 ? cH+'h '+cM+'m' : cM+'m');
+  document.getElementById('m-closed').className = 'text-2xl font-bold ' + (closedMin > 0 ? 'text-red-600' : 'text-green-600');
+
+  document.getElementById('m-anomalies').textContent = m.anomalies_count;
+  document.getElementById('m-anomalies').className = 'text-2xl font-bold ' + (m.anomalies_count > 0 ? 'text-yellow-600' : 'text-gray-400');
+
+  buildHeatmap(data.timeline);
+  buildEpisodes(data.timeline);
+  loadMenuItems();
+}
+
+function toBali(ts) {
+  return new Date(ts + BALI_OFFSET * 3600000);
+}
+
+function buildHeatmap(timeline) {
+  const el = document.getElementById('heatmap');
+  if (!timeline?.length) { el.innerHTML = '<div class="text-center text-sm text-gray-300 py-8">No data</div>'; return; }
+
+  // Group by day (Bali time)
+  const days = {};
+  timeline.forEach(t => {
+    const d = toBali(t.ts);
+    const key = d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
+    if (!days[key]) days[key] = [];
+    days[key].push({ ...t, baliDate: d });
+  });
+
+  const sortedDays = Object.keys(days).sort();
+  const cellsPerDay = 24 * 12; // 5-min slots = 288 per day
+  const cellW = 100 / cellsPerDay;
+
+  let html = '';
+
+  // Hour markers
+  html += '<div class="flex items-center mb-0.5">';
+  html += '<div class="w-20 flex-shrink-0"></div>';
+  html += '<div class="flex-1 relative h-3">';
+  for (let h = 0; h < 24; h += 3) {
+    const left = (h / 24 * 100);
+    html += `<span class="absolute text-[9px] text-gray-300" style="left:${left}%">${String(h).padStart(2,'0')}</span>`;
+  }
+  html += '</div></div>';
+
+  sortedDays.forEach(dayKey => {
+    const checks = days[dayKey];
+    const parts = dayKey.split('-');
+    const dateObj = new Date(parts[0], parts[1]-1, parts[2]);
+    const label = dateObj.toLocaleDateString('en', { weekday: 'short', day: 'numeric' });
+    const todayKey = (() => { const n = toBali(Date.now()); return n.getFullYear()+'-'+String(n.getMonth()+1).padStart(2,'0')+'-'+String(n.getDate()).padStart(2,'0'); })();
+    const isToday = dayKey === todayKey;
+
+    // Build 288-slot array
+    const slots = new Array(cellsPerDay).fill(null); // null = no data
+    checks.forEach(c => {
+      const d = c.baliDate;
+      const slot = d.getHours() * 12 + Math.floor(d.getMinutes() / 5);
+      if (slot >= 0 && slot < cellsPerDay) {
+        slots[slot] = { s: c.s, a: c.a };
+      }
+    });
+
+    // Render day row
+    html += '<div class="flex items-center mb-px">';
+    html += `<div class="w-20 flex-shrink-0 text-[11px] pr-2 text-right ${isToday ? 'font-bold text-gray-900' : 'text-gray-400'}">${label}</div>`;
+    html += '<div class="flex-1 flex h-4 rounded-sm overflow-hidden">';
+
+    // Group consecutive same-status slots for fewer DOM elements
+    let i = 0;
+    while (i < cellsPerDay) {
+      const slot = slots[i];
+      let count = 1;
+      while (i + count < cellsPerDay) {
+        const next = slots[i + count];
+        if (slot === null && next === null) { count++; continue; }
+        if (slot !== null && next !== null && slot.s === next.s && slot.a === next.a) { count++; continue; }
+        break;
+      }
+
+      const width = (count * cellW).toFixed(3);
+      let cls, title;
+      if (slot === null) {
+        cls = 'bg-gray-100';
+        title = 'No data';
+      } else if (slot.a) {
+        cls = 'bg-yellow-400';
+        title = 'Anomaly';
+      } else if (slot.s === 1) {
+        cls = 'bg-green-500';
+        title = 'Open';
+      } else if (slot.s === 0) {
+        cls = 'bg-red-400';
+        title = 'Closed';
+      } else {
+        cls = 'bg-gray-300';
+        title = 'Error';
+      }
+
+      html += `<div class="${cls}" style="width:${width}%" title="${title}"></div>`;
+      i += count;
+    }
+
+    html += '</div></div>';
+  });
+
+  el.innerHTML = html;
+}
+
+function buildEpisodes(timeline) {
+  const el = document.getElementById('episodes');
+  if (!timeline?.length) { el.innerHTML = ''; return; }
+
+  // Find closed/error episodes from raw data
+  const episodes = [];
+  let cur = null;
+  timeline.forEach(t => {
+    const bad = t.s <= 0; // closed or error
+    if (bad) {
+      if (!cur) cur = { start: t, end: t, count: 1, hasAnomaly: !!t.a, isClosed: t.s === 0 };
+      else { cur.end = t; cur.count++; if (t.a) cur.hasAnomaly = true; if (t.s === 0) cur.isClosed = true; }
+    } else {
+      if (cur) { episodes.push(cur); cur = null; }
+    }
+  });
+  if (cur) episodes.push(cur);
+
+  // Only show episodes where restaurant was actually CLOSED (not just errors)
+  const closedEpisodes = episodes.filter(e => e.isClosed);
+
+  if (closedEpisodes.length === 0) {
+    el.innerHTML = '<div class="text-sm text-green-600 flex items-center gap-1.5 py-1"><i data-lucide="check-circle" class="w-4 h-4"></i>No downtime in this period</div>';
     lucide.createIcons();
-    const RID = <%= @restaurant.id %>;
-    let currentPeriod = '<%= @period %>';
+    return;
+  }
 
-    function loadPeriod(p) {
-      currentPeriod = p;
-      document.querySelectorAll('.period-btn').forEach(b => {
-        b.classList.remove('bg-white','text-gray-900','shadow-sm');
-        b.classList.add('text-gray-500');
-      });
-      document.getElementById('btn-'+p).classList.add('bg-white','text-gray-900','shadow-sm');
-      document.getElementById('btn-'+p).classList.remove('text-gray-500');
-      loadData();
-    }
+  closedEpisodes.sort((a,b) => b.count - a.count);
+  let html = '<div class="space-y-1.5">';
+  closedEpisodes.slice(0,15).forEach(ep => {
+    const start = toBali(ep.start.ts);
+    const end = toBali(ep.end.ts);
+    const mins = ep.count * 5;
+    const h = Math.floor(mins/60), m = mins%60;
+    const dur = h > 0 ? h+'h '+m+'m' : m+'m';
+    const day = start.toLocaleDateString('en',{month:'short',day:'numeric'});
+    const t1 = start.toLocaleTimeString('en',{hour:'2-digit',minute:'2-digit',hour12:false});
+    const t2 = end.toLocaleTimeString('en',{hour:'2-digit',minute:'2-digit',hour12:false});
+    const anom = ep.hasAnomaly;
 
-    async function loadData() {
-      try {
-        const resp = await fetch(`/restaurants/${RID}/analytics_data?period=${currentPeriod}`);
-        const data = await resp.json();
-        if (!data.success) return;
+    html += `<div class="flex items-center gap-3 py-1.5 px-3 rounded ${anom ? 'bg-yellow-50' : 'bg-gray-50'}">`;
+    html += `<div class="w-1.5 h-1.5 rounded-full bg-red-500 flex-shrink-0"></div>`;
+    html += `<span class="text-sm text-gray-700 flex-1">${day} ${t1} - ${t2}`;
+    if (anom) html += ' <span class="text-[10px] text-yellow-600 font-semibold">ANOMALY</span>';
+    html += `</span>`;
+    html += `<span class="text-sm font-mono font-semibold text-red-600">${dur}</span>`;
+    html += '</div>';
+  });
+  html += '</div>';
+  el.innerHTML = html;
+  lucide.createIcons();
+}
 
-        // Metrics
-        const m = data.metrics;
-        document.getElementById('m-uptime').textContent = m.uptime_percentage.toFixed(1) + '%';
-        document.getElementById('m-uptime-sub').textContent = m.total_checks + ' checks';
+async function loadMenuItems() {
+  const el = document.getElementById('menu-items');
+  try {
+    const resp = await fetch(`/restaurants/${RID}.json`);
+    if (!resp.ok) { el.innerHTML = '<div class="text-xs text-gray-300">Menu tracking available for GoFood</div>'; return; }
+    const data = await resp.json();
+    const items = data.menu_items || [];
+    const oos = items.filter(i => i.current_status === 0);
 
-        const downtimeChecks = data.timeline.filter(t => t.actual_status === 'closed').length;
-        const downtimeMin = downtimeChecks * 5;
-        const dtH = Math.floor(downtimeMin / 60);
-        const dtM = downtimeMin % 60;
-        document.getElementById('m-downtime').textContent = dtH > 0 ? dtH + 'h ' + dtM + 'm' : dtM + 'm';
-        document.getElementById('m-downtime-sub').textContent = downtimeChecks + ' closed checks';
+    document.getElementById('m-menu').textContent = (items.length - oos.length) + '/' + items.length;
+    document.getElementById('m-menu').className = 'text-2xl font-bold ' + (oos.length > 0 ? 'text-orange-600' : 'text-green-600');
 
-        document.getElementById('m-anomalies').textContent = m.anomalies_count;
-        document.getElementById('m-anomalies-sub').textContent = m.anomalies_count > 0 ? 'unexpected status' : 'all normal';
+    if (!items.length) { el.innerHTML = '<div class="text-xs text-gray-300">No menu data yet</div>'; return; }
+    if (!oos.length) { el.innerHTML = '<div class="text-sm text-green-600">All ' + items.length + ' items available</div>'; return; }
 
-        // Menu items
-        loadMenuItems();
-
-        // Heatmap
-        buildHeatmap(data.timeline);
-
-        // Episodes
-        buildEpisodes(data.timeline);
-
-      } catch(e) {
-        console.error('Analytics error:', e);
+    let html = '<div class="grid grid-cols-1 sm:grid-cols-2 gap-1.5">';
+    oos.forEach(it => {
+      const since = it.status_changed_at ? new Date(it.status_changed_at) : null;
+      let dur = '';
+      if (since) {
+        const ms = Date.now() - since.getTime();
+        const h = Math.floor(ms/3600000), d = Math.floor(h/24);
+        dur = d > 0 ? d+'d '+(h%24)+'h' : h+'h '+Math.floor((ms%3600000)/60000)+'m';
       }
-    }
-
-    function buildHeatmap(timeline) {
-      const container = document.getElementById('heatmap');
-      if (!timeline || timeline.length === 0) {
-        container.innerHTML = '<div class="text-center text-sm text-gray-400 py-4">No data for this period</div>';
-        return;
-      }
-
-      // Group by day
-      const days = {};
-      timeline.forEach(t => {
-        // Use the label for grouping in 24h mode (hourly), or create date-based groups
-        const ts = new Date(t.timestamp);
-        const dayKey = ts.toISOString().slice(0,10);
-        if (!days[dayKey]) days[dayKey] = [];
-        days[dayKey].push(t);
-      });
-
-      const sortedDays = Object.keys(days).sort();
-      let html = '';
-
-      // Hour labels row
-      html += '<div class="flex items-center gap-1 mb-1">';
-      html += '<div class="w-16 flex-shrink-0"></div>';
-      html += '<div class="flex-1 flex justify-between text-[9px] text-gray-300 px-0.5">';
-      html += '<span>00</span><span>03</span><span>06</span><span>09</span><span>12</span><span>15</span><span>18</span><span>21</span>';
-      html += '</div></div>';
-
-      sortedDays.forEach(dayKey => {
-        const checks = days[dayKey];
-        const date = new Date(dayKey + 'T00:00:00');
-        const dayLabel = date.toLocaleDateString('en', { weekday: 'short', month: 'short', day: 'numeric' });
-        const isToday = dayKey === new Date().toISOString().slice(0,10);
-
-        html += '<div class="flex items-center gap-1">';
-        html += '<div class="w-16 flex-shrink-0 text-[11px] ' + (isToday ? 'font-semibold text-gray-900' : 'text-gray-400') + ' truncate">' + dayLabel + '</div>';
-        html += '<div class="flex-1 h-5 bg-gray-100 rounded-sm overflow-hidden flex relative">';
-
-        // Fill 24h bar with colored segments
-        // Each check represents ~5 min, map to position in 24h
-        checks.forEach(c => {
-          const ts = new Date(c.timestamp);
-          const minuteOfDay = ts.getHours() * 60 + ts.getMinutes();
-          const leftPct = (minuteOfDay / 1440 * 100);
-          const widthPct = Math.max(5 / 1440 * 100, 0.4); // 5 min segment
-
-          let color = 'bg-gray-300'; // error/unknown
-          if (c.actual_status === 'open') color = 'bg-green-500';
-          else if (c.actual_status === 'closed') color = 'bg-red-400';
-
-          let extra = '';
-          if (c.is_anomaly) {
-            color = 'bg-yellow-400';
-            extra = ' border-t-2 border-yellow-600';
-          }
-
-          html += '<div class="absolute h-full ' + color + extra + '" style="left:' + leftPct + '%;width:' + widthPct + '%"></div>';
-        });
-
-        html += '</div></div>';
-      });
-
-      container.innerHTML = html;
-    }
-
-    function buildEpisodes(timeline) {
-      const container = document.getElementById('episodes');
-      if (!timeline || timeline.length === 0) {
-        container.innerHTML = '<div class="text-center text-sm text-gray-400 py-4">No data</div>';
-        return;
-      }
-
-      // Find consecutive closed/error periods
-      const episodes = [];
-      let current = null;
-
-      timeline.forEach(t => {
-        const isBad = t.actual_status === 'closed' || t.actual_status === 'error';
-        if (isBad) {
-          if (!current) {
-            current = { start: t, end: t, status: t.actual_status, count: 1, isAnomaly: t.is_anomaly };
-          } else {
-            current.end = t;
-            current.count++;
-            if (t.is_anomaly) current.isAnomaly = true;
-          }
-        } else {
-          if (current) {
-            episodes.push(current);
-            current = null;
-          }
-        }
-      });
-      if (current) episodes.push(current);
-
-      if (episodes.length === 0) {
-        container.innerHTML = '<div class="flex items-center gap-2 text-sm text-green-600 py-2"><i data-lucide="check-circle" class="w-4 h-4"></i> No downtime episodes in this period</div>';
-        lucide.createIcons();
-        return;
-      }
-
-      // Sort by duration descending
-      episodes.sort((a,b) => b.count - a.count);
-
-      let html = '<div class="space-y-2">';
-      episodes.slice(0, 20).forEach(ep => {
-        const startTime = new Date(ep.start.timestamp);
-        const endTime = new Date(ep.end.timestamp);
-        const durationMin = ep.count * 5;
-        const dH = Math.floor(durationMin / 60);
-        const dM = durationMin % 60;
-        const durStr = dH > 0 ? dH + 'h ' + dM + 'm' : dM + 'm';
-
-        const dateStr = startTime.toLocaleDateString('en', { month: 'short', day: 'numeric' });
-        const timeStr = startTime.toLocaleTimeString('en', { hour: '2-digit', minute: '2-digit', hour12: false });
-        const endStr = endTime.toLocaleTimeString('en', { hour: '2-digit', minute: '2-digit', hour12: false });
-
-        const isAnomaly = ep.isAnomaly;
-        const statusColor = ep.status === 'closed' ? 'red' : 'gray';
-
-        html += '<div class="flex items-center gap-3 py-2 px-3 rounded-lg ' + (isAnomaly ? 'bg-yellow-50 border border-yellow-200' : 'bg-gray-50') + '">';
-        html += '<div class="w-2 h-2 rounded-full flex-shrink-0 bg-' + statusColor + '-500"></div>';
-        html += '<div class="flex-1 min-w-0">';
-        html += '<span class="text-sm font-medium text-gray-900">' + dateStr + ' ' + timeStr + ' - ' + endStr + '</span>';
-        if (isAnomaly) html += ' <span class="text-xs text-yellow-600 font-medium">ANOMALY</span>';
-        html += '</div>';
-        html += '<div class="text-sm font-mono font-semibold text-' + statusColor + '-600">' + durStr + '</div>';
-        html += '</div>';
-      });
+      html += `<div class="flex items-center gap-2 px-2.5 py-1.5 rounded bg-red-50 text-sm">`;
+      html += `<div class="w-1.5 h-1.5 rounded-full bg-red-400 flex-shrink-0"></div>`;
+      html += `<span class="flex-1 truncate text-gray-800">${it.name}</span>`;
+      if (dur) html += `<span class="text-[10px] text-red-400 font-mono flex-shrink-0">${dur}</span>`;
       html += '</div>';
+    });
+    html += '</div>';
+    el.innerHTML = html;
+  } catch(e) { el.innerHTML = ''; }
+}
 
-      container.innerHTML = html;
-      lucide.createIcons();
-    }
-
-    async function loadMenuItems() {
-      try {
-        const resp = await fetch(`/restaurants/${RID}.json`);
-        if (!resp.ok) {
-          // Try alternative: use the page data
-          document.getElementById('m-menu').textContent = '--';
-          document.getElementById('m-menu-sub').textContent = 'no data';
-          document.getElementById('menu-items').innerHTML = '<div class="text-sm text-gray-400 py-2">Menu tracking available for GoFood restaurants</div>';
-          return;
-        }
-        const data = await resp.json();
-        const items = data.menu_items || [];
-        const oos = items.filter(i => i.current_status === 0);
-        const available = items.filter(i => i.current_status === 1);
-
-        document.getElementById('m-menu').textContent = available.length + '/' + items.length;
-        document.getElementById('m-menu-sub').textContent = oos.length > 0 ? oos.length + ' out of stock' : 'all available';
-        document.getElementById('menu-count').textContent = items.length + ' items tracked';
-
-        if (oos.length === 0) {
-          document.getElementById('menu-items').innerHTML = items.length > 0
-            ? '<div class="flex items-center gap-2 text-sm text-green-600 py-2"><span class="w-4 h-4">&#10003;</span> All ' + items.length + ' menu items available</div>'
-            : '<div class="text-sm text-gray-400 py-2">No menu data yet. Available after next monitoring cycle.</div>';
-          return;
-        }
-
-        let html = '<div class="grid grid-cols-1 md:grid-cols-2 gap-2">';
-        oos.forEach(item => {
-          const since = item.status_changed_at ? new Date(item.status_changed_at) : null;
-          let durStr = '';
-          if (since) {
-            const ms = Date.now() - since.getTime();
-            const h = Math.floor(ms/3600000);
-            const d = Math.floor(h/24);
-            if (d > 0) durStr = d + 'd ' + (h%24) + 'h';
-            else durStr = h + 'h ' + Math.floor((ms%3600000)/60000) + 'm';
-          }
-          html += '<div class="flex items-center gap-2 px-3 py-2 rounded-lg bg-red-50 border border-red-100">';
-          html += '<div class="w-1.5 h-1.5 rounded-full bg-red-500 flex-shrink-0"></div>';
-          html += '<div class="flex-1 min-w-0 truncate text-sm text-gray-900">' + item.name + '</div>';
-          if (durStr) html += '<div class="text-xs text-red-500 font-mono flex-shrink-0">' + durStr + '</div>';
-          html += '</div>';
-        });
-        html += '</div>';
-
-        document.getElementById('menu-items').innerHTML = html;
-      } catch(e) {
-        document.getElementById('menu-items').innerHTML = '<div class="text-sm text-gray-400 py-2">Menu data unavailable</div>';
-      }
-    }
-
-    // Load on page ready
-    loadData();
-  </script>
+loadData();
+</script>
 </body>
 </html>

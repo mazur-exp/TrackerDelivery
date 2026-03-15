@@ -765,19 +765,31 @@ class RestaurantsController < ApplicationController
 
     checks = fetch_checks_for_period(@restaurant, period)
 
+    # Raw checks for heatmap (every 5 min data point)
+    bali_offset = 8 * 3600 # WITA = UTC+8
+    raw_timeline = checks.map do |c|
+      bali_time = c.checked_at + bali_offset
+      {
+        ts: c.checked_at.to_i * 1000,
+        bali_ts: bali_time.to_i * 1000,
+        s: c.actual_status == "open" ? 1 : (c.actual_status == "closed" ? 0 : -1),
+        a: c.is_anomaly? ? 1 : 0
+      }
+    end
+
     render json: {
       success: true,
       period: period,
       metrics: {
         uptime_percentage: calculate_uptime(checks),
-        revenue_loss: calculate_revenue_loss(checks),
         total_checks: checks.count,
         anomalies_count: checks.select(&:is_anomaly?).count,
-        avg_rating: @restaurant.rating || 0
+        avg_rating: @restaurant.rating || 0,
+        open_checks: checks.count { |c| c.actual_status == "open" },
+        closed_checks: checks.count { |c| c.actual_status == "closed" },
+        error_checks: checks.count { |c| !%w[open closed].include?(c.actual_status) }
       },
-      timeline: aggregate_checks_by_time(checks, period),
-      platform_comparison: platform_comparison_data(@restaurant, period),
-      recent_anomalies: recent_anomalies(checks, limit: 10)
+      timeline: raw_timeline
     }
   rescue ActiveRecord::RecordNotFound
     render json: {

@@ -3,6 +3,7 @@ class Restaurant < ApplicationRecord
   has_many :notification_contacts, dependent: :destroy
   has_many :working_hours, dependent: :destroy
   has_many :restaurant_status_checks, dependent: :destroy
+  has_many :menu_items, dependent: :destroy
 
   # Enums
   enum :platform, { grab: "grab", gojek: "gojek" }

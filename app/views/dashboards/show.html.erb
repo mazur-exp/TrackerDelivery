@@ -195,45 +195,71 @@
                   </div>
 
                   <div class="flex flex-col lg:flex-row items-start lg:items-center gap-4 lg:gap-8">
-                    <div class="flex items-center gap-2">
-                      <% latest_check = restaurant.restaurant_status_checks.recent(24.hours).last %>
-                      <% if latest_check %>
-                        <% case latest_check.actual_status %>
-                        <% when 'open' %>
-                          <div class="w-3 h-3 rounded-full bg-green-500 animate-pulse"></div>
-                          <span class="text-sm font-medium text-green-700"><%= t('dashboard.restaurants_tab.online') %></span>
-                        <% when 'closed' %>
-                          <div class="w-3 h-3 rounded-full bg-red-500 animate-pulse"></div>
-                          <span class="text-sm font-medium text-red-700"><%= t('dashboard.restaurants_tab.offline') %></span>
-                        <% else %>
-                          <div class="w-3 h-3 rounded-full bg-gray-500 animate-pulse"></div>
-                          <span class="text-sm font-medium text-gray-700"><%= t('dashboard.restaurants_tab.unknown') %></span>
-                        <% end %>
+                    <% sd = @status_data[restaurant.id] %>
+                  <% if sd %>
+                    <!-- Status + Live Timer -->
+                    <div class="flex items-center gap-3">
+                      <% case sd[:current_status] %>
+                      <% when 'open' %>
+                        <div class="flex items-center gap-2 px-3 py-1.5 bg-green-50 border border-green-200 rounded-lg">
+                          <div class="w-2.5 h-2.5 rounded-full bg-green-500 animate-pulse"></div>
+                          <span class="text-sm font-semibold text-green-700">OPEN</span>
+                          <span class="text-xs text-green-600 font-mono status-timer" data-since="<%= sd[:status_since] %>">--:--</span>
+                        </div>
+                      <% when 'closed' %>
+                        <div class="flex items-center gap-2 px-3 py-1.5 bg-red-50 border border-red-200 rounded-lg">
+                          <div class="w-2.5 h-2.5 rounded-full bg-red-500"></div>
+                          <span class="text-sm font-semibold text-red-700">CLOSED</span>
+                          <span class="text-xs text-red-600 font-mono status-timer" data-since="<%= sd[:status_since] %>">--:--</span>
+                        </div>
                       <% else %>
-                        <div class="w-3 h-3 rounded-full bg-gray-400"></div>
-                        <span class="text-sm font-medium text-gray-500"><%= t('dashboard.restaurants_tab.not_monitored') %></span>
+                        <div class="flex items-center gap-2 px-3 py-1.5 bg-gray-50 border border-gray-200 rounded-lg">
+                          <div class="w-2.5 h-2.5 rounded-full bg-gray-400"></div>
+                          <span class="text-sm font-medium text-gray-600"><%= sd[:current_status] %></span>
+                        </div>
                       <% end %>
                     </div>
-                    
-                    <div class="grid grid-cols-2 lg:grid-cols-3 gap-4 text-sm">
-                      <div>
-                        <p class="text-gray-500"><%= t('dashboard.restaurants_tab.rating') %></p>
-                        <p class="font-semibold flex items-center gap-1">
-                          <i data-lucide="star" class="w-3 h-3 fill-yellow-400 text-yellow-400"></i>
-                          <span><%= restaurant.rating == "NEW" ? t('dashboard.restaurants_tab.rating_new') : restaurant.rating || t('dashboard.restaurants_tab.rating_na') %></span>
-                        </p>
+
+                    <!-- Today Stats -->
+                    <div class="flex items-center gap-4 text-xs">
+                      <div class="flex items-center gap-1">
+                        <i data-lucide="star" class="w-3 h-3 fill-yellow-400 text-yellow-400"></i>
+                        <span class="font-semibold"><%= restaurant.rating == "NEW" ? "NEW" : restaurant.rating || "-" %></span>
                       </div>
-                      <div>
-                        <p class="text-gray-500"><%= t('dashboard.restaurants_tab.reviews') %></p>
-                        <p class="font-semibold">-</p>
+                      <% if sd[:uptime_pct] %>
+                        <div class="flex items-center gap-1.5">
+                          <div class="w-16 h-1.5 bg-gray-200 rounded-full overflow-hidden">
+                            <div class="h-full rounded-full <%= sd[:uptime_pct] >= 90 ? 'bg-green-500' : sd[:uptime_pct] >= 50 ? 'bg-yellow-500' : 'bg-red-500' %>" style="width: <%= sd[:uptime_pct] %>%"></div>
+                          </div>
+                          <span class="text-gray-600"><%= sd[:uptime_pct] %>%</span>
+                        </div>
+                      <% end %>
+                      <span class="text-gray-400">
+                        <i data-lucide="clock" class="w-3 h-3 inline"></i>
+                        <span class="text-green-600"><%= sd[:open_minutes] %>m</span> /
+                        <span class="text-red-600"><%= sd[:closed_minutes] %>m</span>
+                      </span>
+                      <% if sd[:oos_menu_items] > 0 %>
+                        <span class="inline-flex items-center px-1.5 py-0.5 rounded bg-red-100 text-red-700 font-medium">
+                          <i data-lucide="package-x" class="w-3 h-3 mr-0.5"></i>
+                          <%= sd[:oos_menu_items] %> OOS
+                        </span>
+                      <% end %>
+                    </div>
+                  <% else %>
+                    <div class="flex items-center gap-2">
+                      <div class="w-3 h-3 rounded-full bg-gray-400"></div>
+                      <span class="text-sm font-medium text-gray-500"><%= t('dashboard.restaurants_tab.not_monitored') %></span>
+                    </div>
+                  <% end %>
+
+                    <!-- Daily Timeline Bar -->
+                    <div class="w-full mt-2">
+                      <div class="timeline-bar h-2 bg-gray-100 rounded-full overflow-hidden flex" data-restaurant-id="<%= restaurant.id %>">
+                        <!-- Filled by JS -->
                       </div>
-                      <div>
-                        <p class="text-gray-500"><%= t('dashboard.restaurants_tab.platform') %></p>
-                        <p class="font-semibold">
-                          <a href="<%= restaurant.platform_url %>" target="_blank" class="text-blue-600 hover:text-blue-800 text-xs">
-                            <%= t('dashboard.restaurants_tab.view') %> <i data-lucide="external-link" class="w-3 h-3 inline ml-1"></i>
-                          </a>
-                        </p>
+                      <div class="flex justify-between text-[10px] text-gray-400 mt-0.5">
+                        <span>00:00</span><span>06:00</span><span>12:00</span><span>18:00</span><span>Now</span>
                       </div>
                     </div>
 
@@ -272,128 +298,58 @@
               <h3 class="text-lg font-semibold flex items-center gap-2">
                 <i data-lucide="package-x" class="w-5 h-5"></i>
                 Out of Stock Items
+                <% if @out_of_stock_items.any? %>
+                  <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-700">
+                    <%= @out_of_stock_items.count %>
+                  </span>
+                <% end %>
               </h3>
-              <p class="text-gray-600 text-sm mt-1">Monitor inventory shortages across all restaurant locations</p>
+              <p class="text-gray-600 text-sm mt-1">Menu items currently unavailable across all restaurants</p>
             </div>
             <div class="p-6">
-              <div class="space-y-4">
-                <!-- Out of Stock Item 1 -->
-                <div class="border rounded-lg p-4 bg-red-50 border-red-200">
-                  <div class="flex items-start justify-between">
-                    <div class="flex items-start gap-3">
-                      <div class="w-8 h-8 bg-red-100 rounded-full flex items-center justify-center">
-                        <i data-lucide="x-circle" class="w-4 h-4 text-red-600"></i>
-                      </div>
-                      <div class="flex-1">
-                        <h4 class="font-semibold text-gray-900">Caesar Salad with Chicken</h4>
-                        <p class="text-sm text-gray-600">Nasi Padang Express • GoJek</p>
-                        <div class="flex items-center gap-2 mt-2">
-                          <span class="inline-flex items-center px-2 py-1 rounded text-xs font-medium bg-red-600 text-white">
-                            Out of Stock
-                          </span>
-                          <div class="flex items-center gap-1 text-xs text-gray-500">
-                            <i data-lucide="clock" class="w-3 h-3"></i>
-                            16d 7h 13m
+              <% if @out_of_stock_items.any? %>
+                <div class="space-y-3">
+                  <% @out_of_stock_items.each do |item| %>
+                    <% duration = item.out_of_stock_duration %>
+                    <% hours = duration ? (duration / 3600).floor : 0 %>
+                    <% minutes = duration ? ((duration % 3600) / 60).floor : 0 %>
+                    <% days = hours / 24 %>
+                    <% hours = hours % 24 %>
+                    <% severity = days >= 7 ? 'red' : days >= 1 ? 'orange' : 'yellow' %>
+                    <div class="border rounded-lg p-4 bg-<%= severity %>-50 border-<%= severity %>-200">
+                      <div class="flex items-start justify-between">
+                        <div class="flex items-start gap-3">
+                          <div class="w-8 h-8 bg-<%= severity %>-100 rounded-full flex items-center justify-center flex-shrink-0">
+                            <i data-lucide="x-circle" class="w-4 h-4 text-<%= severity %>-600"></i>
+                          </div>
+                          <div class="flex-1 min-w-0">
+                            <h4 class="font-semibold text-gray-900 truncate"><%= item.name %></h4>
+                            <p class="text-sm text-gray-600"><%= item.restaurant.name %> · <%= item.category_name %></p>
+                            <div class="flex items-center gap-2 mt-1.5">
+                              <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-<%= severity %>-600 text-white">Out of Stock</span>
+                              <div class="flex items-center gap-1 text-xs text-gray-500">
+                                <i data-lucide="clock" class="w-3 h-3"></i>
+                                <span class="oos-timer" data-since="<%= item.status_changed_at&.iso8601 %>">
+                                  <%= days > 0 ? "#{days}d " : '' %><%= hours %>h <%= minutes %>m
+                                </span>
+                              </div>
+                              <% if item.price_cents %>
+                                <span class="text-xs text-gray-500">Rp <%= number_with_delimiter(item.price_cents) %></span>
+                              <% end %>
+                            </div>
                           </div>
                         </div>
-                        <div class="flex items-center gap-4 mt-2">
-                          <span class="inline-flex items-center px-2 py-1 rounded text-xs font-medium bg-red-100 text-red-700">
-                            High Priority
-                          </span>
-                          <span class="text-xs text-gray-600">Popular item - affects revenue</span>
-                        </div>
                       </div>
                     </div>
-                    <div class="flex items-center gap-2">
-                      <button class="inline-flex items-center px-3 py-2 text-sm font-medium text-green-700 bg-green-100 hover:bg-green-200 rounded-md transition-colors">
-                        <i data-lucide="check" class="w-4 h-4 mr-1"></i>
-                        Mark Available
-                      </button>
-                      <button class="inline-flex items-center px-2 py-2 text-gray-400 hover:text-gray-600 rounded-md transition-colors">
-                        <i data-lucide="more-horizontal" class="w-4 h-4"></i>
-                      </button>
-                    </div>
-                  </div>
+                  <% end %>
                 </div>
-
-                <!-- Out of Stock Item 2 -->
-                <div class="border rounded-lg p-4 bg-orange-50 border-orange-200">
-                  <div class="flex items-start justify-between">
-                    <div class="flex items-start gap-3">
-                      <div class="w-8 h-8 bg-orange-100 rounded-full flex items-center justify-center">
-                        <i data-lucide="x-circle" class="w-4 h-4 text-orange-600"></i>
-                      </div>
-                      <div class="flex-1">
-                        <h4 class="font-semibold text-gray-900">Burger with Bacon</h4>
-                        <p class="text-sm text-gray-600">Burger Corner • Grab</p>
-                        <div class="flex items-center gap-2 mt-2">
-                          <span class="inline-flex items-center px-2 py-1 rounded text-xs font-medium bg-orange-600 text-white">
-                            Out of Stock
-                          </span>
-                          <div class="flex items-center gap-1 text-xs text-gray-500">
-                            <i data-lucide="clock" class="w-3 h-3"></i>
-                            13d 0h 58m
-                          </div>
-                        </div>
-                        <div class="flex items-center gap-4 mt-2">
-                          <span class="inline-flex items-center px-2 py-1 rounded text-xs font-medium bg-orange-100 text-orange-700">
-                            Medium Priority
-                          </span>
-                          <span class="text-xs text-gray-600">Regular item</span>
-                        </div>
-                      </div>
-                    </div>
-                    <div class="flex items-center gap-2">
-                      <button class="inline-flex items-center px-3 py-2 text-sm font-medium text-green-700 bg-green-100 hover:bg-green-200 rounded-md transition-colors">
-                        <i data-lucide="check" class="w-4 h-4 mr-1"></i>
-                        Mark Available
-                      </button>
-                      <button class="inline-flex items-center px-2 py-2 text-gray-400 hover:text-gray-600 rounded-md transition-colors">
-                        <i data-lucide="more-horizontal" class="w-4 h-4"></i>
-                      </button>
-                    </div>
-                  </div>
+              <% else %>
+                <div class="text-center py-8 text-gray-500">
+                  <i data-lucide="check-circle" class="w-12 h-12 mx-auto mb-2 text-green-500"></i>
+                  <p class="font-medium">All menu items available</p>
+                  <p class="text-sm mt-1">No out-of-stock items detected</p>
                 </div>
-
-                <!-- Out of Stock Item 3 -->
-                <div class="border rounded-lg p-4 bg-red-50 border-red-200">
-                  <div class="flex items-start justify-between">
-                    <div class="flex items-start gap-3">
-                      <div class="w-8 h-8 bg-red-100 rounded-full flex items-center justify-center">
-                        <i data-lucide="x-circle" class="w-4 h-4 text-red-600"></i>
-                      </div>
-                      <div class="flex-1">
-                        <h4 class="font-semibold text-gray-900">Sushi Set "Philadelphia"</h4>
-                        <p class="text-sm text-gray-600">Only Eggs • GoJek</p>
-                        <div class="flex items-center gap-2 mt-2">
-                          <span class="inline-flex items-center px-2 py-1 rounded text-xs font-medium bg-red-600 text-white">
-                            Out of Stock
-                          </span>
-                          <div class="flex items-center gap-1 text-xs text-gray-500">
-                            <i data-lucide="clock" class="w-3 h-3"></i>
-                            19d 5h 28m
-                          </div>
-                        </div>
-                        <div class="flex items-center gap-4 mt-2">
-                          <span class="inline-flex items-center px-2 py-1 rounded text-xs font-medium bg-red-100 text-red-700">
-                            Critical
-                          </span>
-                          <span class="text-xs text-gray-600">Best seller - urgent restocking needed</span>
-                        </div>
-                      </div>
-                    </div>
-                    <div class="flex items-center gap-2">
-                      <button class="inline-flex items-center px-3 py-2 text-sm font-medium text-green-700 bg-green-100 hover:bg-green-200 rounded-md transition-colors">
-                        <i data-lucide="check" class="w-4 h-4 mr-1"></i>
-                        Mark Available
-                      </button>
-                      <button class="inline-flex items-center px-2 py-2 text-gray-400 hover:text-gray-600 rounded-md transition-colors">
-                        <i data-lucide="more-horizontal" class="w-4 h-4"></i>
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              </div>
+              <% end %>
             </div>
           </div>
         </div>
@@ -1682,6 +1638,57 @@
         setTimeout(() => toast.remove(), 300);
       }, 3000);
     }
+
+    // === LIVE STATUS TIMERS ===
+    function formatDuration(ms) {
+      const totalSec = Math.floor(ms / 1000);
+      const hours = Math.floor(totalSec / 3600);
+      const minutes = Math.floor((totalSec % 3600) / 60);
+      const seconds = totalSec % 60;
+      if (hours > 0) return hours + 'h ' + String(minutes).padStart(2,'0') + 'm';
+      return minutes + 'm ' + String(seconds).padStart(2,'0') + 's';
+    }
+
+    function updateTimers() {
+      const now = Date.now();
+      document.querySelectorAll('.status-timer, .oos-timer').forEach(el => {
+        const since = el.dataset.since;
+        if (!since) return;
+        const elapsed = now - new Date(since).getTime();
+        if (elapsed > 0) el.textContent = formatDuration(elapsed);
+      });
+    }
+    setInterval(updateTimers, 1000);
+    updateTimers();
+
+    // === DAILY TIMELINE BARS ===
+    function loadTimelines() {
+      document.querySelectorAll('.timeline-bar').forEach(async bar => {
+        const rid = bar.dataset.restaurantId;
+        if (!rid) return;
+        try {
+          const resp = await fetch('/dashboard/timeline_data?restaurant_id=' + rid);
+          if (!resp.ok) return;
+          const data = await resp.json();
+          bar.innerHTML = '';
+          if (!data.segments || data.segments.length === 0) {
+            bar.innerHTML = '<div class="h-full w-full bg-gray-200 rounded-full"></div>';
+            return;
+          }
+          data.segments.forEach(seg => {
+            const width = Math.max(seg.end_pct - seg.start_pct, 0.5);
+            const color = seg.status === 'open' ? 'bg-green-500' :
+                          seg.status === 'closed' ? 'bg-red-400' : 'bg-gray-300';
+            const div = document.createElement('div');
+            div.className = 'h-full ' + color;
+            div.style.width = width + '%';
+            div.title = seg.status + ' (' + new Date(seg.start).toLocaleTimeString('en',{hour:'2-digit',minute:'2-digit',hour12:false}) + ' - ' + new Date(seg.end).toLocaleTimeString('en',{hour:'2-digit',minute:'2-digit',hour12:false}) + ')';
+            bar.appendChild(div);
+          });
+        } catch(e) { /* ignore */ }
+      });
+    }
+    loadTimelines();
   </script>
 </body>
 </html>

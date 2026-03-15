@@ -193,6 +193,9 @@ class RestaurantMonitoringWorkerJob < ApplicationJob
       restaurant.update!(updates)
       Rails.logger.info "Restaurant #{restaurant.name} updated with new data"
     end
+
+    # Sync menu items if available
+    sync_menu_items(restaurant, full_data[:menu_items]) if full_data[:menu_items].present?
   rescue => e
     Rails.logger.error "Error updating restaurant data: #{e.message}"
   end
@@ -233,5 +236,45 @@ class RestaurantMonitoringWorkerJob < ApplicationJob
       is_anomaly: is_anomaly,
       parser_response: status_data.to_json
     )
+  end
+
+  def sync_menu_items(restaurant, items_data)
+    return if items_data.blank?
+
+    items_data.each do |item|
+      next if item[:id].blank? || item[:name].blank?
+
+      menu_item = restaurant.menu_items.find_or_initialize_by(
+        platform_item_id: item[:id].to_s
+      )
+
+      new_status = (item[:status] == 1) ? 1 : 0
+
+      # Track when status changed
+      if menu_item.persisted? && menu_item.current_status != new_status
+        menu_item.status_changed_at = Time.current
+        Rails.logger.info "Menu item status changed: #{item[:name]} -> #{new_status == 1 ? 'available' : 'OUT OF STOCK'}"
+      end
+
+      menu_item.assign_attributes(
+        name: item[:name],
+        category_name: item[:category],
+        current_status: new_status,
+        price_cents: item[:price],
+        image_url: item[:image_url],
+        last_checked_at: Time.current
+      )
+
+      # Set initial status_changed_at for new items
+      menu_item.status_changed_at ||= Time.current
+
+      menu_item.save!
+    rescue => e
+      Rails.logger.warn "Error syncing menu item #{item[:name]}: #{e.message}"
+    end
+
+    Rails.logger.info "Synced #{items_data.size} menu items for #{restaurant.name}"
+  rescue => e
+    Rails.logger.error "Error in sync_menu_items: #{e.message}"
   end
 end

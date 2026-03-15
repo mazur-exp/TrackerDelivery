@@ -41,6 +41,8 @@ Rails.application.routes.draw do
 
   # Protected routes
   get "dashboard" => "dashboards#show"
+  get "dashboard/status_data" => "dashboards#status_data"
+  get "dashboard/timeline_data" => "dashboards#timeline_data"
   get "onboarding" => "dashboards#onboarding"
 
   # Restaurant management

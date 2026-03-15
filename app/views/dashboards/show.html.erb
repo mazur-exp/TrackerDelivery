@@ -97,50 +97,48 @@
       </div>
 
       <!-- Overview Cards -->
-      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <div class="bg-white rounded-xl border border-green-200 bg-green-50/50 p-6 shadow-sm">
-          <div class="flex flex-row items-center justify-between space-y-0 pb-2">
-            <h3 class="text-sm font-medium"><%= t('dashboard.overview_cards.total_revenue') %></h3>
-            <i data-lucide="dollar-sign" class="h-4 w-4 text-green-600"></i>
+      <%
+        all_status = @status_data.values
+        open_now = all_status.count { |s| s[:current_status] == 'open' }
+        closed_now = all_status.count { |s| s[:current_status] == 'closed' }
+        avg_uptime = all_status.any? ? (all_status.sum { |s| s[:uptime_pct] || 0 } / all_status.size).round(1) : 0
+        total_oos = @out_of_stock_items.count
+      %>
+      <div class="grid grid-cols-2 lg:grid-cols-4 gap-3">
+        <div class="bg-white rounded-xl border p-4">
+          <div class="flex items-center justify-between mb-1">
+            <span class="text-xs font-medium text-gray-500">Online Now</span>
+            <i data-lucide="check-circle" class="h-4 w-4 text-green-500"></i>
           </div>
-          <div class="text-2xl font-bold text-green-700" id="totalRevenue">Rp 4,240,000</div>
-          <p class="text-xs text-green-600 flex items-center gap-1">
-            <i data-lucide="trending-up" class="w-3 h-3"></i>
-            <%= t('dashboard.overview_cards.from_yesterday') %>
-          </p>
+          <div class="text-2xl font-bold text-green-700"><%= open_now %>/<%= @total_restaurants %></div>
+          <p class="text-xs text-gray-400"><%= closed_now %> closed</p>
         </div>
 
-        <div class="bg-white rounded-xl border border-blue-200 bg-blue-50/50 p-6 shadow-sm">
-          <div class="flex flex-row items-center justify-between space-y-0 pb-2">
-            <h3 class="text-sm font-medium"><%= t('dashboard.overview_cards.total_orders') %></h3>
-            <i data-lucide="shopping-bag" class="h-4 w-4 text-blue-600"></i>
+        <div class="bg-white rounded-xl border p-4">
+          <div class="flex items-center justify-between mb-1">
+            <span class="text-xs font-medium text-gray-500">Avg Uptime Today</span>
+            <i data-lucide="activity" class="h-4 w-4 text-blue-500"></i>
           </div>
-          <div class="text-2xl font-bold text-blue-700" id="totalOrders">135</div>
-          <p class="text-xs text-blue-600 flex items-center gap-1">
-            <i data-lucide="trending-up" class="w-3 h-3"></i>
-            <%= t('dashboard.overview_cards.orders_from_yesterday') %>
-          </p>
+          <div class="text-2xl font-bold <%= avg_uptime >= 90 ? 'text-green-700' : avg_uptime >= 50 ? 'text-yellow-700' : 'text-red-700' %>"><%= avg_uptime %>%</div>
+          <p class="text-xs text-gray-400">across all restaurants</p>
         </div>
 
-        <div class="bg-white rounded-xl border border-purple-200 bg-purple-50/50 p-6 shadow-sm">
-          <div class="flex flex-row items-center justify-between space-y-0 pb-2">
-            <h3 class="text-sm font-medium"><%= t('dashboard.overview_cards.online_stores') %></h3>
-            <i data-lucide="store" class="h-4 w-4 text-purple-600"></i>
+        <div class="bg-white rounded-xl border p-4">
+          <div class="flex items-center justify-between mb-1">
+            <span class="text-xs font-medium text-gray-500">Out of Stock</span>
+            <i data-lucide="package-x" class="h-4 w-4 text-<%= total_oos > 0 ? 'red' : 'gray' %>-500"></i>
           </div>
-          <div class="text-2xl font-bold text-purple-700" id="onlineStores"><%= @total_restaurants %></div>
-          <p class="text-xs text-purple-600" id="operationalPercentage"><%= t('dashboard.overview_cards.total_restaurants') %></p>
+          <div class="text-2xl font-bold <%= total_oos > 0 ? 'text-red-700' : 'text-gray-700' %>"><%= total_oos %></div>
+          <p class="text-xs text-gray-400">menu items unavailable</p>
         </div>
 
-        <div class="bg-white rounded-xl border border-orange-200 bg-orange-50/50 p-6 shadow-sm">
-          <div class="flex flex-row items-center justify-between space-y-0 pb-2">
-            <h3 class="text-sm font-medium"><%= t('dashboard.overview_cards.avg_rating') %></h3>
-            <i data-lucide="star" class="h-4 w-4 text-orange-600"></i>
+        <div class="bg-white rounded-xl border p-4">
+          <div class="flex items-center justify-between mb-1">
+            <span class="text-xs font-medium text-gray-500">Avg Rating</span>
+            <i data-lucide="star" class="h-4 w-4 text-orange-500"></i>
           </div>
-          <div class="text-2xl font-bold text-orange-700" id="avgRating"><%= @average_rating > 0 ? @average_rating : "N/A" %></div>
-          <p class="text-xs text-orange-600 flex items-center gap-1">
-            <i data-lucide="star" class="w-3 h-3 fill-current"></i>
-            <%= t('dashboard.overview_cards.across_all_platforms') %>
-          </p>
+          <div class="text-2xl font-bold text-orange-700"><%= @average_rating > 0 ? @average_rating : "N/A" %></div>
+          <p class="text-xs text-gray-400">across all platforms</p>
         </div>
       </div>
 
@@ -336,66 +334,12 @@
 
         <!-- Reviews Tab -->
         <div id="reviews-tab" class="tab-content hidden space-y-4">
-          <div class="bg-white rounded-xl border shadow-sm">
-            <div class="p-6 border-b">
-              <h3 class="text-lg font-semibold flex items-center gap-2">
-                <i data-lucide="star" class="w-5 h-5"></i>
-                Recent Reviews
-              </h3>
-              <p class="text-gray-600 text-sm mt-1">Monitor and respond to customer feedback</p>
-            </div>
-            <div class="divide-y">
-              <!-- Review 1 -->
-              <div class="p-6">
-                <div class="flex items-start justify-between">
-                  <div class="flex-1">
-                    <div class="flex items-center gap-2 mb-2">
-                      <div class="flex items-center">
-                        <i data-lucide="star" class="w-4 h-4 fill-yellow-400 text-yellow-400"></i>
-                        <i data-lucide="star" class="w-4 h-4 fill-yellow-400 text-yellow-400"></i>
-                        <i data-lucide="star" class="w-4 h-4 fill-yellow-400 text-yellow-400"></i>
-                        <i data-lucide="star" class="w-4 h-4 fill-yellow-400 text-yellow-400"></i>
-                        <i data-lucide="star" class="w-4 h-4 text-gray-300"></i>
-                      </div>
-                      <span class="font-semibold">4.0</span>
-                      <span class="text-gray-500">•</span>
-                      <span class="text-sm text-gray-500">2 hours ago</span>
-                    </div>
-                    <p class="text-gray-900 mb-2">"Food was great but delivery took longer than expected. Will order again!"</p>
-                    <p class="text-sm text-gray-500">Platform: GoJek</p>
-                  </div>
-                  <button class="ml-4 inline-flex items-center px-3 py-2 text-sm font-medium text-green-700 bg-green-100 hover:bg-green-200 rounded-md transition-colors">
-                    Reply
-                  </button>
-                </div>
-              </div>
-
-              <!-- Review 2 -->
-              <div class="p-6">
-                <div class="flex items-start justify-between">
-                  <div class="flex-1">
-                    <div class="flex items-center gap-2 mb-2">
-                      <div class="flex items-center">
-                        <i data-lucide="star" class="w-4 h-4 fill-yellow-400 text-yellow-400"></i>
-                        <i data-lucide="star" class="w-4 h-4 fill-yellow-400 text-yellow-400"></i>
-                        <i data-lucide="star" class="w-4 h-4 text-gray-300"></i>
-                        <i data-lucide="star" class="w-4 h-4 text-gray-300"></i>
-                        <i data-lucide="star" class="w-4 h-4 text-gray-300"></i>
-                      </div>
-                      <span class="font-semibold">2.0</span>
-                      <span class="text-gray-500">•</span>
-                      <span class="text-sm text-gray-500">4 hours ago</span>
-                    </div>
-                    <p class="text-gray-900 mb-2">"Food was cold when it arrived. Not satisfied with the service."</p>
-                    <p class="text-sm text-gray-500">Platform: Grab</p>
-                  </div>
-                  <button class="ml-4 inline-flex items-center px-3 py-2 text-sm font-medium text-red-700 bg-red-100 hover:bg-red-200 rounded-md transition-colors">
-                    <i data-lucide="alert-triangle" class="w-4 h-4 mr-1"></i>
-                    Urgent Reply
-                  </button>
-                </div>
-              </div>
-            </div>
+          <div class="bg-white rounded-xl border shadow-sm p-8 text-center">
+            <i data-lucide="message-square" class="w-12 h-12 mx-auto text-gray-300 mb-3"></i>
+            <h3 class="text-lg font-semibold text-gray-900 mb-1">Reviews Coming Soon</h3>
+            <p class="text-sm text-gray-500 max-w-md mx-auto">
+              Review monitoring and response management is being developed. You'll be able to see and respond to customer reviews from Grab and GoFood in one place.
+            </p>
           </div>
         </div>
 

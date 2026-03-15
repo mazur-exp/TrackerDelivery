@@ -660,7 +660,16 @@ class RestaurantsController < ApplicationController
           telegram: @restaurant.all_telegram_contacts,
           email: @restaurant.all_email_contacts
         }
-      }
+      },
+      menu_items: @restaurant.menu_items.map { |mi| {
+        id: mi.id,
+        name: mi.name,
+        category_name: mi.category_name,
+        current_status: mi.current_status,
+        price_cents: mi.price_cents,
+        status_changed_at: mi.status_changed_at&.iso8601,
+        last_checked_at: mi.last_checked_at&.iso8601
+      } }
     }
   rescue ActiveRecord::RecordNotFound => e
     Rails.logger.error "Restaurant not found: #{e.message}"

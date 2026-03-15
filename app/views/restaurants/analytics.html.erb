@@ -197,10 +197,8 @@ function buildDayRows(sortedDays, days) {
     if (hasIssues) {
       const issueCount = events.filter(e => e.type === 'unexpected_close').length;
       html += `<span class="text-xs font-medium text-red-500">${issueCount} issue${issueCount !== 1 ? 's' : ''}</span>`;
-      html += `<i data-lucide="chevron-right" class="w-4 h-4 text-gray-300 flex-shrink-0 transition-transform" id="chevron-${dayKey}"></i>`;
-    } else if (closedMin > 0 || errorCount > 0) {
-      html += `<i data-lucide="chevron-right" class="w-4 h-4 text-gray-200 flex-shrink-0 transition-transform" id="chevron-${dayKey}"></i>`;
     }
+    html += `<i data-lucide="chevron-right" class="w-4 h-4 text-gray-300 flex-shrink-0 transition-transform" id="chevron-${dayKey}"></i>`;
 
     html += '</div>';
 
@@ -231,6 +229,16 @@ function buildDayRows(sortedDays, days) {
           html += `<span class="text-red-600 font-medium">Closed unexpectedly</span>`;
           html += `<span class="text-xs bg-yellow-100 text-yellow-700 px-1.5 py-0.5 rounded font-medium ml-1">ANOMALY</span>`;
           html += '</div>';
+        } else if (ev.type === 'monitoring') {
+          const durM = ev.mins || 0;
+          const dH = Math.floor(durM/60), dM = durM%60;
+          const durStr = dH > 0 ? dH + 'h ' + dM + 'm' : dM + 'm';
+          const statusLabel = ev.status === 'open' ? 'open' : ev.status === 'closed' ? 'closed' : 'monitoring';
+          const dotColor = ev.status === 'open' ? 'bg-green-200' : ev.status === 'closed' ? 'bg-red-200' : 'bg-gray-200';
+          html += `<div class="flex items-center gap-2 text-xs text-gray-300 py-0.5 ml-3">`;
+          html += `<span class="border-l border-dashed ${dotColor} h-4"></span>`;
+          html += `<span>✓ ${ev.count} checks OK · ${durStr} ${statusLabel}</span>`;
+          html += '</div>';
         }
       });
       html += '</div></div>';
@@ -248,31 +256,48 @@ function findEvents(checks) {
   const events = [];
 
   // Filter out errors: treat them as continuation of last known status
-  // This prevents "monitoring error" noise in the event log
   const realChecks = [];
-  let lastReal = null;
   checks.forEach(c => {
-    if (c.s === -1) return; // skip errors
-    realChecks.push(c);
-    lastReal = c;
+    if (c.s !== -1) realChecks.push(c); // skip errors
   });
 
-  if (!realChecks.length) return [];
+  // Also count total checks (including errors) between events for "monitoring" lines
+  const allChecks = checks;
+
+  if (!realChecks.length) {
+    // All errors - show summary
+    if (allChecks.length > 0) {
+      events.push({ type: 'monitoring', count: allChecks.length, status: 'error',
+        startTime: allChecks[0].bali, endTime: allChecks[allChecks.length-1].bali });
+    }
+    return events;
+  }
 
   let prevStatus = null;
   let lastCloseTime = null;
+  let lastEventTime = null;
+  let checksSinceLastEvent = 0;
 
   realChecks.forEach((c, i) => {
     const status = c.s; // 1=open, 0=closed
     const time = c.bali;
 
     if (prevStatus === null) {
-      // First real check of the day
+      // First real check
       if (status === 1) events.push({ type: 'opened', time });
       else events.push({ type: 'closed', time });
+      lastEventTime = time;
+      checksSinceLastEvent = 0;
     } else if (status !== prevStatus) {
+      // Status transition - add monitoring summary before it
+      if (checksSinceLastEvent > 1 && lastEventTime) {
+        const mins = Math.round((time - lastEventTime) / 60000);
+        events.push({ type: 'monitoring', count: checksSinceLastEvent,
+          status: prevStatus === 1 ? 'open' : 'closed',
+          startTime: lastEventTime, endTime: time, mins });
+      }
+
       if (status === 1 && prevStatus === 0) {
-        // Reopened
         let downtime = '';
         if (lastCloseTime) {
           const mins = Math.round((time - lastCloseTime) / 60000);
@@ -286,9 +311,22 @@ function findEvents(checks) {
         events.push({ type: isAnomaly ? 'unexpected_close' : 'closed', time });
         lastCloseTime = time;
       }
+      lastEventTime = time;
+      checksSinceLastEvent = 0;
+    } else {
+      checksSinceLastEvent++;
     }
     prevStatus = status;
   });
+
+  // Add trailing monitoring summary (from last event to end of data)
+  if (checksSinceLastEvent > 1 && lastEventTime && realChecks.length > 0) {
+    const lastCheck = realChecks[realChecks.length - 1];
+    const mins = Math.round((lastCheck.bali - lastEventTime) / 60000);
+    events.push({ type: 'monitoring', count: checksSinceLastEvent,
+      status: prevStatus === 1 ? 'open' : 'closed',
+      startTime: lastEventTime, endTime: lastCheck.bali, mins });
+  }
 
   return events;
 }

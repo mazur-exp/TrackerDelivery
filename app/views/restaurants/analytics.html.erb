@@ -209,7 +209,7 @@ function buildDayRows(sortedDays, days) {
       html += `<div id="day-${dayKey}" class="hidden border-t bg-gray-50/50 px-4 py-3">`;
       html += '<div class="space-y-1.5 ml-8">';
       events.forEach(ev => {
-        const time = fmtTime(ev.time);
+        const time = ev.time ? fmtTime(ev.time) : '';
         if (ev.type === 'opened') {
           html += `<div class="flex items-center gap-2 text-sm">`;
           html += `<span class="w-1.5 h-1.5 rounded-full bg-green-500 flex-shrink-0"></span>`;

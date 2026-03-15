@@ -754,7 +754,7 @@ class RestaurantsController < ApplicationController
 
   def analytics
     @restaurant = current_user.restaurants.find(params[:id])
-    @period = params[:period] || "24h"
+    @period = params[:period] || "7d"
   rescue ActiveRecord::RecordNotFound
     redirect_to dashboard_path, alert: "Restaurant not found"
   end

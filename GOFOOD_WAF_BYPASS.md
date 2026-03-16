@@ -9,12 +9,12 @@ gofood.co.id is protected by **Tencent Cloud WAF (EdgeOne)**. It blocks all non-
 | Direct curl (server IP) | 202 JS challenge | 202 JS challenge |
 | curl + w_tsfp cookie | N/A | 403 (IP-bound) |
 | BrightData datacenter proxy | 202 JS challenge | 202 JS challenge |
-| BrightData Scraping Browser | **200 OK** | CAPTCHA (Tencent) |
+| Local Chrome + BrightData datacenter proxy | **200 OK** | CAPTCHA (Tencent) |
 | Googlebot UA | 202 JS challenge | 202 JS challenge |
 | CORS proxies | 403/502 | 403/502 |
 
 WAF has two protection levels:
-1. **JS probe challenge** (`/C2WF946J0/probe.js`) - solved automatically by Scraping Browser
+1. **JS probe challenge** (`/C2WF946J0/probe.js`) - solved automatically by Local Chrome + proxy
 2. **Tencent CAPTCHA** (`sg.captcha.qcloud.com/Captcha.js`) - blocks automated access to restaurant pages
 
 ## Solution: Next.js Client-Side Router
@@ -27,7 +27,7 @@ GoFood uses **Next.js with SSR**. When the browser does client-side navigation (
 ### Flow
 
 ```
-1. Scraping Browser -> gofood.co.id/ (homepage)
+1. Local Chrome + proxy -> gofood.co.id/ (homepage)
    WAF: JS probe challenge -> auto-solved -> 200 OK
    Result: Next.js app loaded, router available
 
@@ -95,10 +95,10 @@ Short URL: `https://gofood.link/a/{code}` - resolves via JS redirect to full URL
 
 ## Infrastructure
 
-### BrightData Scraping Browser
+### Local Chrome + BrightData datacenter proxy
 
-- Zone: `scraping_browser1`
-- WebSocket: `wss://brd-customer-hl_4f9d9889-zone-scraping_browser1:vcsa70x4kkpv@brd.superproxy.io:9222`
+- Zone: `datacenter_proxy1`
+- WebSocket: `wss://brd-customer-hl_4f9d9889-zone-datacenter_proxy1:vcsa70x4kkpv@brd.superproxy.io:9222`
 - Connection: Playwright `chromium.connectOverCDP()`
 - Handles JS challenges automatically, but NOT Tencent CAPTCHA
 
@@ -106,13 +106,13 @@ Short URL: `https://gofood.link/a/{code}` - resolves via JS redirect to full URL
 
 - Node.js (available on server at /usr/bin/node)
 - Playwright (from /root/delivery-stats-parser/node_modules)
-- BrightData Scraping Browser zone (active subscription)
+- Local Chrome + BrightData datacenter proxy zone (active subscription)
 
 ### Configuration (ENV vars)
 
 | Variable | Default | Description |
 |----------|---------|-------------|
-| `SCRAPING_BROWSER_WS` | (hardcoded) | BrightData Scraping Browser WebSocket URL |
+| `SCRAPING_BROWSER_WS` | (hardcoded) | Local Chrome + BrightData datacenter proxy WebSocket URL |
 | `NODE_BIN` | `node` | Path to Node.js binary |
 | `PLAYWRIGHT_PATH` | `/root/delivery-stats-parser/node_modules` | Path to Playwright module |
 
@@ -134,7 +134,7 @@ Short URL: `https://gofood.link/a/{code}` - resolves via JS redirect to full URL
 ## Troubleshooting
 
 ### Homepage fails to load
-- Scraping Browser is inconsistent (~80% success rate)
+- Local Chrome + proxy is inconsistent (~80% success rate)
 - Script retries up to 2 times
 - If persistent, check BrightData zone status
 

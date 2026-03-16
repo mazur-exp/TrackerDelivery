@@ -175,11 +175,12 @@ class HttpGojekParserService
   end
 
   def run_node_script(input_json)
-    env = {
-      "SCRAPING_BROWSER_WS" => ENV.fetch("SCRAPING_BROWSER_WS",
-        "wss://brd-customer-hl_4f9d9889-zone-scraping_browser1:vcsa70x4kkpv@brd.superproxy.io:9222")
-    }
+    env = {}
     env["NODE_PATH"] = PLAYWRIGHT_PATH if PLAYWRIGHT_PATH
+    # Proxy config (defaults in scraper script, can override via ENV)
+    env["PROXY_SERVER"] = ENV["PROXY_SERVER"] if ENV["PROXY_SERVER"]
+    env["PROXY_USERNAME"] = ENV["PROXY_USERNAME"] if ENV["PROXY_USERNAME"]
+    env["PROXY_PASSWORD"] = ENV["PROXY_PASSWORD"] if ENV["PROXY_PASSWORD"]
 
     cmd = [NODE_BIN, SCRAPER_SCRIPT, input_json]
 

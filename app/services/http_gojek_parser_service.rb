@@ -6,7 +6,7 @@ class HttpGojekParserService
   SCRAPER_SCRIPT = Rails.root.join("lib", "gofood_scraper.js").to_s
   NODE_BIN = ENV.fetch("NODE_BIN", "node")
   PLAYWRIGHT_PATH = ENV.fetch("PLAYWRIGHT_PATH", nil)
-  CACHE_TTL = 4.minutes
+  CACHE_TTL = 10.minutes
   SCRAPER_TIMEOUT = 120 # seconds
 
   def initialize

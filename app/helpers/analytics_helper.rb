@@ -20,6 +20,27 @@ module AnalyticsHelper
               .order(checked_at: :asc)
   end
 
+  # Calculate uptime percentage against working hours only
+  def calculate_working_hours_uptime(checks, restaurant)
+    working_checks = checks.select do |check|
+      bali_time = check.checked_at.in_time_zone("Asia/Makassar")
+      day_of_week = bali_time.wday == 0 ? 6 : bali_time.wday - 1
+      wh = restaurant.working_hours.find { |w| w.day_of_week == day_of_week }
+      next false unless wh && !wh.is_closed
+      current_time = bali_time.strftime("%H:%M")
+      opens = wh.opens_at.to_s
+      closes = wh.closes_at.to_s
+      if closes > opens
+        current_time >= opens && current_time <= closes
+      else
+        current_time >= opens || current_time <= closes
+      end
+    end
+    return nil if working_checks.empty?
+    open_count = working_checks.count { |c| c.actual_status == "open" }
+    (open_count.to_f / working_checks.size * 100).round(1)
+  end
+
   # Calculate uptime percentage
   def calculate_uptime(checks)
     return 0 if checks.empty?

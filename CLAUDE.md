@@ -51,6 +51,7 @@ Current application structure:
 2. **UI Design System** (`ai_docs/ui/ui_design_system.md`): Comprehensive design patterns with gradient-based modern aesthetic
 3. **UI Quick Reference** (`ai_docs/ui/ui_quick_reference.md`): Copy-paste components and code examples
 
+4. **UX Improvements Spec v2** (`ai_docs/development/specs/ux-improvements-v2.md`): Priority UX fixes for dashboard and analytics — inline analytics, uptime calculation fix, terminology alignment, mobile improvements, revenue loss estimation
 Key design principles:
 - Gradient backgrounds: `bg-gradient-to-br from-slate-50 via-white to-blue-50`
 - Primary colors: Blue-600 to Indigo-700 gradients

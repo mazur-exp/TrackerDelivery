@@ -112,6 +112,9 @@ class DashboardsController < ApplicationController
       valid_checks = open_checks + closed_checks
       uptime_pct = valid_checks > 0 ? (open_checks.to_f / valid_checks * 100).round(1) : nil
 
+      # Working hours uptime — filter to checks within working hours
+      working_hours_uptime_pct = calculate_working_hours_uptime_today(checks_today.to_a, r, bali_tz)
+
       # Menu items summary
       total_items = r.menu_items.count
       oos_items = r.menu_items.out_of_stock.count
@@ -122,7 +125,7 @@ class DashboardsController < ApplicationController
         status_since: status_since.iso8601,
         open_minutes: open_minutes,
         closed_minutes: closed_minutes,
-        uptime_pct: uptime_pct,
+        uptime_pct: working_hours_uptime_pct || uptime_pct,
         total_checks: total_checks,
         error_checks: error_checks,
         total_menu_items: total_items,
@@ -131,6 +134,28 @@ class DashboardsController < ApplicationController
       }
     end
     data
+  end
+
+  def calculate_working_hours_uptime_today(checks, restaurant, bali_tz)
+    return nil if checks.empty? || restaurant.working_hours.empty?
+
+    working_checks = checks.select do |check|
+      bali_time = check.checked_at.in_time_zone(bali_tz)
+      day_of_week = bali_time.wday == 0 ? 6 : bali_time.wday - 1
+      wh = restaurant.working_hours.find { |w| w.day_of_week == day_of_week }
+      next false unless wh && !wh.is_closed
+      current_time = bali_time.strftime("%H:%M")
+      opens = wh.opens_at.to_s
+      closes = wh.closes_at.to_s
+      if closes > opens
+        current_time >= opens && current_time <= closes
+      else
+        current_time >= opens || current_time <= closes
+      end
+    end
+    return nil if working_checks.empty?
+    open_count = working_checks.count { |c| c.actual_status == "open" }
+    (open_count.to_f / working_checks.size * 100).round(1)
   end
 
   def build_timeline_segments(checks, day_start, day_end)

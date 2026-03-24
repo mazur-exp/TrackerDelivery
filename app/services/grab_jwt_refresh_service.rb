@@ -228,6 +228,18 @@ class GrabJwtRefreshService
   end
 
   def save_credentials(jwt_token, api_version, cookies, error: nil)
+    # Don't overwrite a working JWT with null
+    if jwt_token.nil?
+      existing_file = Rails.root.join("storage", COOKIES_FILE)
+      if File.exist?(existing_file) && File.size(existing_file) > 0
+        existing = JSON.parse(File.read(existing_file)) rescue {}
+        if existing["jwt_token"].present?
+          Rails.logger.warn("[GrabJWT] Skipping save — would overwrite working JWT with null")
+          return
+        end
+      end
+    end
+
     data = {
       "cookies" => cookies,
       "jwt_token" => jwt_token,

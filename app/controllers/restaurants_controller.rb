@@ -755,6 +755,12 @@ class RestaurantsController < ApplicationController
   def analytics
     @restaurant = current_user.restaurants.find(params[:id])
     @period = params[:period] || "7d"
+
+    if request.headers["X-Inline"] == "true" || params[:inline] == "true"
+      render partial: "restaurants/analytics_inline", layout: false
+    else
+      render "restaurants/analytics"
+    end
   rescue ActiveRecord::RecordNotFound
     redirect_to dashboard_path, alert: "Restaurant not found"
   end
@@ -782,14 +788,19 @@ class RestaurantsController < ApplicationController
       period: period,
       metrics: {
         uptime_percentage: calculate_uptime(checks),
+        working_hours_uptime: calculate_working_hours_uptime(checks, @restaurant),
         total_checks: checks.count,
         anomalies_count: checks.select(&:is_anomaly?).count,
         avg_rating: @restaurant.rating || 0,
         open_checks: checks.count { |c| c.actual_status == "open" },
         closed_checks: checks.count { |c| c.actual_status == "closed" },
-        error_checks: checks.count { |c| !%w[open closed].include?(c.actual_status) }
+        error_checks: checks.count { |c| !%w[open closed].include?(c.actual_status) },
+        estimated_revenue_loss: calculate_revenue_loss(checks)
       },
-      timeline: raw_timeline
+      timeline: raw_timeline,
+      working_hours: @restaurant.working_hours.map { |wh|
+        { day_of_week: wh.day_of_week, opens_at: wh.opens_at, closes_at: wh.closes_at, is_closed: wh.is_closed }
+      }
     }
   rescue ActiveRecord::RecordNotFound
     render json: {

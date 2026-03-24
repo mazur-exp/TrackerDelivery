@@ -162,6 +162,7 @@
 
         <!-- Restaurants Tab -->
         <div id="restaurants-tab" class="tab-content space-y-4">
+          <div id="restaurants-list">
           <% if @restaurants.present? %>
             <% @restaurants.each do |restaurant| %>
               <div class="<%= restaurant.is_active ? 'bg-white' : 'bg-gray-100' %> rounded-xl border shadow-sm hover:shadow-md transition-shadow p-5 <%= restaurant.is_active ? '' : 'opacity-60' %>" data-restaurant-card="<%= restaurant.id %>">
@@ -176,7 +177,10 @@
                       </div>
                     <% end %>
                     <div class="min-w-0">
-                      <h3 class="font-semibold text-base truncate"><%= restaurant.name %></h3>
+                      <h3 class="font-semibold text-base truncate">
+                        <span class="hidden md:inline"><%= restaurant.name %></span>
+                        <span class="md:hidden"><%= restaurant.short_name %></span>
+                      </h3>
                       <div class="flex items-center gap-2 text-xs text-gray-500">
                         <span><%= restaurant.platform_name %></span>
                         <% if restaurant.rating.present? && restaurant.rating != "NEW" %>
@@ -234,16 +238,16 @@
                       </div>
                     <% end %>
 
-                    <%= link_to analytics_restaurant_path(restaurant), class: "inline-flex items-center gap-1 px-2.5 py-1.5 bg-green-600 hover:bg-green-700 text-white text-xs font-medium rounded-lg transition-colors" do %>
+                    <a href="#" onclick="loadInlineAnalytics(<%= restaurant.id %>); return false;" class="inline-flex items-center gap-1 px-2.5 py-1.5 bg-green-600 hover:bg-green-700 text-white text-xs font-medium rounded-lg transition-colors">
                       <i data-lucide="bar-chart-3" class="w-3.5 h-3.5"></i>
                       <span>Analytics</span>
-                    <% end %>
+                    </a>
                   </div>
                 </div>
 
                 <!-- Timeline bar -->
                 <div class="mt-3">
-                  <div class="timeline-bar h-1.5 bg-gray-100 rounded-full overflow-hidden flex" data-restaurant-id="<%= restaurant.id %>"></div>
+                  <div class="timeline-bar h-2.5 bg-gray-100 rounded-full overflow-hidden flex" data-restaurant-id="<%= restaurant.id %>"></div>
                   <div class="flex justify-between text-[9px] text-gray-300 mt-0.5 px-0.5">
                     <span>00</span><span>06</span><span>12</span><span>18</span><span>now</span>
                   </div>
@@ -263,6 +267,10 @@
               </button>
             </div>
           <% end %>
+          </div>
+          <div id="restaurant-analytics" class="hidden">
+            <!-- analytics will be loaded here via AJAX -->
+          </div>
         </div>
 
         <!-- Out of Stock Tab -->
@@ -282,8 +290,16 @@
             </div>
             <div class="p-6">
               <% if @out_of_stock_items.any? %>
-                <div class="space-y-3">
-                  <% @out_of_stock_items.each do |item| %>
+                <div class="flex items-center gap-2 mb-4">
+                  <label class="text-xs text-gray-500">Sort by:</label>
+                  <select id="oosSortSelect" onchange="sortOosItems(this.value)" class="text-xs border rounded px-2 py-1 text-gray-700">
+                    <option value="duration" selected>Duration (longest first)</option>
+                    <option value="restaurant">Restaurant</option>
+                    <option value="category">Category</option>
+                  </select>
+                </div>
+                <div class="space-y-3" id="oos-items-list">
+                  <% @out_of_stock_items.sort_by { |i| -(i.out_of_stock_duration || 0) }.each do |item| %>
                     <% duration = item.out_of_stock_duration %>
                     <% hours = duration ? (duration / 3600).floor : 0 %>
                     <% minutes = duration ? ((duration % 3600) / 60).floor : 0 %>
@@ -296,7 +312,11 @@
                     <% else %>
                       <% bg_cls, border_cls, icon_cls, badge_cls = 'bg-yellow-50', 'border-yellow-200', 'bg-yellow-100 text-yellow-600', 'bg-yellow-600' %>
                     <% end %>
-                    <div class="border rounded-lg p-4 <%= bg_cls %> <%= border_cls %>">
+                    <%
+                      total_hours = (item.out_of_stock_duration || 0) / 3600
+                      border_left_cls = total_hours > 72 ? 'border-l-4 border-l-red-400' : total_hours > 24 ? 'border-l-4 border-l-yellow-400' : ''
+                    %>
+                    <div class="border rounded-lg p-4 <%= bg_cls %> <%= border_cls %> <%= border_left_cls %> oos-item" data-duration="<%= item.out_of_stock_duration || 0 %>" data-restaurant="<%= item.restaurant.name %>" data-category="<%= item.category_name %>">
                       <div class="flex items-start gap-3">
                         <div class="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 <%= icon_cls %>">
                           <i data-lucide="x-circle" class="w-4 h-4"></i>
@@ -364,18 +384,18 @@
                       <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-green-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-green-600"></div>
                     </label>
                   </div>
-                  <div class="flex items-center justify-between">
-                    <label class="text-sm font-medium">Review alerts</label>
+                  <div class="flex items-center justify-between opacity-50 pointer-events-none">
+                    <label class="text-sm font-medium">Review alerts <span class="text-xs bg-gray-200 text-gray-500 px-1.5 py-0.5 rounded ml-1">Coming Soon</span></label>
                     <label class="relative inline-flex items-center cursor-pointer">
-                      <input type="checkbox" checked class="sr-only peer">
-                      <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-green-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-green-600"></div>
+                      <input type="checkbox" disabled class="sr-only peer">
+                      <div class="w-11 h-6 bg-gray-200 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-green-600"></div>
                     </label>
                   </div>
-                  <div class="flex items-center justify-between">
-                    <label class="text-sm font-medium">Order alerts</label>
+                  <div class="flex items-center justify-between opacity-50 pointer-events-none">
+                    <label class="text-sm font-medium">Order alerts <span class="text-xs bg-gray-200 text-gray-500 px-1.5 py-0.5 rounded ml-1">Coming Soon</span></label>
                     <label class="relative inline-flex items-center cursor-pointer">
-                      <input type="checkbox" class="sr-only peer">
-                      <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-green-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-green-600"></div>
+                      <input type="checkbox" disabled class="sr-only peer">
+                      <div class="w-11 h-6 bg-gray-200 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-green-600"></div>
                     </label>
                   </div>
                   <div class="flex items-center justify-between">
@@ -392,17 +412,35 @@
                 <h4 class="font-medium">Delivery Methods</h4>
                 <div class="space-y-3">
                   <div class="flex items-center justify-between">
+                    <label class="text-sm font-medium">
+                      <i data-lucide="message-circle" class="w-4 h-4 inline mr-1"></i>
+                      Telegram notifications
+                    </label>
+                    <label class="relative inline-flex items-center cursor-pointer">
+                      <input type="checkbox" checked class="sr-only peer">
+                      <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-green-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-green-600"></div>
+                    </label>
+                  </div>
+                  <% if current_user %>
+                    <% telegram_contacts = current_user.all_telegram_contacts rescue [] %>
+                    <% if telegram_contacts.any? %>
+                      <div class="text-xs text-gray-500 ml-5">
+                        Connected: <%= telegram_contacts.join(", ") %>
+                      </div>
+                    <% end %>
+                  <% end %>
+                  <div class="flex items-center justify-between">
                     <label class="text-sm font-medium">Email notifications</label>
                     <label class="relative inline-flex items-center cursor-pointer">
                       <input type="checkbox" checked class="sr-only peer">
                       <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-green-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-green-600"></div>
                     </label>
                   </div>
-                  <div class="flex items-center justify-between">
-                    <label class="text-sm font-medium">Push notifications</label>
+                  <div class="flex items-center justify-between opacity-50 pointer-events-none">
+                    <label class="text-sm font-medium">Push notifications <span class="text-xs bg-gray-200 text-gray-500 px-1.5 py-0.5 rounded ml-1">Coming Soon</span></label>
                     <label class="relative inline-flex items-center cursor-pointer">
-                      <input type="checkbox" class="sr-only peer">
-                      <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-green-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-green-600"></div>
+                      <input type="checkbox" disabled class="sr-only peer">
+                      <div class="w-11 h-6 bg-gray-200 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-green-600"></div>
                     </label>
                   </div>
                 </div>
@@ -502,7 +540,14 @@
 
       <!-- Footer -->
       <div class="text-center text-sm text-gray-500">
-        <%= t('dashboard.footer.last_updated') %> <span id="lastUpdate">-</span>
+        <%
+          latest_check = @status_data.values.map { |d| d[:last_checked_at] }.compact.max
+          if latest_check
+            mins_ago = ((Time.current - Time.parse(latest_check)) / 60).round
+            last_updated_text = mins_ago < 1 ? "just now" : "#{mins_ago} min ago"
+          end
+        %>
+        <span id="last-updated">Last updated: <%= last_updated_text || "-" %></span>
       </div>
     </div>
   </div>
@@ -1613,6 +1658,82 @@
       });
     }
     loadTimelines();
+
+    // === INLINE ANALYTICS ===
+    async function loadInlineAnalytics(restaurantId) {
+      const listEl = document.getElementById('restaurants-list');
+      const analyticsEl = document.getElementById('restaurant-analytics');
+      analyticsEl.innerHTML = '<div class="p-8 text-center text-gray-400">Loading analytics...</div>';
+      listEl.classList.add('hidden');
+      analyticsEl.classList.remove('hidden');
+      const resp = await fetch('/restaurants/' + restaurantId + '/analytics?inline=true', {
+        headers: { 'X-Inline': 'true' }
+      });
+      const html = await resp.text();
+      analyticsEl.innerHTML = html;
+      if (window.lucide) lucide.createIcons();
+      analyticsEl.querySelectorAll('script').forEach(oldScript => {
+        const newScript = document.createElement('script');
+        newScript.textContent = oldScript.textContent;
+        oldScript.replaceWith(newScript);
+      });
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    function showRestaurantsList() {
+      const listEl = document.getElementById('restaurants-list');
+      const analyticsEl = document.getElementById('restaurant-analytics');
+      analyticsEl.classList.add('hidden');
+      analyticsEl.innerHTML = '';
+      listEl.classList.remove('hidden');
+    }
+
+    // === LAST UPDATED (from status polling) ===
+    function updateLastUpdated(statusData) {
+      let latestTime = null;
+      Object.values(statusData).forEach(rd => {
+        if (rd.last_checked_at) {
+          const t = new Date(rd.last_checked_at);
+          if (!latestTime || t > latestTime) latestTime = t;
+        }
+      });
+      const el = document.getElementById('last-updated');
+      if (el && latestTime) {
+        const ago = Math.round((Date.now() - latestTime.getTime()) / 60000);
+        if (ago < 1) el.textContent = 'Last updated: just now';
+        else if (ago < 60) el.textContent = 'Last updated: ' + ago + ' min ago';
+        else el.textContent = 'Last updated: ' + latestTime.toLocaleTimeString();
+      }
+    }
+
+    // === OOS SORTING ===
+    function sortOosItems(sortBy) {
+      const container = document.getElementById('oos-items-list');
+      if (!container) return;
+      const items = Array.from(container.querySelectorAll('.oos-item'));
+      items.sort((a, b) => {
+        if (sortBy === 'duration') {
+          return parseInt(b.dataset.duration) - parseInt(a.dataset.duration);
+        } else if (sortBy === 'restaurant') {
+          return (a.dataset.restaurant || '').localeCompare(b.dataset.restaurant || '');
+        } else if (sortBy === 'category') {
+          return (a.dataset.category || '').localeCompare(b.dataset.category || '');
+        }
+        return 0;
+      });
+      items.forEach(item => container.appendChild(item));
+    }
+
+    // === STATUS POLLING ===
+    async function pollStatusData() {
+      try {
+        const resp = await fetch('/dashboard/status_data');
+        if (!resp.ok) return;
+        const data = await resp.json();
+        updateLastUpdated(data);
+      } catch(e) { /* ignore */ }
+    }
+    setInterval(pollStatusData, 60000);
   </script>
 </body>
 </html>

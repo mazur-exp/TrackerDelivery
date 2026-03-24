@@ -27,6 +27,10 @@ class Restaurant < ApplicationRecord
     name.present? ? name : "Restaurant ##{id}"
   end
 
+  def short_name
+    name.gsub(/\s*\([^)]*\)\s*/, " ").strip.gsub(/\s+/, " ")
+  end
+
   def platform_name
     platform.humanize
   end

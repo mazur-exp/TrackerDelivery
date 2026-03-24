@@ -1,62 +1,51 @@
-<!DOCTYPE html>
-<html lang="<%= I18n.locale %>">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Analytics - <%= @restaurant.name %></title>
-  <%= stylesheet_link_tag "application" %>
-  <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
-</head>
-<body class="min-h-screen bg-gray-50">
-  <div class="max-w-2xl mx-auto p-4 md:p-6 space-y-4">
+<div class="max-w-2xl mx-auto p-4 md:p-6 space-y-4">
 
-    <!-- Header -->
-    <div>
-      <a href="<%= dashboard_path %>" class="text-gray-400 hover:text-gray-600 text-xs flex items-center gap-1 mb-2">
-        <i data-lucide="arrow-left" class="w-3.5 h-3.5"></i> Back to Dashboard
-      </a>
-      <h1 class="text-xl font-bold text-gray-900"><%= @restaurant.name %></h1>
-      <p class="text-xs text-gray-400"><%= @restaurant.platform_name %></p>
-    </div>
-
-    <!-- Current Status -->
-    <div id="current-status" class="rounded-xl border-2 p-6 text-center bg-white">
-      <div class="text-sm text-gray-400 mb-1">Current Status</div>
-      <div id="status-icon" class="text-5xl mb-2">--</div>
-      <div id="status-label" class="text-2xl font-bold mb-1">Loading...</div>
-      <div id="status-timer" class="text-sm text-gray-500 font-mono"></div>
-    </div>
-
-    <!-- Period + Summary -->
-    <div class="bg-white rounded-xl border p-4">
-      <div class="flex items-center justify-between mb-3">
-        <span class="text-sm font-semibold text-gray-900">Uptime</span>
-        <div class="bg-gray-100 rounded-lg p-0.5 inline-flex">
-          <% %w[7d 30d].each do |p| %>
-            <button onclick="loadPeriod('<%= p %>')" id="btn-<%= p %>"
-              class="period-btn px-3 py-1 text-xs font-medium rounded-md transition-colors <%= p == @period ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500' %>">
-              <%= p == '7d' ? '7 days' : '30 days' %>
-            </button>
-          <% end %>
-        </div>
-      </div>
-      <div class="flex items-baseline gap-2 mb-3">
-        <span id="period-uptime" class="text-3xl font-bold">--%</span>
-        <span id="period-subtitle" class="text-sm text-gray-400"></span>
-      </div>
-      <!-- Menu summary -->
-      <div id="menu-summary" class="text-sm text-gray-400"></div>
-    </div>
-
-    <!-- Day rows -->
-    <div class="bg-white rounded-xl border divide-y" id="days-container">
-      <div class="p-8 text-center text-sm text-gray-300">Loading...</div>
-    </div>
-
+  <!-- Header -->
+  <div>
+    <a href="#" onclick="showRestaurantsList(); return false;" class="text-gray-400 hover:text-gray-600 text-xs flex items-center gap-1 mb-2">
+      <i data-lucide="arrow-left" class="w-3.5 h-3.5"></i> Back to all restaurants
+    </a>
+    <h1 class="text-xl font-bold text-gray-900"><%= @restaurant.name %></h1>
+    <p class="text-xs text-gray-400"><%= @restaurant.platform_name %></p>
   </div>
 
+  <!-- Current Status -->
+  <div id="current-status" class="rounded-xl border-2 p-6 text-center bg-white">
+    <div class="text-sm text-gray-400 mb-1">Current Status</div>
+    <div id="status-icon" class="text-5xl mb-2">--</div>
+    <div id="status-label" class="text-2xl font-bold mb-1">Loading...</div>
+    <div id="status-timer" class="text-sm text-gray-500 font-mono"></div>
+  </div>
+
+  <!-- Period + Summary -->
+  <div class="bg-white rounded-xl border p-4">
+    <div class="flex items-center justify-between mb-3">
+      <span class="text-sm font-semibold text-gray-900">Uptime</span>
+      <div class="bg-gray-100 rounded-lg p-0.5 inline-flex">
+        <% %w[7d 30d].each do |p| %>
+          <button onclick="loadPeriod('<%= p %>')" id="btn-<%= p %>"
+            class="period-btn px-3 py-1 text-xs font-medium rounded-md transition-colors <%= p == @period ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500' %>">
+            <%= p == '7d' ? '7 days' : '30 days' %>
+          </button>
+        <% end %>
+      </div>
+    </div>
+    <div class="flex items-baseline gap-2 mb-3">
+      <span id="period-uptime" class="text-3xl font-bold">--%</span>
+      <span id="period-subtitle" class="text-sm text-gray-400"></span>
+    </div>
+    <!-- Menu summary -->
+    <div id="menu-summary" class="text-sm text-gray-400"></div>
+  </div>
+
+  <!-- Day rows -->
+  <div class="bg-white rounded-xl border divide-y" id="days-container">
+    <div class="p-8 text-center text-sm text-gray-300">Loading...</div>
+  </div>
+
+</div>
+
 <script>
-lucide.createIcons();
 const RID = <%= @restaurant.id %>;
 let currentPeriod = '<%= @period || "7d" %>';
 const BALI_OFFSET = 8 * 3600000;
@@ -77,7 +66,7 @@ function loadPeriod(p) {
 }
 
 async function loadData() {
-  const resp = await fetch(`/restaurants/${RID}/analytics_data?period=${currentPeriod}`);
+  const resp = await fetch('/restaurants/' + RID + '/analytics_data?period=' + currentPeriod);
   const data = await resp.json();
   if (!data.success) return;
 
@@ -89,16 +78,20 @@ async function loadData() {
   const el = document.getElementById('period-uptime');
   el.textContent = uptimePct + '%';
   el.className = 'text-3xl font-bold ' + (uptimePct >= 95 ? 'text-green-600' : uptimePct >= 70 ? 'text-yellow-600' : 'text-red-600');
+
   // Subtitle: hours instead of checks, "issues" instead of "anomalies"
   const openHours = Math.round(m.open_checks * 5 / 60 * 10) / 10;
   const closedHours = Math.round(m.closed_checks * 5 / 60 * 10) / 10;
   const issueText = m.anomalies_count === 1 ? '1 issue' : m.anomalies_count + ' issues';
-  let subtitleText = openHours + 'h open / ' + closedHours + 'h closed \u00b7 ' + issueText;
+  let subtitle = openHours + 'h open / ' + closedHours + 'h closed \u00b7 ' + issueText;
+
+  // Revenue loss estimation
   if (m.estimated_revenue_loss > 0) {
     const lossFormatted = new Intl.NumberFormat('id-ID').format(m.estimated_revenue_loss);
-    subtitleText += ' \u00b7 ~Rp ' + lossFormatted + ' est. lost';
+    subtitle += ' \u00b7 ~Rp ' + lossFormatted + ' est. lost';
   }
-  document.getElementById('period-subtitle').textContent = subtitleText;
+
+  document.getElementById('period-subtitle').textContent = subtitle;
 
   // Group checks by day (Bali time)
   const days = {};
@@ -115,9 +108,10 @@ async function loadData() {
     updateCurrentStatus(last);
   }
 
-  // Build day rows
-  const sortedDays = Object.keys(days).sort().reverse(); // newest first
-  buildDayRows(sortedDays, days);
+  // Build day rows — generate placeholder rows for missing days
+  const sortedDays = Object.keys(days).sort().reverse();
+  const workingHours = data.working_hours || [];
+  buildDayRows(sortedDays, days, workingHours);
 
   // Menu
   loadMenuSummary();
@@ -131,22 +125,21 @@ function updateCurrentStatus(last) {
 
   if (last.s === 1) {
     statusEl.className = 'rounded-xl border-2 border-green-200 bg-green-50 p-6 text-center';
-    iconEl.textContent = '🟢';
+    iconEl.textContent = '\uD83D\uDFE2';
     labelEl.textContent = 'OPEN';
     labelEl.className = 'text-2xl font-bold text-green-700 mb-1';
   } else if (last.s === 0) {
     statusEl.className = 'rounded-xl border-2 border-red-200 bg-red-50 p-6 text-center';
-    iconEl.textContent = '🔴';
+    iconEl.textContent = '\uD83D\uDD34';
     labelEl.textContent = 'CLOSED';
     labelEl.className = 'text-2xl font-bold text-red-700 mb-1';
   } else {
     statusEl.className = 'rounded-xl border-2 border-gray-200 bg-gray-50 p-6 text-center';
-    iconEl.textContent = '⚪';
+    iconEl.textContent = '\u26AA';
     labelEl.textContent = 'UNKNOWN';
     labelEl.className = 'text-2xl font-bold text-gray-500 mb-1';
   }
 
-  // Start ticking timer
   const since = last.ts;
   function tick() {
     const elapsed = Date.now() - since;
@@ -156,10 +149,21 @@ function updateCurrentStatus(last) {
     timerEl.textContent = (h > 0 ? h + 'h ' : '') + pad(m) + 'm ' + pad(s) + 's';
   }
   tick();
-  setInterval(tick, 1000);
+  if (window._analyticsTimerInterval) clearInterval(window._analyticsTimerInterval);
+  window._analyticsTimerInterval = setInterval(tick, 1000);
 }
 
-function buildDayRows(sortedDays, days) {
+function isDayOff(dayKey, workingHours) {
+  if (!workingHours || workingHours.length === 0) return false;
+  const parts = dayKey.split('-');
+  const dateObj = new Date(parts[0], parts[1]-1, parts[2]);
+  const jsDay = dateObj.getDay(); // 0=Sun
+  const dayOfWeek = jsDay === 0 ? 6 : jsDay - 1; // 0=Mon
+  const wh = workingHours.find(w => w.day_of_week === dayOfWeek);
+  return wh && wh.is_closed;
+}
+
+function buildDayRows(sortedDays, days, workingHours) {
   const container = document.getElementById('days-container');
   const todayKey = (() => { const n = toBali(Date.now()); return n.getFullYear()+'-'+pad(n.getMonth()+1)+'-'+pad(n.getDate()); })();
 
@@ -167,6 +171,7 @@ function buildDayRows(sortedDays, days) {
   sortedDays.forEach(dayKey => {
     const checks = days[dayKey];
     const isToday = dayKey === todayKey;
+    const dayOff = isDayOff(dayKey, workingHours);
 
     // Day label
     const parts = dayKey.split('-');
@@ -180,7 +185,6 @@ function buildDayRows(sortedDays, days) {
     const validCount = openCount + closedCount;
     const uptimePct = validCount > 0 ? (openCount / validCount * 100).toFixed(0) : '--';
     const openMin = openCount * 5;
-    const closedMin = closedCount * 5;
     const openH = Math.floor(openMin/60), openM = openMin%60;
     const openStr = openH > 0 ? openH + 'h ' + openM + 'm' : openM + 'm';
 
@@ -192,52 +196,81 @@ function buildDayRows(sortedDays, days) {
     // Uptime color
     const pctNum = parseFloat(uptimePct) || 0;
     const noData = validCount === 0;
-    const uptimeColor = noData ? 'text-gray-300' : pctNum >= 95 ? 'text-green-600' : pctNum >= 70 ? 'text-yellow-600' : 'text-red-600';
-    const uptimeIcon = noData ? '⚪' : pctNum >= 95 ? '✅' : pctNum >= 70 ? '⚠️' : '🔴';
-    const bgClass = isToday ? 'bg-blue-50/30' : '';
 
-    html += `<div class="group ${bgClass}">`;
-    // Day header row (always visible)
-    html += `<div class="flex items-center gap-3 px-4 py-3 cursor-pointer hover:bg-gray-50 transition-colors" onclick="toggleDay('${dayKey}')">`;
-    html += `<span class="text-sm ${uptimeColor} w-5 text-center flex-shrink-0">${uptimeIcon}</span>`;
-    html += `<span class="text-sm ${isToday ? 'font-bold text-gray-900' : 'font-medium text-gray-700'} w-28 flex-shrink-0">${dayLabel}</span>`;
-    html += `<span class="text-sm font-semibold ${uptimeColor} w-12 flex-shrink-0">${uptimePct}%</span>`;
-    html += `<span class="text-xs text-gray-400 flex-1">${noData ? 'no data' : openStr + ' open'}</span>`;
+    let uptimeColor, uptimeIcon, bgClass;
+    if (dayOff) {
+      uptimeColor = 'text-gray-300';
+      uptimeIcon = '\u23F8\uFE0F';
+      bgClass = '';
+    } else if (noData) {
+      uptimeColor = 'text-yellow-400';
+      uptimeIcon = '\u26A0\uFE0F';
+      bgClass = '';
+    } else {
+      uptimeColor = pctNum >= 95 ? 'text-green-600' : pctNum >= 70 ? 'text-yellow-600' : 'text-red-600';
+      uptimeIcon = pctNum >= 95 ? '\u2705' : pctNum >= 70 ? '\u26A0\uFE0F' : '\uD83D\uDD34';
+      bgClass = isToday ? 'bg-blue-50/30' : '';
+    }
+
+    html += '<div class="group ' + bgClass + '">';
+    html += '<div class="flex items-center gap-3 px-4 py-3 cursor-pointer hover:bg-gray-50 transition-colors" onclick="toggleDay(\'' + dayKey + '\')">';
+    html += '<span class="text-sm ' + uptimeColor + ' w-5 text-center flex-shrink-0">' + uptimeIcon + '</span>';
+    html += '<span class="text-sm ' + (isToday ? 'font-bold text-gray-900' : 'font-medium text-gray-700') + ' w-28 flex-shrink-0">' + dayLabel + '</span>';
+
+    if (dayOff) {
+      html += '<span class="text-sm text-gray-300 w-12 flex-shrink-0">--</span>';
+      html += '<span class="text-xs text-gray-400 flex-1">Day off</span>';
+    } else if (noData) {
+      html += '<span class="text-sm text-yellow-400 w-12 flex-shrink-0">--</span>';
+      html += '<span class="text-xs text-yellow-500 flex-1">No data</span>';
+    } else {
+      html += '<span class="text-sm font-semibold ' + uptimeColor + ' w-12 flex-shrink-0">' + uptimePct + '%</span>';
+      html += '<span class="text-xs text-gray-400 flex-1">' + openStr + ' open</span>';
+    }
 
     if (hasIssues) {
       const issueCount = events.filter(e => e.type === 'unexpected_close').length;
-      html += `<span class="text-xs font-medium text-red-500">${issueCount} issue${issueCount !== 1 ? 's' : ''}</span>`;
+      html += '<span class="text-xs font-medium text-red-500">' + issueCount + ' issue' + (issueCount !== 1 ? 's' : '') + '</span>';
     }
-    html += `<i data-lucide="chevron-right" class="w-4 h-4 text-gray-300 flex-shrink-0 transition-transform" id="chevron-${dayKey}"></i>`;
 
+    // Revenue loss per day
+    if (closedCount > 0 && !dayOff) {
+      const dayLoss = closedCount * 5 / 60 * 50000;
+      if (dayLoss > 0) {
+        const lossStr = 'Rp ' + new Intl.NumberFormat('id-ID').format(Math.round(dayLoss));
+        html += '<span class="text-xs text-red-400 ml-1">~' + lossStr + '</span>';
+      }
+    }
+
+    html += '<i data-lucide="chevron-right" class="w-4 h-4 text-gray-300 flex-shrink-0 transition-transform" id="chevron-' + dayKey + '"></i>';
     html += '</div>';
 
-    // Expandable event log (hidden by default)
+    // Expandable event log
     if (events.length > 0) {
-      html += `<div id="day-${dayKey}" class="hidden border-t bg-gray-50/50 px-4 py-3">`;
+      html += '<div id="day-' + dayKey + '" class="hidden border-t bg-gray-50/50 px-4 py-3">';
       html += '<div class="space-y-1.5 ml-8">';
       events.forEach(ev => {
         const time = ev.time ? fmtTime(ev.time) : '';
         if (ev.type === 'opened') {
-          html += `<div class="flex items-center gap-2 text-sm">`;
-          html += `<span class="w-1.5 h-1.5 rounded-full bg-green-500 flex-shrink-0"></span>`;
-          html += `<span class="text-gray-500 font-mono w-12">${time}</span>`;
-          html += `<span class="text-green-700">Opened</span>`;
-          if (ev.downtime) html += `<span class="text-xs text-gray-400 ml-1">(${ev.downtime} downtime)</span>`;
+          html += '<div class="flex items-center gap-2 text-sm">';
+          html += '<span class="w-1.5 h-1.5 rounded-full bg-green-500 flex-shrink-0"></span>';
+          html += '<span class="text-gray-500 font-mono w-12">' + time + '</span>';
+          html += '<span class="text-green-700">Opened</span>';
+          if (ev.downtime) html += '<span class="text-xs text-gray-400 ml-1">(' + ev.downtime + ' downtime)</span>';
           html += '</div>';
         } else if (ev.type === 'closed') {
-          html += `<div class="flex items-center gap-2 text-sm">`;
-          html += `<span class="w-1.5 h-1.5 rounded-full bg-gray-400 flex-shrink-0"></span>`;
-          html += `<span class="text-gray-500 font-mono w-12">${time}</span>`;
-          html += `<span class="text-gray-600">Closed</span>`;
-          html += `<span class="text-xs text-gray-300 ml-1">scheduled</span>`;
+          html += '<div class="flex items-center gap-2 text-sm">';
+          html += '<span class="w-1.5 h-1.5 rounded-full bg-gray-400 flex-shrink-0"></span>';
+          html += '<span class="text-gray-500 font-mono w-12">' + time + '</span>';
+          html += '<span class="text-gray-600">Closed</span>';
+          html += '<span class="text-xs text-gray-300 ml-1">scheduled</span>';
           html += '</div>';
         } else if (ev.type === 'unexpected_close') {
-          html += `<div class="flex items-center gap-2 text-sm">`;
-          html += `<span class="w-1.5 h-1.5 rounded-full bg-red-500 flex-shrink-0"></span>`;
-          html += `<span class="text-gray-500 font-mono w-12">${time}</span>`;
-          html += `<span class="text-red-600 font-medium">Closed unexpectedly</span>`;
-          html += `<span class="text-xs bg-yellow-100 text-yellow-700 px-1.5 py-0.5 rounded font-medium ml-1">ISSUE</span>`;
+          html += '<div class="flex items-center gap-2 text-sm">';
+          html += '<span class="w-1.5 h-1.5 rounded-full bg-red-500 flex-shrink-0"></span>';
+          html += '<span class="text-gray-500 font-mono w-12">' + time + '</span>';
+          html += '<span class="text-red-600 font-medium">Closed unexpectedly</span>';
+          html += '<span class="text-xs bg-yellow-100 text-yellow-700 px-1.5 py-0.5 rounded font-medium ml-1">ISSUE</span>';
           html += '</div>';
         } else if (ev.type === 'monitoring') {
           const durM = ev.mins || 0;
@@ -245,9 +278,9 @@ function buildDayRows(sortedDays, days) {
           const durStr = dH > 0 ? dH + 'h ' + dM + 'm' : dM + 'm';
           const statusLabel = ev.status === 'open' ? 'open' : ev.status === 'closed' ? 'closed' : 'monitoring';
           const dotColor = ev.status === 'open' ? 'bg-green-200' : ev.status === 'closed' ? 'bg-red-200' : 'bg-gray-200';
-          html += `<div class="flex items-center gap-2 text-xs text-gray-300 py-0.5 ml-3">`;
-          html += `<span class="border-l border-dashed ${dotColor} h-4"></span>`;
-          html += `<span>✓ ${ev.count} checks OK · ${durStr} ${statusLabel}</span>`;
+          html += '<div class="flex items-center gap-2 text-xs text-gray-300 py-0.5 ml-3">';
+          html += '<span class="border-l border-dashed ' + dotColor + ' h-4"></span>';
+          html += '<span>\u2713 ' + ev.count + ' checks OK \u00b7 ' + durStr + ' ' + statusLabel + '</span>';
           html += '</div>';
         }
       });
@@ -258,24 +291,21 @@ function buildDayRows(sortedDays, days) {
   });
 
   container.innerHTML = html || '<div class="p-8 text-center text-sm text-gray-300">No data for this period</div>';
-  lucide.createIcons();
+  if (window.lucide) lucide.createIcons();
 }
 
 function findEvents(checks) {
   if (!checks.length) return [];
   const events = [];
 
-  // Filter out errors: treat them as continuation of last known status
   const realChecks = [];
   checks.forEach(c => {
-    if (c.s !== -1) realChecks.push(c); // skip errors
+    if (c.s !== -1) realChecks.push(c);
   });
 
-  // Also count total checks (including errors) between events for "monitoring" lines
   const allChecks = checks;
 
   if (!realChecks.length) {
-    // All errors - show summary
     if (allChecks.length > 0) {
       events.push({ type: 'monitoring', count: allChecks.length, status: 'error',
         startTime: allChecks[0].bali, endTime: allChecks[allChecks.length-1].bali });
@@ -289,17 +319,15 @@ function findEvents(checks) {
   let checksSinceLastEvent = 0;
 
   realChecks.forEach((c, i) => {
-    const status = c.s; // 1=open, 0=closed
+    const status = c.s;
     const time = c.bali;
 
     if (prevStatus === null) {
-      // First real check
       if (status === 1) events.push({ type: 'opened', time });
       else events.push({ type: 'closed', time });
       lastEventTime = time;
       checksSinceLastEvent = 0;
     } else if (status !== prevStatus) {
-      // Status transition - add monitoring summary before it
       if (checksSinceLastEvent > 1 && lastEventTime) {
         const mins = Math.round((time - lastEventTime) / 60000);
         events.push({ type: 'monitoring', count: checksSinceLastEvent,
@@ -329,7 +357,6 @@ function findEvents(checks) {
     prevStatus = status;
   });
 
-  // Add trailing monitoring summary (from last event to end of data)
   if (checksSinceLastEvent > 1 && lastEventTime && realChecks.length > 0) {
     const lastCheck = realChecks[realChecks.length - 1];
     const mins = Math.round((lastCheck.bali - lastEventTime) / 60000);
@@ -354,7 +381,7 @@ function toggleDay(dayKey) {
 async function loadMenuSummary() {
   const el = document.getElementById('menu-summary');
   try {
-    const resp = await fetch(`/restaurants/${RID}.json`);
+    const resp = await fetch('/restaurants/' + RID + '.json');
     if (!resp.ok) { el.textContent = ''; return; }
     const data = await resp.json();
     const items = data.menu_items || [];
@@ -370,5 +397,3 @@ async function loadMenuSummary() {
 
 loadData();
 </script>
-</body>
-</html>
